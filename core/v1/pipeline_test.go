@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/stretchr/testify/assert"
+	"log"
 	"reflect"
 	"testing"
 )
@@ -38,9 +39,11 @@ func Test_loadArgs(t *testing.T) {
 
 	pipeline.Steps[0].Arg=variable
 	testCase.expected=map[string]string{"env1":"value1","env2":"value2","key1":"value1","key2":"value2"}
+
 	pipeline.loadArgs(&MockK8sResource{})
 	testCase.actual=pipeline.Steps[0].Arg.Data
-	if reflect.DeepEqual(testCase.expected, testCase.actual){
+	log.Print(testCase.actual)
+	if !reflect.DeepEqual(testCase.expected, testCase.actual){
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
 	}
 }
