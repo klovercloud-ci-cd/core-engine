@@ -18,9 +18,7 @@ type Step struct {
 
 
 func NewStep()*Step{
-	return &Step{
-
-	}
+	return &Step{}
 }
 func (step * Step)SetInput(url,revision string){
 	if step.Type==BUILD{
