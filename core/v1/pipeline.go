@@ -28,8 +28,8 @@ func(pipeline *Pipeline)loadEnvs(k8s K8s){
 }
 
 func(pipeline *Pipeline)setInputResource(url,revision string){
-	for _,each:=range pipeline.Steps{
-		each.setInput(url,revision)
+	for i,_:=range pipeline.Steps{
+		pipeline.Steps[i].setInput(url,revision)
 	}
 }
 

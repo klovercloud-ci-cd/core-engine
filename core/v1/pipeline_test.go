@@ -42,7 +42,6 @@ func Test_loadArgs(t *testing.T) {
 
 	pipeline.loadArgs(&MockK8sResource{})
 	testCase.actual=pipeline.Steps[0].Arg.Data
-	log.Print(testCase.actual)
 	if !reflect.DeepEqual(testCase.expected, testCase.actual){
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
 	}
