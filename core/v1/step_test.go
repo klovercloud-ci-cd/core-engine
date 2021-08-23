@@ -76,3 +76,40 @@ func Test_setArgs(t *testing.T) {
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
 	}
 }
+
+func Test_SetInput(t *testing.T) {
+	type TestCase struct {
+		url,revision string
+		step_type STEP_TYPE
+		expected Resource
+		actual Resource
+	}
+	step := Step{
+		Type: BUILD,
+	}
+	testCase:=TestCase{
+		url:       "github.com/abc",
+		revision:  "12234345455",
+		step_type: BUILD,
+		expected:  Resource{
+			Url:      "github.com/abc",
+			Revision: "12234345455",
+		},
+	}
+
+	step.SetInput("github.com/abc","12234345455")
+	testCase.actual=step.Input
+	if !reflect.DeepEqual(testCase.expected, testCase.actual){
+		assert.ElementsMatch(t, testCase.expected, testCase.actual)
+	}
+	testCase=TestCase{
+		url:       "github.com/abc",
+		revision:  "12234345455",
+		step_type: DEPLOY,
+		expected:  Resource{},
+	}
+	step.SetInput("github.com/abc","12234345455")
+	if !reflect.DeepEqual(testCase.expected, testCase.actual){
+		assert.ElementsMatch(t, testCase.expected, testCase.actual)
+	}
+}
