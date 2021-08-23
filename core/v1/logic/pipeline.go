@@ -3,6 +3,7 @@ package logic
 import (
 	v1 "github.com/klovercloud-ci/core/v1"
 	"github.com/klovercloud-ci/core/v1/service"
+	"log"
 )
 
 type pipelineService struct {
@@ -20,9 +21,10 @@ func (p pipelineService) Apply(url,revision string) error {
 		if err!=nil{return err}
 		taskrun,err:=p.tekton.InitTaskRun(each)
 		if err!=nil{return err}
+		log.Print("applying:", input, " ",outputs, " ",task, " ",taskrun)
 	}
 
-
+return nil
 
 }
 
