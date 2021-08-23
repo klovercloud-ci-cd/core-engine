@@ -89,26 +89,26 @@ func Test_SetInput(t *testing.T) {
 	}
 	testCase:=TestCase{
 		url:       "github.com/abc",
-		revision:  "12234345455",
+		revision:  "1222",
 		step_type: BUILD,
 		expected:  Resource{
 			Url:      "github.com/abc",
-			Revision: "12234345455",
+			Revision: "1222",
 		},
 	}
 
-	step.SetInput("github.com/abc","12234345455")
+	step.SetInput("github.com/abc","1222")
 	testCase.actual=step.Input
 	if !reflect.DeepEqual(testCase.expected, testCase.actual){
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
 	}
 	testCase=TestCase{
 		url:       "github.com/abc",
-		revision:  "12234345455",
+		revision:  "1222",
 		step_type: DEPLOY,
 		expected:  Resource{},
 	}
-	step.SetInput("github.com/abc","12234345455")
+	step.SetInput("github.com/abc","1222")
 	if !reflect.DeepEqual(testCase.expected, testCase.actual){
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
 	}
