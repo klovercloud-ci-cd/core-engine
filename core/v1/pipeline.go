@@ -15,22 +15,21 @@ type Pipeline struct {
 	Steps [] Step  `json:"steps"`
 }
 
-func(pipeline *Pipeline)loadArgs(k8s K8s){
-	for _,each:=range pipeline.Steps{
-		each.SetArgs(k8s)
+func(pipeline Pipeline)loadArgs(k8s K8s){
+	for i,_:=range pipeline.Steps{
+		pipeline.Steps[i].setArgs(k8s)
 	}
-
 }
 
 func(pipeline *Pipeline)loadEnvs(k8s K8s){
-	for _,each:=range pipeline.Steps{
-		each.SetEnvs(k8s)
+	for i,_:=range pipeline.Steps{
+		pipeline.Steps[i].setEnvs(k8s)
 	}
 }
 
 func(pipeline *Pipeline)setInputResource(url,revision string){
 	for _,each:=range pipeline.Steps{
-		each.SetInput(url,revision)
+		each.setInput(url,revision)
 	}
 }
 

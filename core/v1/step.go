@@ -1,9 +1,9 @@
 package v1
 
 var _ interface {
-	SetInput(url,revision string)
-	SetArgs(k8s K8s)
-	SetEnvs(k8s K8s)
+	setInput(url,revision string)
+	setArgs(k8s K8s)
+	setEnvs(k8s K8s)
 }= NewStep()
 
 type Step struct {
@@ -20,14 +20,14 @@ type Step struct {
 func NewStep()*Step{
 	return &Step{}
 }
-func (step * Step)SetInput(url,revision string){
+func (step * Step)setInput(url,revision string){
 	if step.Type==BUILD{
 		step.Input.Url=url
 		step.Input.Revision=revision
 	}
 }
 
-func (step * Step)SetArgs(k8s K8s){
+func (step * Step)setArgs(k8s K8s){
 	if step.Arg.Data==nil{
 		step.Arg.Data= map[string]string{}
 	}
@@ -52,7 +52,7 @@ func (step * Step)SetArgs(k8s K8s){
 	}
 }
 
-func (step * Step)SetEnvs(k8s K8s){
+func (step * Step)setEnvs(k8s K8s){
 	if step.Env.Data==nil{
 		step.Env.Data= map[string]string{}
 	}

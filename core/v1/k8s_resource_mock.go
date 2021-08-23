@@ -4,12 +4,10 @@ import (
 	"errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"strconv"
 )
 
 type MockK8sResource struct {
-	kcs *kubernetes.Clientset
 }
 
 func (k8s * MockK8sResource) getSecret(name,namespace string)(v1.Secret,error){

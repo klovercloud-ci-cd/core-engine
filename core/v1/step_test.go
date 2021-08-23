@@ -19,7 +19,6 @@ func Test_setEnvs(t *testing.T) {
 		configMaps:     InitConfigMaps(),
 		secrets: InitSecrets(),
 		expected: map[string]string{"key1":"value1","key2":"value2","env1":"value1","env2":"value2"},
-		actual:   nil,
 	}
 
 	step := &Step{
@@ -34,7 +33,7 @@ func Test_setEnvs(t *testing.T) {
 			}{{Name: "configMap0", Namespace: "klovercloud"}},
 		},
 	}
-	step.SetEnvs(&MockK8sResource{})
+	step.setEnvs(&MockK8sResource{})
 	testCase.actual=step.Env.Data
 
 	if !reflect.DeepEqual(testCase.expected, testCase.actual){
@@ -69,7 +68,7 @@ func Test_setArgs(t *testing.T) {
 			}{{Name: "configMap0", Namespace: "klovercloud"}},
 		},
 	}
-	step.SetArgs(&MockK8sResource{})
+	step.setArgs(&MockK8sResource{})
 	testCase.actual=step.Arg.Data
 
 	if !reflect.DeepEqual(testCase.expected, testCase.actual){
@@ -77,7 +76,7 @@ func Test_setArgs(t *testing.T) {
 	}
 }
 
-func Test_SetInput(t *testing.T) {
+func Test_setInput(t *testing.T) {
 	type TestCase struct {
 		url,revision string
 		step_type STEP_TYPE
@@ -97,7 +96,7 @@ func Test_SetInput(t *testing.T) {
 		},
 	}
 
-	step.SetInput("github.com/abc","1222")
+	step.setInput("github.com/abc","1222")
 	testCase.actual=step.Input
 	if !reflect.DeepEqual(testCase.expected, testCase.actual){
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
@@ -108,7 +107,7 @@ func Test_SetInput(t *testing.T) {
 		step_type: DEPLOY,
 		expected:  Resource{},
 	}
-	step.SetInput("github.com/abc","1222")
+	step.setInput("github.com/abc","1222")
 	if !reflect.DeepEqual(testCase.expected, testCase.actual){
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
 	}
