@@ -13,11 +13,11 @@ type K8s interface {
 }
 
 type K8sResource struct {
-	kcs *kubernetes.Clientset
+	Kcs *kubernetes.Clientset
 }
 
 func (k8s * K8sResource) getSecret(name,namespace string)(v1.Secret,error){
-	sec,err:=k8s.kcs.CoreV1().
+	sec,err:=k8s.Kcs.CoreV1().
 		Secrets(namespace).
 		Get(context.Background(),name,metav1.GetOptions{})
 	if err!=nil{
@@ -27,7 +27,7 @@ func (k8s * K8sResource) getSecret(name,namespace string)(v1.Secret,error){
 }
 
 func (k8s * K8sResource) getConfigMap(name,namespace string)(v1.ConfigMap,error){
-	sec,err:=k8s.kcs.CoreV1().
+	sec,err:=k8s.Kcs.CoreV1().
 		ConfigMaps(namespace).
 		Get(context.Background(),name,metav1.GetOptions{})
 	if err!=nil{

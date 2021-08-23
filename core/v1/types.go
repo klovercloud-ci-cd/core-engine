@@ -1,7 +1,8 @@
 package v1
 
 type Resource struct {
-	Url string `json:"type"`
+	Type PIPELINE_RESOURCE_TYPE `json:"type"`
+	Url string `json:"url"`
 	Revision string  `json:"revision"`
 }
 

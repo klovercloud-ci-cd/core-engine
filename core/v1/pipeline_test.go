@@ -2,7 +2,6 @@ package v1
 
 import (
 	"github.com/stretchr/testify/assert"
-	"log"
 	"reflect"
 	"testing"
 )
