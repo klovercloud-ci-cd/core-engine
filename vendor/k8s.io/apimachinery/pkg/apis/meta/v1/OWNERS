@@ -1,5 +1,3 @@
-# See the OWNERS docs at https://go.k8s.io/owners
-
 reviewers:
 - thockin
 - smarterclayton
@@ -25,6 +23,9 @@ reviewers:
 - krousey
 - mml
 - mbohlool
+- david-mcmahon
 - therc
+- mqliang
 - kevin-wangzefeng
 - jianhuiz
+- feihujiang

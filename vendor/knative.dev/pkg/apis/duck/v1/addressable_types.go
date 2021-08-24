@@ -22,11 +22,9 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"knative.dev/pkg/apis"
-	"knative.dev/pkg/apis/duck/ducktypes"
-	"knative.dev/pkg/kmeta"
+	"knative.dev/pkg/apis/duck"
 )
 
 // +genduck
@@ -42,6 +40,8 @@ type Addressable struct {
 }
 
 var (
+	// Addressable is an Implementable "duck type".
+	_ duck.Implementable = (*Addressable)(nil)
 	// Addressable is a Convertible type.
 	_ apis.Convertible = (*Addressable)(nil)
 )
@@ -65,25 +65,24 @@ type AddressStatus struct {
 	Address *Addressable `json:"address,omitempty"`
 }
 
-// Verify AddressableType resources meet duck contracts.
 var (
-	_ apis.Listable         = (*AddressableType)(nil)
-	_ ducktypes.Populatable = (*AddressableType)(nil)
-	_ kmeta.OwnerRefable    = (*AddressableType)(nil)
+	// Verify AddressableType resources meet duck contracts.
+	_ duck.Populatable = (*AddressableType)(nil)
+	_ apis.Listable    = (*AddressableType)(nil)
 )
 
 // GetFullType implements duck.Implementable
-func (*Addressable) GetFullType() ducktypes.Populatable {
+func (*Addressable) GetFullType() duck.Populatable {
 	return &AddressableType{}
 }
 
-// ConvertTo implements apis.Convertible
-func (a *Addressable) ConvertTo(ctx context.Context, to apis.Convertible) error {
+// ConvertUp implements apis.Convertible
+func (a *Addressable) ConvertUp(ctx context.Context, to apis.Convertible) error {
 	return fmt.Errorf("v1 is the highest known version, got: %T", to)
 }
 
-// ConvertFrom implements apis.Convertible
-func (a *Addressable) ConvertFrom(ctx context.Context, from apis.Convertible) error {
+// ConvertDown implements apis.Convertible
+func (a *Addressable) ConvertDown(ctx context.Context, from apis.Convertible) error {
 	return fmt.Errorf("v1 is the highest known version, got: %T", from)
 }
 
@@ -98,11 +97,6 @@ func (t *AddressableType) Populate() {
 			},
 		},
 	}
-}
-
-// GetGroupVersionKind implements kmeta.OwnerRefable
-func (t *AddressableType) GetGroupVersionKind() schema.GroupVersionKind {
-	return t.GroupVersionKind()
 }
 
 // GetListType implements apis.Listable

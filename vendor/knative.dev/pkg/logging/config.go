@@ -23,7 +23,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/blendle/zapdriver"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	corev1 "k8s.io/api/core/v1"
@@ -32,16 +31,14 @@ import (
 	"knative.dev/pkg/logging/logkey"
 )
 
+const ConfigMapNameEnv = "CONFIG_LOGGING_NAME"
+
 const (
-	configMapNameEnv   = "CONFIG_LOGGING_NAME"
 	loggerConfigKey    = "zap-logger-config"
 	fallbackLoggerName = "fallback-logger"
 )
 
-var (
-	errEmptyLoggerConfig     = errors.New("empty logger configuration")
-	errEmptyJSONLogginString = errors.New("json logging string is empty")
-)
+var errEmptyLoggerConfig = errors.New("empty logger configuration")
 
 // NewLogger creates a logger with the supplied configuration.
 // In addition to the logger, it returns AtomicLevel that can
@@ -52,37 +49,32 @@ var (
 func NewLogger(configJSON string, levelOverride string, opts ...zap.Option) (*zap.SugaredLogger, zap.AtomicLevel) {
 	logger, atomicLevel, err := newLoggerFromConfig(configJSON, levelOverride, opts)
 	if err == nil {
-		return enrichLoggerWithCommitID(logger), atomicLevel
+		return enrichLoggerWithCommitID(logger.Sugar()), atomicLevel
 	}
 
-	loggingCfg := stackdriverConfig()
-
+	loggingCfg := zap.NewProductionConfig()
 	if levelOverride != "" {
 		if level, err := levelFromString(levelOverride); err == nil {
 			loggingCfg.Level = zap.NewAtomicLevelAt(*level)
 		}
 	}
 
-	logger, err = loggingCfg.Build(opts...)
-	if err != nil {
-		panic(err)
+	logger, err2 := loggingCfg.Build(opts...)
+	if err2 != nil {
+		panic(err2)
 	}
-
-	slogger := enrichLoggerWithCommitID(logger.Named(fallbackLoggerName))
-	slogger.Warnw("Failed to parse logging config - using default zap production config", zap.Error(err))
-	return slogger, loggingCfg.Level
+	return enrichLoggerWithCommitID(logger.Named(fallbackLoggerName).Sugar()), loggingCfg.Level
 }
 
-func enrichLoggerWithCommitID(logger *zap.Logger) *zap.SugaredLogger {
-	commitID, err := changeset.Get()
-	if err != nil {
-		logger.Info("Fetch GitHub commit ID from kodata failed", zap.Error(err))
-		return logger.Sugar()
+func enrichLoggerWithCommitID(logger *zap.SugaredLogger) *zap.SugaredLogger {
+	commmitID, err := changeset.Get()
+	if err == nil {
+		// Enrich logs with GitHub commit ID.
+		return logger.With(zap.String(logkey.GitHubCommitID, commmitID))
 	}
 
-	// Enrich logs with GitHub commit ID.
-	return logger.With(zap.String(logkey.GitHubCommitID, commitID)).Sugar()
-
+	logger.Infof("Fetch GitHub commit ID from kodata failed: %v", err)
+	return logger
 }
 
 // NewLoggerFromConfig creates a logger using the provided Config
@@ -96,7 +88,7 @@ func NewLoggerFromConfig(config *Config, name string, opts ...zap.Option) (*zap.
 	return logger.Named(name), level
 }
 
-func newLoggerFromConfig(configJSON, levelOverride string, opts []zap.Option) (*zap.Logger, zap.AtomicLevel, error) {
+func newLoggerFromConfig(configJSON string, levelOverride string, opts []zap.Option) (*zap.Logger, zap.AtomicLevel, error) {
 	loggingCfg, err := zapConfigFromJSON(configJSON)
 	if err != nil {
 		return nil, zap.AtomicLevel{}, err
@@ -114,19 +106,20 @@ func newLoggerFromConfig(configJSON, levelOverride string, opts []zap.Option) (*
 	}
 
 	logger.Info("Successfully created the logger.")
-	logger.Info("Logging level set to: " + loggingCfg.Level.String())
+	logger.Sugar().Infof("Logging level set to %v", loggingCfg.Level)
 	return logger, loggingCfg.Level, nil
 }
 
 func zapConfigFromJSON(configJSON string) (*zap.Config, error) {
-	loggingCfg := stackdriverConfig()
-
-	if configJSON != "" {
-		if err := json.Unmarshal([]byte(configJSON), &loggingCfg); err != nil {
-			return nil, err
-		}
+	if configJSON == "" {
+		return nil, errEmptyLoggerConfig
 	}
-	return &loggingCfg, nil
+
+	loggingCfg := &zap.Config{}
+	if err := json.Unmarshal([]byte(configJSON), loggingCfg); err != nil {
+		return nil, err
+	}
+	return loggingCfg, nil
 }
 
 // Config contains the configuration defined in the logging ConfigMap.
@@ -136,20 +129,38 @@ type Config struct {
 	LoggingLevel  map[string]zapcore.Level
 }
 
-func defaultConfig() *Config {
-	return &Config{
-		LoggingLevel: make(map[string]zapcore.Level),
-	}
-}
+const defaultZLC = `{
+  "level": "info",
+  "development": false,
+  "outputPaths": ["stdout"],
+  "errorOutputPaths": ["stderr"],
+  "encoding": "json",
+  "encoderConfig": {
+    "timeKey": "ts",
+    "levelKey": "level",
+    "nameKey": "logger",
+    "callerKey": "caller",
+    "messageKey": "msg",
+    "stacktraceKey": "stacktrace",
+    "lineEnding": "",
+    "levelEncoder": "",
+    "timeEncoder": "iso8601",
+    "durationEncoder": "",
+    "callerEncoder": ""
+  }
+}`
 
 // NewConfigFromMap creates a LoggingConfig from the supplied map,
 // expecting the given list of components.
 func NewConfigFromMap(data map[string]string) (*Config, error) {
-	lc := defaultConfig()
+	lc := &Config{}
 	if zlc, ok := data[loggerConfigKey]; ok {
 		lc.LoggingConfig = zlc
+	} else {
+		lc.LoggingConfig = defaultZLC
 	}
 
+	lc.LoggingLevel = make(map[string]zapcore.Level)
 	for k, v := range data {
 		if component := strings.TrimPrefix(k, "loglevel."); component != k && component != "" {
 			if len(v) > 0 {
@@ -182,6 +193,7 @@ func levelFromString(level string) (*zapcore.Level, error) {
 // when a config map is updated
 func UpdateLevelFromConfigMap(logger *zap.SugaredLogger, atomicLevel zap.AtomicLevel,
 	levelKey string) func(configMap *corev1.ConfigMap) {
+
 	return func(configMap *corev1.ConfigMap) {
 		config, err := NewConfigFromConfigMap(configMap)
 		if err != nil {
@@ -194,11 +206,11 @@ func UpdateLevelFromConfigMap(logger *zap.SugaredLogger, atomicLevel zap.AtomicL
 			// reset to global level
 			loggingCfg, err := zapConfigFromJSON(config.LoggingConfig)
 			switch {
-			case errors.Is(err, errEmptyLoggerConfig):
+			case err == errEmptyLoggerConfig:
 				level = zap.NewAtomicLevel().Level()
 			case err != nil:
-				logger.Errorw("Failed to parse logger configuration. Previous log level retained for "+levelKey,
-					zap.Error(err))
+				logger.With(zap.Error(err)).Errorf("Failed to parse logger configuration. "+
+					"Previous log level retained for %v", levelKey)
 				return
 			default:
 				level = loggingCfg.Level.Level()
@@ -214,17 +226,18 @@ func UpdateLevelFromConfigMap(logger *zap.SugaredLogger, atomicLevel zap.AtomicL
 
 // ConfigMapName gets the name of the logging ConfigMap
 func ConfigMapName() string {
-	if cm := os.Getenv(configMapNameEnv); cm != "" {
-		return cm
+	cm := os.Getenv(ConfigMapNameEnv)
+	if cm == "" {
+		return "config-logging"
 	}
-	return "config-logging"
+	return cm
 }
 
-// JSONToConfig converts a JSON string of a Config.
-// Always returns a non-nil Config.
-func JSONToConfig(jsonCfg string) (*Config, error) {
+// JsonToLoggingConfig converts a json string of a Config.
+// Returns a non-nil Config always.
+func JsonToLoggingConfig(jsonCfg string) (*Config, error) {
 	if jsonCfg == "" {
-		return nil, errEmptyJSONLogginString
+		return nil, errors.New("json logging string is empty")
 	}
 
 	var configMap map[string]string
@@ -235,13 +248,15 @@ func JSONToConfig(jsonCfg string) (*Config, error) {
 	cfg, err := NewConfigFromMap(configMap)
 	if err != nil {
 		// Get the default config from logging package.
-		return NewConfigFromConfigMap(nil)
+		if cfg, err = NewConfigFromMap(nil); err != nil {
+			return nil, err
+		}
 	}
 	return cfg, nil
 }
 
-// ConfigToJSON  converts a Config to a JSON string.
-func ConfigToJSON(cfg *Config) (string, error) {
+// LoggingConfigToJson converts a Config to a json string.
+func LoggingConfigToJson(cfg *Config) (string, error) {
 	if cfg == nil || cfg.LoggingConfig == "" {
 		return "", nil
 	}
@@ -249,11 +264,9 @@ func ConfigToJSON(cfg *Config) (string, error) {
 	jsonCfg, err := json.Marshal(map[string]string{
 		loggerConfigKey: cfg.LoggingConfig,
 	})
-	return string(jsonCfg), err
-}
+	if err != nil {
+		return "", err
+	}
 
-func stackdriverConfig() zap.Config {
-	cfg := zapdriver.NewProductionConfig()
-	cfg.EncoderConfig.EncodeDuration = zapcore.StringDurationEncoder
-	return cfg
+	return string(jsonCfg), nil
 }

@@ -20,12 +20,29 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"knative.dev/pkg/apis/duck/ducktypes"
+	"knative.dev/pkg/apis"
 	"knative.dev/pkg/kmp"
 )
 
-type Implementable = ducktypes.Implementable
-type Populatable = ducktypes.Populatable
+// Implementable is implemented by the Fooable duck type that consumers
+// are expected to embed as a `.status.fooable` field.
+type Implementable interface {
+	// GetFullType returns an instance of a full resource wrapping
+	// an instance of this Implementable that can populate its fields
+	// to verify json roundtripping.
+	GetFullType() Populatable
+}
+
+// Populatable is implemented by a skeleton resource wrapping an Implementable
+// duck type.  It will generally have TypeMeta, ObjectMeta, and a Status field
+// wrapping a Fooable field.
+type Populatable interface {
+	apis.Listable
+
+	// Populate fills in all possible fields, so that we can verify that
+	// they roundtrip properly through JSON.
+	Populate()
+}
 
 // VerifyType verifies that a particular concrete resource properly implements
 // the provided Implementable duck type.  It is expected that under the resource
@@ -79,17 +96,17 @@ func roundTrip(instance interface{}, input, output Populatable) error {
 	// Serialize the input to JSON and deserialize that into the provided instance
 	// of the type that we are checking.
 	if before, err := json.Marshal(input); err != nil {
-		return fmt.Errorf("error serializing duck type %T error: %w", input, err)
+		return fmt.Errorf("error serializing duck type %T error: %s", input, err)
 	} else if err := json.Unmarshal(before, instance); err != nil {
-		return fmt.Errorf("error deserializing duck type %T into %T error: %w", input, instance, err)
+		return fmt.Errorf("error deserializing duck type %T into %T error: %s", input, instance, err)
 	}
 
 	// Serialize the instance we are checking to JSON and deserialize that into the
 	// output resource.
 	if after, err := json.Marshal(instance); err != nil {
-		return fmt.Errorf("error serializing %T error: %w", instance, err)
+		return fmt.Errorf("error serializing %T error: %s", instance, err)
 	} else if err := json.Unmarshal(after, output); err != nil {
-		return fmt.Errorf("error deserializing %T into duck type %T error: %w", instance, output, err)
+		return fmt.Errorf("error deserializing %T into duck type %T error: %s", instance, output, err)
 	}
 
 	return nil

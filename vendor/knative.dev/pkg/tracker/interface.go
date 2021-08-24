@@ -23,7 +23,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
 
 	"knative.dev/pkg/apis"
@@ -61,8 +60,7 @@ type Reference struct {
 type Interface interface {
 	// Track tells us that "obj" is tracking changes to the
 	// referenced object.
-	//
-	// Deprecated: use TrackReference.
+	// DEPRECATED: use TrackReference
 	Track(ref corev1.ObjectReference, obj interface{}) error
 
 	// Track tells us that "obj" is tracking changes to the
@@ -72,15 +70,6 @@ type Interface interface {
 	// OnChanged is a callback to register with the InformerFactory
 	// so that we are notified for appropriate object changes.
 	OnChanged(obj interface{})
-
-	// GetObservers returns the names of all observers for the given
-	// object.
-	GetObservers(obj interface{}) []types.NamespacedName
-
-	// OnDeletedObserver is a callback to register with the InformerFactory
-	// so that we are notified for deletions of a watching parent to
-	// remove the respective tracking.
-	OnDeletedObserver(obj interface{})
 }
 
 // GroupVersionKind returns the GroupVersion of the object referenced.

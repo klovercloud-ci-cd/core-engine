@@ -1,6 +1,4 @@
 # The OWNERS file is used by prow to automatically merge approved PRs.
 
 approvers:
-- pkg-configmap-writers
-reviewers:
-- pkg-configmap-reviewers
+- configmap-approvers

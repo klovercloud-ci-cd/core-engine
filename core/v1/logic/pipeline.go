@@ -15,12 +15,12 @@ type pipelineService struct {
 func (p pipelineService) apply() {
 	// all the err logs will be persisted by buildId
 	for _,each:=range p.pipeline.Steps{
-		input,outputs,err:=p.tekton.InitPipelineResources(each,p.pipeline.Name,p.pipeline.Label,p.pipeline.BuildId)
+		input,outputs,err:=p.tekton.InitPipelineResources(each,p.pipeline.Label,p.pipeline.BuildId)
 		if err!=nil{
 			log.Println(err.Error())
 			continue
 		}
-		task,err:=p.tekton.InitTask(each,p.pipeline.Name,p.pipeline.Label,p.pipeline.BuildId)
+		task,err:=p.tekton.InitTask(each,p.pipeline.Label,p.pipeline.BuildId)
 		if err!=nil{
 			log.Println(err.Error())
 			continue
@@ -67,6 +67,11 @@ func (p pipelineService) apply() {
 
 func (p pipelineService) Apply(url,revision string) error {
 	p.pipeline.Build(p.k8s,url,revision)
+	if p.pipeline.Label==nil{
+		p.pipeline.Label=make(map[string]string)
+	}
+	p.pipeline.Label["buildId"]=p.pipeline.BuildId
+	p.pipeline.Label["pipeline"]=p.pipeline.Name
 	//validate
 	p.apply()
 	return nil

@@ -20,12 +20,14 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/golang/glog"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog/v2"
 )
 
 // errNotList is returned when an object implements the Object style interfaces but not the List style
@@ -39,6 +41,8 @@ var errNotCommon = fmt.Errorf("object does not implement the common interface fo
 func CommonAccessor(obj interface{}) (metav1.Common, error) {
 	switch t := obj.(type) {
 	case List:
+		return t, nil
+	case metav1.ListInterface:
 		return t, nil
 	case ListMetaAccessor:
 		if m := t.GetListMeta(); m != nil {
@@ -69,6 +73,8 @@ func CommonAccessor(obj interface{}) (metav1.Common, error) {
 func ListAccessor(obj interface{}) (List, error) {
 	switch t := obj.(type) {
 	case List:
+		return t, nil
+	case metav1.ListInterface:
 		return t, nil
 	case ListMetaAccessor:
 		if m := t.GetListMeta(); m != nil {
@@ -109,12 +115,12 @@ func Accessor(obj interface{}) (metav1.Object, error) {
 
 // AsPartialObjectMetadata takes the metav1 interface and returns a partial object.
 // TODO: consider making this solely a conversion action.
-func AsPartialObjectMetadata(m metav1.Object) *metav1.PartialObjectMetadata {
+func AsPartialObjectMetadata(m metav1.Object) *metav1beta1.PartialObjectMetadata {
 	switch t := m.(type) {
 	case *metav1.ObjectMeta:
-		return &metav1.PartialObjectMetadata{ObjectMeta: *t}
+		return &metav1beta1.PartialObjectMetadata{ObjectMeta: *t}
 	default:
-		return &metav1.PartialObjectMetadata{
+		return &metav1beta1.PartialObjectMetadata{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:                       m.GetName(),
 				GenerateName:               m.GetGenerateName(),
@@ -126,12 +132,12 @@ func AsPartialObjectMetadata(m metav1.Object) *metav1.PartialObjectMetadata {
 				CreationTimestamp:          m.GetCreationTimestamp(),
 				DeletionTimestamp:          m.GetDeletionTimestamp(),
 				DeletionGracePeriodSeconds: m.GetDeletionGracePeriodSeconds(),
-				Labels:                     m.GetLabels(),
-				Annotations:                m.GetAnnotations(),
-				OwnerReferences:            m.GetOwnerReferences(),
-				Finalizers:                 m.GetFinalizers(),
-				ClusterName:                m.GetClusterName(),
-				ManagedFields:              m.GetManagedFields(),
+				Labels:          m.GetLabels(),
+				Annotations:     m.GetAnnotations(),
+				OwnerReferences: m.GetOwnerReferences(),
+				Finalizers:      m.GetFinalizers(),
+				ClusterName:     m.GetClusterName(),
+				Initializers:    m.GetInitializers(),
 			},
 		}
 	}
@@ -601,7 +607,7 @@ func (a genericAccessor) GetOwnerReferences() []metav1.OwnerReference {
 	var ret []metav1.OwnerReference
 	s := a.ownerReferences
 	if s.Kind() != reflect.Ptr || s.Elem().Kind() != reflect.Slice {
-		klog.Errorf("expect %v to be a pointer to slice", s)
+		glog.Errorf("expect %v to be a pointer to slice", s)
 		return ret
 	}
 	s = s.Elem()
@@ -609,7 +615,7 @@ func (a genericAccessor) GetOwnerReferences() []metav1.OwnerReference {
 	ret = make([]metav1.OwnerReference, s.Len(), s.Len()+1)
 	for i := 0; i < s.Len(); i++ {
 		if err := extractFromOwnerReference(s.Index(i), &ret[i]); err != nil {
-			klog.Errorf("extractFromOwnerReference failed: %v", err)
+			glog.Errorf("extractFromOwnerReference failed: %v", err)
 			return ret
 		}
 	}
@@ -619,13 +625,13 @@ func (a genericAccessor) GetOwnerReferences() []metav1.OwnerReference {
 func (a genericAccessor) SetOwnerReferences(references []metav1.OwnerReference) {
 	s := a.ownerReferences
 	if s.Kind() != reflect.Ptr || s.Elem().Kind() != reflect.Slice {
-		klog.Errorf("expect %v to be a pointer to slice", s)
+		glog.Errorf("expect %v to be a pointer to slice", s)
 	}
 	s = s.Elem()
 	newReferences := reflect.MakeSlice(s.Type(), len(references), len(references))
 	for i := 0; i < len(references); i++ {
 		if err := setOwnerReference(newReferences.Index(i), &references[i]); err != nil {
-			klog.Errorf("setOwnerReference failed: %v", err)
+			glog.Errorf("setOwnerReference failed: %v", err)
 			return
 		}
 	}

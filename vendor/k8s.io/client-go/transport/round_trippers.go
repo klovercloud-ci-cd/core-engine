@@ -22,8 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/glog"
 	"golang.org/x/oauth2"
-	"k8s.io/klog/v2"
 
 	utilnet "k8s.io/apimachinery/pkg/util/net"
 )
@@ -67,17 +67,21 @@ func HTTPWrappersForConfig(config *Config, rt http.RoundTripper) (http.RoundTrip
 // DebugWrappers wraps a round tripper and logs based on the current log level.
 func DebugWrappers(rt http.RoundTripper) http.RoundTripper {
 	switch {
-	case bool(klog.V(9).Enabled()):
+	case bool(glog.V(9)):
 		rt = newDebuggingRoundTripper(rt, debugCurlCommand, debugURLTiming, debugResponseHeaders)
-	case bool(klog.V(8).Enabled()):
+	case bool(glog.V(8)):
 		rt = newDebuggingRoundTripper(rt, debugJustURL, debugRequestHeaders, debugResponseStatus, debugResponseHeaders)
-	case bool(klog.V(7).Enabled()):
+	case bool(glog.V(7)):
 		rt = newDebuggingRoundTripper(rt, debugJustURL, debugRequestHeaders, debugResponseStatus)
-	case bool(klog.V(6).Enabled()):
+	case bool(glog.V(6)):
 		rt = newDebuggingRoundTripper(rt, debugURLTiming)
 	}
 
 	return rt
+}
+
+type requestCanceler interface {
+	CancelRequest(*http.Request)
 }
 
 type authProxyRoundTripper struct {
@@ -136,7 +140,11 @@ func SetAuthProxyHeaders(req *http.Request, username string, groups []string, ex
 }
 
 func (rt *authProxyRoundTripper) CancelRequest(req *http.Request) {
-	tryCancelRequest(rt.WrappedRoundTripper(), req)
+	if canceler, ok := rt.rt.(requestCanceler); ok {
+		canceler.CancelRequest(req)
+	} else {
+		glog.Errorf("CancelRequest not implemented by %T", rt.rt)
+	}
 }
 
 func (rt *authProxyRoundTripper) WrappedRoundTripper() http.RoundTripper { return rt.rt }
@@ -146,7 +154,6 @@ type userAgentRoundTripper struct {
 	rt    http.RoundTripper
 }
 
-// NewUserAgentRoundTripper will add User-Agent header to a request unless it has already been set.
 func NewUserAgentRoundTripper(agent string, rt http.RoundTripper) http.RoundTripper {
 	return &userAgentRoundTripper{agent, rt}
 }
@@ -161,14 +168,18 @@ func (rt *userAgentRoundTripper) RoundTrip(req *http.Request) (*http.Response, e
 }
 
 func (rt *userAgentRoundTripper) CancelRequest(req *http.Request) {
-	tryCancelRequest(rt.WrappedRoundTripper(), req)
+	if canceler, ok := rt.rt.(requestCanceler); ok {
+		canceler.CancelRequest(req)
+	} else {
+		glog.Errorf("CancelRequest not implemented by %T", rt.rt)
+	}
 }
 
 func (rt *userAgentRoundTripper) WrappedRoundTripper() http.RoundTripper { return rt.rt }
 
 type basicAuthRoundTripper struct {
 	username string
-	password string `datapolicy:"password"`
+	password string
 	rt       http.RoundTripper
 }
 
@@ -188,7 +199,11 @@ func (rt *basicAuthRoundTripper) RoundTrip(req *http.Request) (*http.Response, e
 }
 
 func (rt *basicAuthRoundTripper) CancelRequest(req *http.Request) {
-	tryCancelRequest(rt.WrappedRoundTripper(), req)
+	if canceler, ok := rt.rt.(requestCanceler); ok {
+		canceler.CancelRequest(req)
+	} else {
+		glog.Errorf("CancelRequest not implemented by %T", rt.rt)
+	}
 }
 
 func (rt *basicAuthRoundTripper) WrappedRoundTripper() http.RoundTripper { return rt.rt }
@@ -244,7 +259,11 @@ func (rt *impersonatingRoundTripper) RoundTrip(req *http.Request) (*http.Respons
 }
 
 func (rt *impersonatingRoundTripper) CancelRequest(req *http.Request) {
-	tryCancelRequest(rt.WrappedRoundTripper(), req)
+	if canceler, ok := rt.delegate.(requestCanceler); ok {
+		canceler.CancelRequest(req)
+	} else {
+		glog.Errorf("CancelRequest not implemented by %T", rt.delegate)
+	}
 }
 
 func (rt *impersonatingRoundTripper) WrappedRoundTripper() http.RoundTripper { return rt.delegate }
@@ -261,7 +280,7 @@ func NewBearerAuthRoundTripper(bearer string, rt http.RoundTripper) http.RoundTr
 	return &bearerAuthRoundTripper{bearer, nil, rt}
 }
 
-// NewBearerAuthWithRefreshRoundTripper adds the provided bearer token to a request
+// NewBearerAuthRoundTripper adds the provided bearer token to a request
 // unless the authorization header has already been set.
 // If tokenFile is non-empty, it is periodically read,
 // and the last successfully read content is used as the bearer token.
@@ -299,14 +318,18 @@ func (rt *bearerAuthRoundTripper) RoundTrip(req *http.Request) (*http.Response, 
 }
 
 func (rt *bearerAuthRoundTripper) CancelRequest(req *http.Request) {
-	tryCancelRequest(rt.WrappedRoundTripper(), req)
+	if canceler, ok := rt.rt.(requestCanceler); ok {
+		canceler.CancelRequest(req)
+	} else {
+		glog.Errorf("CancelRequest not implemented by %T", rt.rt)
+	}
 }
 
 func (rt *bearerAuthRoundTripper) WrappedRoundTripper() http.RoundTripper { return rt.rt }
 
 // requestInfo keeps track of information about a request/response combination
 type requestInfo struct {
-	RequestHeaders http.Header `datapolicy:"token"`
+	RequestHeaders http.Header
 	RequestVerb    string
 	RequestURL     string
 
@@ -341,7 +364,6 @@ func (r *requestInfo) toCurl() string {
 	headers := ""
 	for key, values := range r.RequestHeaders {
 		for _, value := range values {
-			value = maskValue(key, value)
 			headers += fmt.Sprintf(` -H %q`, fmt.Sprintf("%s: %s", key, value))
 		}
 	}
@@ -380,57 +402,28 @@ func newDebuggingRoundTripper(rt http.RoundTripper, levels ...debugLevel) *debug
 }
 
 func (rt *debuggingRoundTripper) CancelRequest(req *http.Request) {
-	tryCancelRequest(rt.WrappedRoundTripper(), req)
-}
-
-var knownAuthTypes = map[string]bool{
-	"bearer":    true,
-	"basic":     true,
-	"negotiate": true,
-}
-
-// maskValue masks credential content from authorization headers
-// See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization
-func maskValue(key string, value string) string {
-	if !strings.EqualFold(key, "Authorization") {
-		return value
-	}
-	if len(value) == 0 {
-		return ""
-	}
-	var authType string
-	if i := strings.Index(value, " "); i > 0 {
-		authType = value[0:i]
+	if canceler, ok := rt.delegatedRoundTripper.(requestCanceler); ok {
+		canceler.CancelRequest(req)
 	} else {
-		authType = value
+		glog.Errorf("CancelRequest not implemented by %T", rt.delegatedRoundTripper)
 	}
-	if !knownAuthTypes[strings.ToLower(authType)] {
-		return "<masked>"
-	}
-	if len(value) > len(authType)+1 {
-		value = authType + " <masked>"
-	} else {
-		value = authType
-	}
-	return value
 }
 
 func (rt *debuggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	reqInfo := newRequestInfo(req)
 
 	if rt.levels[debugJustURL] {
-		klog.Infof("%s %s", reqInfo.RequestVerb, reqInfo.RequestURL)
+		glog.Infof("%s %s", reqInfo.RequestVerb, reqInfo.RequestURL)
 	}
 	if rt.levels[debugCurlCommand] {
-		klog.Infof("%s", reqInfo.toCurl())
+		glog.Infof("%s", reqInfo.toCurl())
 
 	}
 	if rt.levels[debugRequestHeaders] {
-		klog.Infof("Request Headers:")
+		glog.Infof("Request Headers:")
 		for key, values := range reqInfo.RequestHeaders {
 			for _, value := range values {
-				value = maskValue(key, value)
-				klog.Infof("    %s: %s", key, value)
+				glog.Infof("    %s: %s", key, value)
 			}
 		}
 	}
@@ -442,16 +435,16 @@ func (rt *debuggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, e
 	reqInfo.complete(response, err)
 
 	if rt.levels[debugURLTiming] {
-		klog.Infof("%s %s %s in %d milliseconds", reqInfo.RequestVerb, reqInfo.RequestURL, reqInfo.ResponseStatus, reqInfo.Duration.Nanoseconds()/int64(time.Millisecond))
+		glog.Infof("%s %s %s in %d milliseconds", reqInfo.RequestVerb, reqInfo.RequestURL, reqInfo.ResponseStatus, reqInfo.Duration.Nanoseconds()/int64(time.Millisecond))
 	}
 	if rt.levels[debugResponseStatus] {
-		klog.Infof("Response Status: %s in %d milliseconds", reqInfo.ResponseStatus, reqInfo.Duration.Nanoseconds()/int64(time.Millisecond))
+		glog.Infof("Response Status: %s in %d milliseconds", reqInfo.ResponseStatus, reqInfo.Duration.Nanoseconds()/int64(time.Millisecond))
 	}
 	if rt.levels[debugResponseHeaders] {
-		klog.Infof("Response Headers:")
+		glog.Infof("Response Headers:")
 		for key, values := range reqInfo.ResponseHeaders {
 			for _, value := range values {
-				klog.Infof("    %s: %s", key, value)
+				glog.Infof("    %s: %s", key, value)
 			}
 		}
 	}

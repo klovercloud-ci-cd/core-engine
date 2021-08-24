@@ -26,8 +26,9 @@ import (
 type ManualWatcher struct {
 	Namespace string
 
-	// Guards observers
-	sync.RWMutex
+	// Guards mutations to defaultImpl fields
+	m sync.RWMutex
+
 	observers map[string][]Observer
 }
 
@@ -35,40 +36,33 @@ var _ Watcher = (*ManualWatcher)(nil)
 
 // Watch implements Watcher
 func (w *ManualWatcher) Watch(name string, o ...Observer) {
-	w.Lock()
-	defer w.Unlock()
+	w.m.Lock()
+	defer w.m.Unlock()
 
 	if w.observers == nil {
-		w.observers = make(map[string][]Observer, 1)
+		w.observers = make(map[string][]Observer, len(o))
 	}
 	w.observers[name] = append(w.observers[name], o...)
 }
 
-// ForEach implements Watcher
-func (w *ManualWatcher) ForEach(f func(string, []Observer) error) error {
-	for k, v := range w.observers {
-		if err := f(k, v); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Start implements Watcher
 func (w *ManualWatcher) Start(<-chan struct{}) error {
 	return nil
 }
 
-// OnChange invokes the callbacks of all observers of the given ConfigMap.
 func (w *ManualWatcher) OnChange(configMap *corev1.ConfigMap) {
 	if configMap.Namespace != w.Namespace {
 		return
 	}
 	// Within our namespace, take the lock and see if there are any registered observers.
-	w.RLock()
-	defer w.RUnlock()
+	w.m.RLock()
+	defer w.m.RUnlock()
+	observers, ok := w.observers[configMap.Name]
+	if !ok {
+		return // No observers.
+	}
+
 	// Iterate over the observers and invoke their callbacks.
-	for _, o := range w.observers[configMap.Name] {
+	for _, o := range observers {
 		o(configMap)
 	}
 }

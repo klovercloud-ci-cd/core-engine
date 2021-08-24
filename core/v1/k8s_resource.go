@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"context"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -19,7 +18,7 @@ type K8sResource struct {
 func (k8s * K8sResource) getSecret(name,namespace string)(v1.Secret,error){
 	sec,err:=k8s.Kcs.CoreV1().
 		Secrets(namespace).
-		Get(context.Background(),name,metav1.GetOptions{})
+		Get(name,metav1.GetOptions{})
 	if err!=nil{
 		return v1.Secret{}, err
 	}
@@ -29,7 +28,7 @@ func (k8s * K8sResource) getSecret(name,namespace string)(v1.Secret,error){
 func (k8s * K8sResource) getConfigMap(name,namespace string)(v1.ConfigMap,error){
 	sec,err:=k8s.Kcs.CoreV1().
 		ConfigMaps(namespace).
-		Get(context.Background(),name,metav1.GetOptions{})
+		Get(name,metav1.GetOptions{})
 	if err!=nil{
 		return v1.ConfigMap{}, err
 	}
