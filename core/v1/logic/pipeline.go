@@ -72,7 +72,10 @@ func (p pipelineService) Apply(url,revision string) error {
 	}
 	p.pipeline.Label["buildId"]=p.pipeline.BuildId
 	p.pipeline.Label["pipeline"]=p.pipeline.Name
-	//validate
+	err:=p.pipeline.Validate()
+	if err!=nil{
+		return err
+	}
 	p.apply()
 	return nil
 }

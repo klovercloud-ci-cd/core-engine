@@ -6,6 +6,10 @@ type Resource struct {
 	Revision string  `json:"revision"`
 }
 
+func(resource Resource)Validate() error{
+	
+}
+
 type Variable struct {
 	Secrets     []struct{
 		Name string `json:"name"`

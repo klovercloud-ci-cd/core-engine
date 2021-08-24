@@ -42,3 +42,15 @@ func(pipeline *Pipeline)Build(k8s K8s,url,revision string){
 func NewPipeline() *Pipeline {
 	return &Pipeline{}
 }
+
+
+func(pipeline Pipeline)Validate()error{
+	for _,each:=range pipeline.Steps{
+		err:=each.Validate()
+		if err!=nil{
+			return err
+		}
+	}
+
+	return nil
+}

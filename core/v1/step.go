@@ -9,7 +9,7 @@ var _ interface {
 type Step struct {
 	Name string `json:"name"`
 	Type STEP_TYPE `json:"type"`
-	ServiceAccount string `json:"serviceAccount"`
+	ServiceAccount string `json:"service_account"`
 	Input Resource `json:"input"`
 	Outputs []Resource `json:"outputs"`
 	Arg Variable  `json:"arg"`
@@ -75,4 +75,19 @@ func (step * Step)setEnvs(k8s K8s){
 		}
 
 	}
+}
+
+func (step Step)Validate()error{
+	err:=step.Input.Validate()
+	if err!=nil{
+		return err
+	}
+
+	for _,each:=range step.Outputs{
+		err:=each.Validate()
+		if err!=nil{
+			return err
+		}
+	}
+	return nil
 }
