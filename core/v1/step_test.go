@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/klovercloud-ci/enums"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"reflect"
@@ -79,17 +80,17 @@ func Test_setArgs(t *testing.T) {
 func Test_setInput(t *testing.T) {
 	type TestCase struct {
 		url,revision string
-		step_type STEP_TYPE
+		step_type enums.STEP_TYPE
 		expected Resource
 		actual Resource
 	}
 	step := Step{
-		Type: BUILD,
+		Type: enums.BUILD,
 	}
 	testCase:=TestCase{
 		url:       "github.com/abc",
 		revision:  "1222",
-		step_type: BUILD,
+		step_type: enums.BUILD,
 		expected:  Resource{
 			Url:      "github.com/abc",
 			Revision: "1222",
@@ -104,7 +105,7 @@ func Test_setInput(t *testing.T) {
 	testCase=TestCase{
 		url:       "github.com/abc",
 		revision:  "1222",
-		step_type: DEPLOY,
+		step_type: enums.DEPLOY,
 		expected:  Resource{},
 	}
 	step.setInput("github.com/abc","1222")

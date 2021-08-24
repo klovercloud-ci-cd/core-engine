@@ -1,5 +1,7 @@
 package v1
 
+import "github.com/klovercloud-ci/enums"
+
 var _ interface {
 	setInput(url,revision string)
 	setArgs(k8s K8s)
@@ -8,7 +10,7 @@ var _ interface {
 
 type Step struct {
 	Name string `json:"name"`
-	Type STEP_TYPE `json:"type"`
+	Type enums.STEP_TYPE `json:"type"`
 	ServiceAccount string `json:"service_account"`
 	Input Resource `json:"input"`
 	Outputs []Resource `json:"outputs"`
@@ -21,7 +23,7 @@ func NewStep()*Step{
 	return &Step{}
 }
 func (step * Step)setInput(url,revision string){
-	if step.Type==BUILD{
+	if step.Type==enums.BUILD{
 		step.Input.Url=url
 		step.Input.Revision=revision
 	}

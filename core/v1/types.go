@@ -1,7 +1,9 @@
 package v1
 
+import "github.com/klovercloud-ci/enums"
+
 type Resource struct {
-	Type PIPELINE_RESOURCE_TYPE `json:"type"`
+	Type enums.PIPELINE_RESOURCE_TYPE `json:"type"`
 	Url string `json:"url"`
 	Revision string  `json:"revision"`
 }

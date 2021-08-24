@@ -1,4 +1,4 @@
-package v1
+package enums
 
 type STEP_TYPE string
 const (

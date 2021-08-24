@@ -1,34 +1,23 @@
-package v1
+package logic
 
 import (
 	"github.com/klovercloud-ci/config"
 	"github.com/klovercloud-ci/core/v1/repository"
+	"github.com/klovercloud-ci/enums"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/klovercloud-ci/core/v1"
 	"log"
 	"strconv"
 )
-type Tekton interface {
-	InitPipelineResources(step Step,label map[string]string,buildId string) (input v1alpha1.PipelineResource,output []v1alpha1.PipelineResource,err error)
-	InitTask(step Step,label map[string]string,buildId string) (v1alpha1.Task,error)
-	InitTaskRun(step Step,label map[string]string,buildId string)(v1alpha1.TaskRun,error)
-	CreatePipelineResource(v1alpha1.PipelineResource) error
-	CreateTask(v1alpha1.Task) error
-	CreateTaskRun(v1alpha1.TaskRun) error
-	DeletePipelineResourceByBuildId(buildId string) error
-	DeleteTaskByBuildId(buildId string) error
-	DeleteTaskRunByBuildId(buildId string) error
-	PurgeByBuildId(buildId string)
-}
-
 type TektonResource struct {
 	Tcs  *versioned.Clientset
 	LogEventRepo repository.LogEventRepository
 }
 
-func (tekton * TektonResource) InitPipelineResources(step Step,label map[string]string,buildId string)(inputResource v1alpha1.PipelineResource,outputResource []v1alpha1.PipelineResource,err error){
+func (tekton * TektonResource) InitPipelineResources(step v1.Step,label map[string]string,buildId string)(inputResource v1alpha1.PipelineResource,outputResource []v1alpha1.PipelineResource,err error){
 	if label==nil{
 		label=make(map[string]string)
 	}
@@ -45,8 +34,8 @@ func (tekton * TektonResource) InitPipelineResources(step Step,label map[string]
 			Labels:    label,
 		},
 	}
-	if step.Input.Type==GIT{
-		input.Spec.Type= v1alpha1.PipelineResourceType(GIT)
+	if step.Input.Type==enums.GIT{
+		input.Spec.Type= v1alpha1.PipelineResourceType(enums.GIT)
 		input.Spec.Params=append(input.Spec.Params, struct {
 			Name  string `json:"name"`
 			Value string `json:"value"`
@@ -67,8 +56,8 @@ func (tekton * TektonResource) InitPipelineResources(step Step,label map[string]
 				Labels:    label,
 			},
 		}
-		if step.Outputs[i].Type==IMAGE{
-			output.Spec.Type= v1alpha1.PipelineResourceType(IMAGE)
+		if step.Outputs[i].Type==enums.IMAGE{
+			output.Spec.Type= v1alpha1.PipelineResourceType(enums.IMAGE)
 			output.Spec.Params=append(input.Spec.Params, struct {
 				Name  string `json:"name"`
 				Value string `json:"value"`
@@ -78,7 +67,7 @@ func (tekton * TektonResource) InitPipelineResources(step Step,label map[string]
 	}
 	return input,outputs,nil
 }
-func (tekton * TektonResource) InitTask(step Step,label map[string]string,buildId string) (v1alpha1.Task,error){
+func (tekton * TektonResource) InitTask(step v1.Step,label map[string]string,buildId string) (v1alpha1.Task,error){
 	if label==nil{
 		label=make(map[string]string)
 	}
@@ -96,7 +85,7 @@ func (tekton * TektonResource) InitTask(step Step,label map[string]string,buildI
 		},
 	}
 
-	if step.Type==BUILD{
+	if step.Type==enums.BUILD{
 		initBuildTaskSpec(step, task)
 	}else {
 		log.Print("Please provide a valid step type!")
@@ -105,7 +94,7 @@ func (tekton * TektonResource) InitTask(step Step,label map[string]string,buildI
 	return *task, nil
 
 }
-func initBuildTaskSpec(step Step, task *v1alpha1.Task) {
+func initBuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
 	params := []v1alpha1.ParamSpec{}
 	params = append(params, v1alpha1.ParamSpec{
 		Name:        "pathToDockerFile",
@@ -157,7 +146,7 @@ func initBuildTaskSpec(step Step, task *v1alpha1.Task) {
 		steps = append(steps, v1alpha1.Step{
 			Container: corev1.Container{
 				Name:    "build-and-push",
-				Image:   KLOVERCLOUD_KANIKO,
+				Image:   enums.KLOVERCLOUD_KANIKO,
 				Command: []string{"/kaniko/executor"},
 				Args:    args,
 				Env: []corev1.EnvVar{corev1.EnvVar{
@@ -188,7 +177,7 @@ func initAdditionalParams(args map[string]string) []v1alpha1.ParamSpec {
 	}
 	return params
 }
-func (tekton * TektonResource) InitTaskRun (step Step,label map[string]string,buildId string)(v1alpha1.TaskRun,error){
+func (tekton * TektonResource) InitTaskRun (step v1.Step,label map[string]string,buildId string)(v1alpha1.TaskRun,error){
 	label["step"]=step.Name
 	var params []v1alpha1.Param
 	params = append(params, v1alpha1.Param{
@@ -218,7 +207,7 @@ func (tekton * TektonResource) InitTaskRun (step Step,label map[string]string,bu
 		},
 	}
 
-	if step.Type==BUILD{
+	if step.Type==enums.BUILD{
 		if step.Arg.Data!=nil{
 			for k,v:=range step.Arg.Data{
 				params= append(params,v1alpha1.Param{

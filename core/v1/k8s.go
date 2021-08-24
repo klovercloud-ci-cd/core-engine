@@ -8,7 +8,7 @@ import (
 
 type K8s interface {
 	getSecret(name,namespace string) (v1.Secret,error)
-    getConfigMap(name,namespace string) (v1.ConfigMap,error)
+   getConfigMap(name,namespace string) (v1.ConfigMap,error)
 }
 
 type K8sResource struct {

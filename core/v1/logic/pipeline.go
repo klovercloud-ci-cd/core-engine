@@ -8,9 +8,10 @@ import (
 
 type pipelineService struct {
 	k8s v1.K8s
-	tekton v1.Tekton
+	tekton service.Tekton
 	pipeline v1.Pipeline
 }
+
 
 func (p pipelineService) apply() {
 	// all the err logs will be persisted by buildId
@@ -81,7 +82,7 @@ func (p pipelineService) Apply(url,revision string) error {
 }
 
 
-func NewPipelineService(k8s v1.K8s,tekton v1.Tekton,pipeline v1.Pipeline) service.Pipeline {
+func NewPipelineService(k8s v1.K8s,tekton service.Tekton,pipeline v1.Pipeline) service.Pipeline {
 	return &pipelineService{
 		k8s: k8s,
 		tekton: tekton,
