@@ -32,9 +32,6 @@ func (pr *PipelineRun) Validate(ctx context.Context) *apis.FieldError {
 	if err := validate.ObjectMetadata(pr.GetObjectMeta()).ViaField("metadata"); err != nil {
 		return err
 	}
-	if apis.IsInDelete(ctx) {
-		return nil
-	}
 	return pr.Spec.Validate(ctx)
 }
 
@@ -65,19 +62,6 @@ func (ps *PipelineRunSpec) Validate(ctx context.Context) *apis.FieldError {
 		// timeout should be a valid duration of at least 0.
 		if ps.Timeout.Duration < 0 {
 			return apis.ErrInvalidValue(fmt.Sprintf("%s should be >= 0", ps.Timeout.Duration.String()), "spec.timeout")
-		}
-	}
-
-	if ps.Workspaces != nil {
-		wsNames := make(map[string]int)
-		for idx, ws := range ps.Workspaces {
-			if prevIdx, alreadyExists := wsNames[ws.Name]; alreadyExists {
-				return &apis.FieldError{
-					Message: fmt.Sprintf("workspace %q provided by pipelinerun more than once, at index %d and %d", ws.Name, prevIdx, idx),
-					Paths:   []string{"spec.workspaces"},
-				}
-			}
-			wsNames[ws.Name] = idx
 		}
 	}
 

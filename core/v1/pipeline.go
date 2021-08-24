@@ -11,6 +11,7 @@ var _ interface {
 type Pipeline struct {
 	ApiVersion string `json:"api_version"`
 	Name string `json:"name"`
+	BuildId string  `json:"build_id"`
 	Label map[string]string  `json:"label"`
 	Steps [] Step  `json:"steps"`
 }

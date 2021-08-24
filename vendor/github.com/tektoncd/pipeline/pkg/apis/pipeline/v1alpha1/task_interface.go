@@ -18,9 +18,9 @@ package v1alpha1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-// TaskObject is implemented by Task and ClusterTask
-type TaskObject interface {
+// TaskInterface is implemented by Task and ClusterTask
+type TaskInterface interface {
 	TaskMetadata() metav1.ObjectMeta
 	TaskSpec() TaskSpec
-	Copy() TaskObject
+	Copy() TaskInterface
 }

@@ -56,6 +56,6 @@ func (t *ClusterTask) TaskMetadata() metav1.ObjectMeta {
 	return t.ObjectMeta
 }
 
-func (t *ClusterTask) Copy() TaskObject {
+func (t *ClusterTask) Copy() TaskInterface {
 	return t.DeepCopy()
 }

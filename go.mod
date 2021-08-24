@@ -7,7 +7,8 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/tektoncd/pipeline v0.27.1
+	//github.com/tektoncd/pipeline v0.27.1
+	github.com/tektoncd/pipeline v0.9.2
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f // indirect
@@ -15,4 +16,5 @@ require (
 	k8s.io/api v0.20.7
 	k8s.io/apimachinery v0.20.7
 	k8s.io/client-go v0.20.7
+	knative.dev/pkg v0.0.0-20210823133635-12d915ede293 // indirect
 )

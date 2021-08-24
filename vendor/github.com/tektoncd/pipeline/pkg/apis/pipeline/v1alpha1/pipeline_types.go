@@ -17,17 +17,12 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"github.com/tektoncd/pipeline/pkg/reconciler/pipeline/dag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // PipelineSpec defines the desired state of Pipeline.
 type PipelineSpec struct {
-	// Description is a user-facing description of the pipeline that may be
-	// used to populate a UI.
-	// +optional
-	Description string `json:"description,omitempty"`
 	// Resources declares the names and types of the resources given to the
 	// Pipeline's tasks as inputs and outputs.
 	Resources []PipelineDeclaredResource `json:"resources,omitempty"`
@@ -36,32 +31,27 @@ type PipelineSpec struct {
 	// Params declares a list of input parameters that must be supplied when
 	// this Pipeline is run.
 	Params []ParamSpec `json:"params,omitempty"`
-	// Workspaces declares a set of named workspaces that are expected to be
-	// provided by a PipelineRun.
-	// +optional
-	Workspaces []PipelineWorkspaceDeclaration `json:"workspaces,omitempty"`
-	// Results are values that this pipeline can output once run
-	// +optional
-	Results []PipelineResult `json:"results,omitempty"`
 }
 
-// PipelineResult used to describe the results of a pipeline
-type PipelineResult = v1beta1.PipelineResult
+// PipelineStatus does not contain anything because Pipelines on their own
+// do not have a status, they just hold data which is later used by a
+// PipelineRun.
+type PipelineStatus struct {
+}
 
 // Check that Pipeline may be validated and defaulted.
 // TaskKind defines the type of Task used by the pipeline.
-type TaskKind = v1beta1.TaskKind
+type TaskKind string
 
 const (
 	// NamespacedTaskKind indicates that the task type has a namepace scope.
-	NamespacedTaskKind TaskKind = v1beta1.NamespacedTaskKind
+	NamespacedTaskKind TaskKind = "Task"
 	// ClusterTaskKind indicates that task type has a cluster scope.
-	ClusterTaskKind TaskKind = v1beta1.ClusterTaskKind
+	ClusterTaskKind TaskKind = "ClusterTask"
 )
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +genclient:noStatus
 
 // Pipeline describes a list of Tasks to execute. It expresses how outputs
 // of tasks feed into inputs of subsequent tasks.
@@ -74,19 +64,10 @@ type Pipeline struct {
 	// Spec holds the desired state of the Pipeline from the client
 	// +optional
 	Spec PipelineSpec `json:"spec"`
-
-	// Status is deprecated.
-	// It usually is used to communicate the observed state of the Pipeline from
-	// the controller, but was unused as there is no controller for Pipeline.
+	// Status communicates the observed state of the Pipeline from the
+	// controller.
 	// +optional
-	Status *PipelineStatus `json:"status,omitempty"`
-}
-
-// PipelineStatus does not contain anything because Pipelines on their own
-// do not have a status, they just hold data which is later used by a
-// PipelineRun.
-// Deprecated
-type PipelineStatus struct {
+	Status PipelineStatus `json:"status"`
 }
 
 func (p *Pipeline) PipelineMetadata() metav1.ObjectMeta {
@@ -97,7 +78,7 @@ func (p *Pipeline) PipelineSpec() PipelineSpec {
 	return p.Spec
 }
 
-func (p *Pipeline) Copy() PipelineObject {
+func (p *Pipeline) Copy() PipelineInterface {
 	return p.DeepCopy()
 }
 
@@ -108,14 +89,8 @@ type PipelineTask struct {
 	// used as a coordinate with the `from` and `runAfter` fields to establish
 	// the execution order of tasks relative to one another.
 	Name string `json:"name,omitempty"`
-
 	// TaskRef is a reference to a task definition.
-	// +optional
-	TaskRef *TaskRef `json:"taskRef,omitempty"`
-
-	// TaskSpec is specification of a task
-	// +optional
-	TaskSpec *TaskSpec `json:"taskSpec,omitempty"`
+	TaskRef TaskRef `json:"taskRef"`
 
 	// Conditions is a list of conditions that need to be true for the task to run
 	// +optional
@@ -137,17 +112,6 @@ type PipelineTask struct {
 	// Parameters declares parameters passed to this task.
 	// +optional
 	Params []Param `json:"params,omitempty"`
-
-	// Workspaces maps workspaces from the pipeline spec to the workspaces
-	// declared in the Task.
-	// +optional
-	Workspaces []WorkspacePipelineTaskBinding `json:"workspaces,omitempty"`
-
-	// Time after which the TaskRun times out. Defaults to 1 hour.
-	// Specified TaskRun timeout should be less than 24h.
-	// Refer Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration
-	// +optional
-	Timeout *metav1.Duration `json:"timeout,omitempty"`
 }
 
 func (pt PipelineTask) HashKey() string {
@@ -162,32 +126,6 @@ func (pt PipelineTask) Deps() []string {
 			deps = append(deps, rd.From...)
 		}
 	}
-	// Add any dependents from conditional resources.
-	for _, cond := range pt.Conditions {
-		for _, rd := range cond.Resources {
-			deps = append(deps, rd.From...)
-		}
-		for _, param := range cond.Params {
-			expressions, ok := v1beta1.GetVarSubstitutionExpressionsForParam(param)
-			if ok {
-				resultRefs := v1beta1.NewResultRefs(expressions)
-				for _, resultRef := range resultRefs {
-					deps = append(deps, resultRef.PipelineTask)
-				}
-			}
-		}
-	}
-	// Add any dependents from task results
-	for _, param := range pt.Params {
-		expressions, ok := v1beta1.GetVarSubstitutionExpressionsForParam(param)
-		if ok {
-			resultRefs := v1beta1.NewResultRefs(expressions)
-			for _, resultRef := range resultRefs {
-				deps = append(deps, resultRef.PipelineTask)
-			}
-		}
-	}
-
 	return deps
 }
 
@@ -201,43 +139,94 @@ func (l PipelineTaskList) Items() []dag.Task {
 	return tasks
 }
 
-func (l PipelineTaskList) Deps() map[string][]string {
-	deps := map[string][]string{}
-	for _, pt := range l {
-		deps[pt.HashKey()] = pt.Deps()
-	}
-	return deps
-}
-
 // PipelineTaskParam is used to provide arbitrary string parameters to a Task.
-type PipelineTaskParam = v1beta1.PipelineTaskParam
+type PipelineTaskParam struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
 
 // PipelineTaskCondition allows a PipelineTask to declare a Condition to be evaluated before
 // the Task is run.
-type PipelineTaskCondition = v1beta1.PipelineTaskCondition
+type PipelineTaskCondition struct {
+	// ConditionRef is the name of the Condition to use for the conditionCheck
+	ConditionRef string `json:"conditionRef"`
+
+	// Params declare parameters passed to this Condition
+	// +optional
+	Params []Param `json:"params,omitempty"`
+
+	// Resources declare the resources provided to this Condition as input
+	Resources []PipelineConditionResource `json:"resources,omitempty"`
+}
 
 // PipelineDeclaredResource is used by a Pipeline to declare the types of the
 // PipelineResources that it will required to run and names which can be used to
 // refer to these PipelineResources in PipelineTaskResourceBindings.
-type PipelineDeclaredResource = v1beta1.PipelineDeclaredResource
+type PipelineDeclaredResource struct {
+	// Name is the name that will be used by the Pipeline to refer to this resource.
+	// It does not directly correspond to the name of any PipelineResources Task
+	// inputs or outputs, and it does not correspond to the actual names of the
+	// PipelineResources that will be bound in the PipelineRun.
+	Name string `json:"name"`
+	// Type is the type of the PipelineResource.
+	Type PipelineResourceType `json:"type"`
+}
+
+// PipelineConditionResource allows a Pipeline to declare how its DeclaredPipelineResources
+// should be provided to a Condition as its inputs.
+type PipelineConditionResource struct {
+	// Name is the name of the PipelineResource as declared by the Condition.
+	Name string `json:"name"`
+	// Resource is the name of the DeclaredPipelineResource to use.
+	Resource string `json:"resource"`
+}
 
 // PipelineTaskResources allows a Pipeline to declare how its DeclaredPipelineResources
 // should be provided to a Task as its inputs and outputs.
-type PipelineTaskResources = v1beta1.PipelineTaskResources
+type PipelineTaskResources struct {
+	// Inputs holds the mapping from the PipelineResources declared in
+	// DeclaredPipelineResources to the input PipelineResources required by the Task.
+	Inputs []PipelineTaskInputResource `json:"inputs,omitempty"`
+	// Outputs holds the mapping from the PipelineResources declared in
+	// DeclaredPipelineResources to the input PipelineResources required by the Task.
+	Outputs []PipelineTaskOutputResource `json:"outputs,omitempty"`
+}
 
 // PipelineTaskInputResource maps the name of a declared PipelineResource input
 // dependency in a Task to the resource in the Pipeline's DeclaredPipelineResources
 // that should be used. This input may come from a previous task.
-type PipelineTaskInputResource = v1beta1.PipelineTaskInputResource
+type PipelineTaskInputResource struct {
+	// Name is the name of the PipelineResource as declared by the Task.
+	Name string `json:"name"`
+	// Resource is the name of the DeclaredPipelineResource to use.
+	Resource string `json:"resource"`
+	// From is the list of PipelineTask names that the resource has to come from.
+	// (Implies an ordering in the execution graph.)
+	// +optional
+	From []string `json:"from,omitempty"`
+}
 
 // PipelineTaskOutputResource maps the name of a declared PipelineResource output
 // dependency in a Task to the resource in the Pipeline's DeclaredPipelineResources
 // that should be used.
-type PipelineTaskOutputResource = v1beta1.PipelineTaskOutputResource
+type PipelineTaskOutputResource struct {
+	// Name is the name of the PipelineResource as declared by the Task.
+	Name string `json:"name"`
+	// Resource is the name of the DeclaredPipelineResource to use.
+	Resource string `json:"resource"`
+}
 
 // TaskRef can be used to refer to a specific instance of a task.
 // Copied from CrossVersionObjectReference: https://github.com/kubernetes/kubernetes/blob/169df7434155cbbc22f1532cba8e0a9588e29ad8/pkg/apis/autoscaling/types.go#L64
-type TaskRef = v1beta1.TaskRef
+type TaskRef struct {
+	// Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names
+	Name string `json:"name,omitempty"`
+	// TaskKind inficates the kind of the task, namespaced or cluster scoped.
+	Kind TaskKind `json:"kind,omitempty"`
+	// API version of the referent
+	// +optional
+	APIVersion string `json:"apiVersion,omitempty"`
+}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 

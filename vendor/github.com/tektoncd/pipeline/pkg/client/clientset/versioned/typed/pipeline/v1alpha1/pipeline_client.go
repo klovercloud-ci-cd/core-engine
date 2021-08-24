@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Tekton Authors
+Copyright 2019 The Tekton Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ package v1alpha1
 import (
 	v1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/client/clientset/versioned/scheme"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -29,8 +30,8 @@ type TektonV1alpha1Interface interface {
 	ClusterTasksGetter
 	ConditionsGetter
 	PipelinesGetter
+	PipelineResourcesGetter
 	PipelineRunsGetter
-	RunsGetter
 	TasksGetter
 	TaskRunsGetter
 }
@@ -52,12 +53,12 @@ func (c *TektonV1alpha1Client) Pipelines(namespace string) PipelineInterface {
 	return newPipelines(c, namespace)
 }
 
-func (c *TektonV1alpha1Client) PipelineRuns(namespace string) PipelineRunInterface {
-	return newPipelineRuns(c, namespace)
+func (c *TektonV1alpha1Client) PipelineResources(namespace string) PipelineResourceInterface {
+	return newPipelineResources(c, namespace)
 }
 
-func (c *TektonV1alpha1Client) Runs(namespace string) RunInterface {
-	return newRuns(c, namespace)
+func (c *TektonV1alpha1Client) PipelineRuns(namespace string) PipelineRunInterface {
+	return newPipelineRuns(c, namespace)
 }
 
 func (c *TektonV1alpha1Client) Tasks(namespace string) TaskInterface {
@@ -100,7 +101,7 @@ func setConfigDefaults(config *rest.Config) error {
 	gv := v1alpha1.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
-	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
+	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
 
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()
