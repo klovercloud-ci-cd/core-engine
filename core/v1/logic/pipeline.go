@@ -16,23 +16,51 @@ func (p pipelineService) apply() {
 	// all the err logs will be persisted by buildId
 	for _,each:=range p.pipeline.Steps{
 		input,outputs,err:=p.tekton.InitPipelineResources(each,p.pipeline.Name,p.pipeline.Label,p.pipeline.BuildId)
-		if err!=nil{log.Println(err.Error())}
+		if err!=nil{
+			log.Println(err.Error())
+			continue
+		}
 		task,err:=p.tekton.InitTask(each,p.pipeline.Name,p.pipeline.Label,p.pipeline.BuildId)
-		if err!=nil{log.Println(err.Error())}
+		if err!=nil{
+			log.Println(err.Error())
+			continue
+		}
 		taskrun,err:=p.tekton.InitTaskRun(each,p.pipeline.Label, p.pipeline.BuildId)
-		if err!=nil{log.Println(err.Error())}
-		log.Print("applying:", input, " ",outputs, " ",task, " ",taskrun)
+		if err!=nil{
+			log.Println(err.Error())
+			continue
+		}
 		p.tekton.DeleteTaskRunByBuildId(p.pipeline.BuildId)
 		err=p.tekton.CreatePipelineResource(input)
-		if err!=nil{log.Println(err.Error())}
+		if err!=nil{
+			log.Println(err.Error())
+			continue
+		}
+		var outputErr error
 		for _,output:=range outputs{
 			err=p.tekton.CreatePipelineResource(output)
-			if err!=nil{log.Println(err.Error())}
+			if err!=nil{
+				outputErr=err
+				break
+			}
+		}
+		if outputErr!=nil{
+			log.Println(outputErr.Error())
+			p.tekton.DeleteTaskRunByBuildId(p.pipeline.BuildId)
+			continue
 		}
 		err=p.tekton.CreateTask(task)
-		if err!=nil{log.Println(err.Error())}
+		if err!=nil{
+			log.Println(err.Error())
+			p.tekton.DeleteTaskRunByBuildId(p.pipeline.BuildId)
+			continue
+		}
 		err=p.tekton.CreateTaskRun(taskrun)
-		if err!=nil{log.Println(err.Error())}
+		if err!=nil{
+			log.Println(err.Error())
+			p.tekton.DeleteTaskRunByBuildId(p.pipeline.BuildId)
+			continue
+		}
 
 	}
 }
