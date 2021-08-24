@@ -81,7 +81,6 @@ func (p pipelineService) Apply(url,revision string) error {
 }
 
 
-
 func NewPipelineService(k8s v1.K8s,tekton v1.Tekton,pipeline v1.Pipeline) service.Pipeline {
 	return &pipelineService{
 		k8s: k8s,

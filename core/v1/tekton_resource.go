@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/klovercloud-ci/config"
+	"github.com/klovercloud-ci/core/v1/repository"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
@@ -24,6 +25,7 @@ type Tekton interface {
 
 type TektonResource struct {
 	Tcs  *versioned.Clientset
+	LogEventRepo repository.LogEventRepository
 }
 
 func (tekton * TektonResource) InitPipelineResources(step Step,label map[string]string,buildId string)(inputResource v1alpha1.PipelineResource,outputResource []v1alpha1.PipelineResource,err error){

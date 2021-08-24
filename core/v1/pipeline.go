@@ -9,6 +9,7 @@ var _ interface {
 
 
 type Pipeline struct {
+	Option PipelineApplyOption
 	ApiVersion string `json:"api_version"`
 	Name string `json:"name"`
 	BuildId string  `json:"build_id"`

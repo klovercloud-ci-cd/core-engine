@@ -15,6 +15,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/json-iterator/go v1.1.9 // indirect
+	github.com/labstack/echo/v4 v4.5.0
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/openzipkin/zipkin-go v0.2.2 // indirect
@@ -26,7 +27,6 @@ require (
 	go.uber.org/zap v1.13.0 // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6 // indirect
-	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	golang.org/x/tools v0.0.0-20200710042808-f1c4188a97a1 // indirect
 	google.golang.org/api v0.15.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect

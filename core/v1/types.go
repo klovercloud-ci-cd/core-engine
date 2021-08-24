@@ -7,7 +7,8 @@ type Resource struct {
 }
 
 func(resource Resource)Validate() error{
-	
+
+	return nil
 }
 
 type Variable struct {
@@ -20,4 +21,12 @@ type Variable struct {
 		Namespace   string `json:"namespace"`
 	}`json:"configMaps"`
 	Data map[string]string `json:"data"`
+}
+
+type LogEventQueryOption struct {
+	IndexFrom int32
+	IndexTo int32
+}
+type PipelineApplyOption struct {
+	EnablePurging bool
 }
