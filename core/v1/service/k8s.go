@@ -8,6 +8,7 @@ type K8s interface {
 	GetConfigMap(name,namespace string) (corev1.ConfigMap,error)
 	GetPodListByBuildId(namespace,buildId string,option v1.PodListGetOption)*corev1.PodList
 	WaitAndGetInitializedPods(namespace,buildId string)*corev1.PodList
+	LogContainer(namespace,podName,containerName,step,buildId string)
 }
 
 

@@ -26,6 +26,7 @@ type Variable struct {
 type LogEventQueryOption struct {
 	IndexFrom int32
 	IndexTo int32
+	Step string
 }
 type PipelineApplyOption struct {
 	EnablePurging bool

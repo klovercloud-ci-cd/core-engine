@@ -8,6 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/api/core/v1"
+	"log"
 	"time"
 )
 
@@ -15,6 +16,24 @@ type k8sService struct {
 	Kcs *kubernetes.Clientset
 	repo repository.LogEventRepository
 }
+
+func (k8s k8sService) LogContainer(namespace, podName, containerName, step, buildId string) {
+	//req := k8s.Kcs.CoreV1().Pods(namespace).GetLogs(
+	//	podName,
+	//	&corev1.PodLogOptions{
+	//		TypeMeta: metav1.TypeMeta{
+	//			Kind:       "Task",
+	//			APIVersion: "tekton.dev/v1",
+	//		},
+	//		Container: containerName,
+	//		Follow:    true,
+	//	},
+	//)
+
+	//readCloser, err := req.Stream()
+	panic("implement me")
+}
+
 
 
 func (k8s * k8sService) GetSecret(name,namespace string)(corev1.Secret,error){
@@ -67,20 +86,18 @@ func (k8s * k8sService) WaitAndGetInitializedPods(namespace,buildId string) *cor
 	if len(podList.Items) < 1 {
 		return podList
 	}
-	//podStatus := podList.Items[0].Status.Phase
-	//for podStatus == TERMINATING {
-	//	log.Println("Pod is:", podStatus)
-	//	return t.waitUntilPodGetsInitializedAndGetPodList(kcs, namespace, taskType, taskrunName, taskName, buildId)
-	//}
-	//
-	//for podStatus == POD_INITIALIZING {
-	//	log.Println("Pod is:", podStatus)
-	//	podStatus = podList.Items[0].Status.Phase
-	//}
+	podStatus := podList.Items[0].Status.Phase
+	if podStatus == enums.TERMINATING {
+		log.Println("Pod is:", podStatus)
+		return k8s.WaitAndGetInitializedPods(namespace, buildId)
+	}
 
+	if podStatus == enums.POD_INITIALIZING {
+		log.Println("Pod is:", podStatus)
+		podStatus = podList.Items[0].Status.Phase
+	}
 	return podList
 }
-
 
 func NewK8sService(Kcs *kubernetes.Clientset,repo repository.LogEventRepository) service.K8s {
 	return &k8sService{
