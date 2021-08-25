@@ -78,4 +78,5 @@ func (l logEventRepository) GetByBuildId(buildId string, option v1.LogEventQuery
 func NewLogEventRepository() repository.LogEventRepository {
 	return &logEventRepository{
 	}
+
 }
