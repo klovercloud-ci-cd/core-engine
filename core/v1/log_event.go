@@ -9,3 +9,7 @@ type LogEvent struct {
 	Step string `bson:"step"`
 	CreatedAt    time.Time `bson:"created_at"`
 }
+
+func (e LogEvent) Println(s string, s2 string) {
+
+}
