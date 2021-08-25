@@ -8,18 +8,18 @@ import (
 	"strconv"
 )
 
-type MockK8sService struct {
+type mockK8sService struct {
 }
 
-func (k8s MockK8sService) GetPodListByBuildId(namespace, buildId string, option v1.PodListGetOption) *corev1.PodList {
+func (k8s mockK8sService) GetPodListByBuildId(namespace, buildId string, option v1.PodListGetOption) *corev1.PodList {
 	panic("implement me")
 }
 
-func (k8s MockK8sService) WaitAndGetInitializedPods(namespace, buildId string) *corev1.PodList {
+func (k8s mockK8sService) WaitAndGetInitializedPods(namespace, buildId string) *corev1.PodList {
 	panic("implement me")
 }
 
-func (k8s * MockK8sService) GetSecret(name,namespace string)(corev1.Secret,error){
+func (k8s *mockK8sService) GetSecret(name,namespace string)(corev1.Secret,error){
 	secrets:=InitSecrets()
 	for _,each:=range secrets{
 		if each.Name==name && each.Namespace==namespace{
@@ -29,7 +29,7 @@ func (k8s * MockK8sService) GetSecret(name,namespace string)(corev1.Secret,error
 return corev1.Secret{},errors.New("No record found")
 }
 
-func (k8s * MockK8sService) GetConfigMap(name,namespace string)(corev1.ConfigMap,error){
+func (k8s *mockK8sService) GetConfigMap(name,namespace string)(corev1.ConfigMap,error){
 	configMaps:=InitConfigMaps()
 	for _,each:=range configMaps{
 		if each.Name==name && each.Namespace==namespace{

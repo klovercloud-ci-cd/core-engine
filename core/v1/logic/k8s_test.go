@@ -18,7 +18,7 @@ func Test_GetSecret(t *testing.T) {
 	var testCases [] TestData
 	data:=InitSecrets()
 	for i:=0;i<10;i++{
-		resource := &MockK8sService{}
+		resource := &mockK8sService{}
 		secret,_:=resource.GetSecret("secret"+strconv.Itoa(i),"klovercloud")
 		testCases= append(testCases, TestData{
 			data: data,

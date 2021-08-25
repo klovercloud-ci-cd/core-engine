@@ -3,6 +3,7 @@ package logic
 import (
 	"github.com/klovercloud-ci/config"
 	"github.com/klovercloud-ci/core/v1/repository"
+	"github.com/klovercloud-ci/core/v1/service"
 	"github.com/klovercloud-ci/enums"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
@@ -12,12 +13,12 @@ import (
 	"log"
 	"strconv"
 )
-type TektonService struct {
+type tektonService struct {
 	Tcs  *versioned.Clientset
 	LogEventRepo repository.LogEventRepository
 }
 
-func (tekton *TektonService) InitPipelineResources(step v1.Step,label map[string]string,buildId string)(inputResource v1alpha1.PipelineResource,outputResource []v1alpha1.PipelineResource,err error){
+func (tekton *tektonService) InitPipelineResources(step v1.Step,label map[string]string,buildId string)(inputResource v1alpha1.PipelineResource,outputResource []v1alpha1.PipelineResource,err error){
 	if label==nil{
 		label=make(map[string]string)
 	}
@@ -67,7 +68,7 @@ func (tekton *TektonService) InitPipelineResources(step v1.Step,label map[string
 	}
 	return input,outputs,nil
 }
-func (tekton *TektonService) InitTask(step v1.Step,label map[string]string,buildId string) (v1alpha1.Task,error){
+func (tekton *tektonService) InitTask(step v1.Step,label map[string]string,buildId string) (v1alpha1.Task,error){
 	if label==nil{
 		label=make(map[string]string)
 	}
@@ -177,7 +178,7 @@ func initAdditionalParams(args map[string]string) []v1alpha1.ParamSpec {
 	}
 	return params
 }
-func (tekton *TektonService) InitTaskRun (step v1.Step,label map[string]string,buildId string)(v1alpha1.TaskRun,error){
+func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,buildId string)(v1alpha1.TaskRun,error){
 	label["step"]=step.Name
 	var params []v1alpha1.Param
 	params = append(params, v1alpha1.Param{
@@ -258,7 +259,7 @@ func (tekton *TektonService) InitTaskRun (step v1.Step,label map[string]string,b
 	return taskrun,nil
 	return v1alpha1.TaskRun{},nil
 }
-func (tekton *TektonService) CreatePipelineResource(resource v1alpha1.PipelineResource)error {
+func (tekton *tektonService) CreatePipelineResource(resource v1alpha1.PipelineResource)error {
 	_,err:=tekton.Tcs.TektonV1alpha1().PipelineResources(config.CI_NAMESPACE).Create(&resource)
 	if err!=nil{
 		log.Println("[ERROR]:","Failed to create pipelineresource" ,err.Error())
@@ -266,7 +267,7 @@ func (tekton *TektonService) CreatePipelineResource(resource v1alpha1.PipelineRe
 	}
 	return nil
 }
-func(tekton *TektonService)CreateTask(resource v1alpha1.Task)error{
+func(tekton *tektonService)CreateTask(resource v1alpha1.Task)error{
 	_,err:=tekton.Tcs.TektonV1alpha1().Tasks(config.CI_NAMESPACE).Create(&resource)
 	if err!=nil{
 		log.Println("[ERROR]:","Failed to create task" ,err.Error())
@@ -274,7 +275,7 @@ func(tekton *TektonService)CreateTask(resource v1alpha1.Task)error{
 	}
 	return nil
 }
-func(tekton *TektonService)CreateTaskRun(resource v1alpha1.TaskRun) error{
+func(tekton *tektonService)CreateTaskRun(resource v1alpha1.TaskRun) error{
 	_,err:=tekton.Tcs.TektonV1alpha1().TaskRuns(config.CI_NAMESPACE).Create(&resource)
 	if err!=nil{
 		log.Println("[ERROR]:","Failed to create taskrun" ,err.Error())
@@ -283,7 +284,7 @@ func(tekton *TektonService)CreateTaskRun(resource v1alpha1.TaskRun) error{
 	return nil
 
 }
-func(tekton *TektonService)DeletePipelineResourceByBuildId(buildId string) error{
+func(tekton *tektonService)DeletePipelineResourceByBuildId(buildId string) error{
 	list,err:=tekton.Tcs.TektonV1alpha1().PipelineResources(config.CI_NAMESPACE).List(metaV1.ListOptions{
 		LabelSelector: "buildId="+buildId,
 	})
@@ -299,7 +300,7 @@ func(tekton *TektonService)DeletePipelineResourceByBuildId(buildId string) error
 	}
 	return nil
 }
-func(tekton *TektonService)DeleteTaskByBuildId(buildId string) error{
+func(tekton *tektonService)DeleteTaskByBuildId(buildId string) error{
 	list,err:=tekton.Tcs.TektonV1alpha1().Tasks(config.CI_NAMESPACE).List(metaV1.ListOptions{
 		LabelSelector: "buildId="+buildId,
 	})
@@ -315,7 +316,7 @@ func(tekton *TektonService)DeleteTaskByBuildId(buildId string) error{
 	}
 	return nil
 }
-func(tekton *TektonService)DeleteTaskRunByBuildId(buildId string) error{
+func(tekton *tektonService)DeleteTaskRunByBuildId(buildId string) error{
 	list,err:=tekton.Tcs.TektonV1alpha1().TaskRuns(config.CI_NAMESPACE).List(metaV1.ListOptions{
 		LabelSelector: "buildId="+buildId,
 	})
@@ -331,9 +332,15 @@ func(tekton *TektonService)DeleteTaskRunByBuildId(buildId string) error{
 	}
 	return nil
 }
-func(tekton *TektonService)PurgeByBuildId(buildId string) {
+func(tekton *tektonService)PurgeByBuildId(buildId string) {
 	tekton.DeletePipelineResourceByBuildId(buildId)
 	tekton.DeleteTaskByBuildId(buildId)
 	tekton.DeleteTaskRunByBuildId(buildId)
 }
 
+func NewTektonService(tcs  *versioned.Clientset,logEventRepo repository.LogEventRepository) service.Tekton{
+	return  &tektonService{
+		Tcs:          tcs,
+		LogEventRepo:logEventRepo,
+	}
+}

@@ -28,7 +28,7 @@ func Test_loadArgs(t *testing.T) {
 		expected: map[string]string{"env1": "value1", "env2": "value2"},
 	}
 	service:=pipelineService{
-		k8s:      &MockK8sService{},
+		k8s:      &mockK8sService{},
 		tekton:   nil,
 		pipeline: pipeline,
 	}
@@ -76,7 +76,7 @@ func Test_loadEnvs(t *testing.T) {
 		expected: map[string]string{"env1": "value1", "env2": "value2"},
 	}
 	service:=pipelineService{
-		k8s:      &MockK8sService{},
+		k8s:      &mockK8sService{},
 		tekton:   nil,
 		pipeline: pipeline,
 	}

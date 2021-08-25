@@ -39,7 +39,7 @@ func Test_SetEnvs(t *testing.T) {
 	service:=stepService{
 		step: *step,
 	}
-	service.SetEnvs(&MockK8sService{})
+	service.SetEnvs(&mockK8sService{})
 	testCase.actual=service.step.Env.Data
 	if !reflect.DeepEqual(testCase.expected, testCase.actual){
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
@@ -76,7 +76,7 @@ func Test_SetArgs(t *testing.T) {
 	service:=stepService{
 		step: *step,
 	}
-	service.SetArgs(&MockK8sService{})
+	service.SetArgs(&mockK8sService{})
 	testCase.actual=service.step.Arg.Data
 	if !reflect.DeepEqual(testCase.expected, testCase.actual){
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
