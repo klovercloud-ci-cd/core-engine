@@ -8,7 +8,7 @@ import (
 type logEventRepository struct {
 }
 
-func (l logEventRepository) Store(log v1.LogEvent) error {
+func (l logEventRepository) Store(log v1.LogEvent) {
 	panic("implement me")
 }
 

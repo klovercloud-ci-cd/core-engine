@@ -1,16 +1,14 @@
 package v1
 
-import "github.com/klovercloud-ci/enums"
+import (
+	"errors"
+	"github.com/klovercloud-ci/enums"
+)
 
 type Resource struct {
 	Type enums.PIPELINE_RESOURCE_TYPE `json:"type"`
 	Url string `json:"url"`
 	Revision string  `json:"revision"`
-}
-
-func(resource Resource)Validate() error{
-
-	return nil
 }
 
 type Variable struct {
@@ -35,4 +33,20 @@ type PipelineApplyOption struct {
 type PodListGetOption struct {
 	Wait bool
 	Duration int
+}
+
+func(resource Resource)Validate() error{
+	if resource.Type != "" {
+		if resource.Type == enums.GIT || resource.Type == enums.IMAGE {
+			if resource.Url == "" {
+				return errors.New("resource url is empty")
+			}
+			if resource.Revision == "" {
+				return errors.New("resource revision is empty")
+			}
+			return nil
+		}
+		return errors.New("resource type is not match")
+	}
+	return errors.New("resource type is required")
 }
