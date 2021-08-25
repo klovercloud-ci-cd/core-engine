@@ -1,25 +1,25 @@
-package v1
+package logic
 
 import (
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
 	"reflect"
 	"strconv"
 	"testing"
+	corev1 "k8s.io/api/core/v1"
 )
 
-func Test_getSecret(t *testing.T) {
+func Test_GetSecret(t *testing.T) {
 	type TestData struct {
-		data                  []v1.Secret
-		expected v1.Secret
-		actual v1.Secret
+		data                  []corev1.Secret
+		expected corev1.Secret
+		actual corev1.Secret
 	}
 
 	var testCases [] TestData
 	data:=InitSecrets()
 	for i:=0;i<10;i++{
-		resource := &MockK8sResource{}
-		secret,_:=resource.getSecret("secret"+strconv.Itoa(i),"klovercloud")
+		resource := &MockK8sService{}
+		secret,_:=resource.GetSecret("secret"+strconv.Itoa(i),"klovercloud")
 		testCases= append(testCases, TestData{
 			data: data,
 			expected: data[i],

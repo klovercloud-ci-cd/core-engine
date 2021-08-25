@@ -7,11 +7,41 @@ import (
 )
 
 type pipelineService struct {
-	k8s v1.K8s
+	k8s service.K8s
 	tekton service.Tekton
 	pipeline v1.Pipeline
 }
 
+func (p pipelineService) LoadArgs(k8s service.K8s) {
+	for i,_:=range p.pipeline.Steps{
+		s := stepService{p.pipeline.Steps[i]}
+		s.SetArgs(k8s)
+		p.pipeline.Steps[i]=s.step
+	}
+
+}
+
+func (p pipelineService) LoadEnvs(k8s service.K8s) {
+	for i,_:=range p.pipeline.Steps{
+		s := stepService{p.pipeline.Steps[i]}
+		s.SetEnvs(k8s)
+		p.pipeline.Steps[i]=s.step
+	}
+}
+
+func (p pipelineService) SetInputResource(url, revision string) {
+	for i,_:=range p.pipeline.Steps{
+		s := stepService{p.pipeline.Steps[i]}
+		s.SetInput(url,revision)
+		p.pipeline.Steps[i]=s.step
+	}
+}
+
+func (p pipelineService) Build(k8s service.K8s, url, revision string) {
+	p.LoadArgs(k8s)
+	p.LoadEnvs(k8s)
+	p.SetInputResource(url,revision)
+}
 
 func (p pipelineService) apply() {
 	// all the err logs will be persisted by buildId
@@ -67,7 +97,7 @@ func (p pipelineService) apply() {
 }
 
 func (p pipelineService) Apply(url,revision string) error {
-	p.pipeline.Build(p.k8s,url,revision)
+	p.Build(p.k8s,url,revision)
 	if p.pipeline.Label==nil{
 		p.pipeline.Label=make(map[string]string)
 	}
@@ -82,7 +112,7 @@ func (p pipelineService) Apply(url,revision string) error {
 }
 
 
-func NewPipelineService(k8s v1.K8s,tekton service.Tekton,pipeline v1.Pipeline) service.Pipeline {
+func NewPipelineService(k8s service.K8s,tekton service.Tekton,pipeline v1.Pipeline) service.Pipeline {
 	return &pipelineService{
 		k8s: k8s,
 		tekton: tekton,

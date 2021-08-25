@@ -1,40 +1,49 @@
-package v1
+package logic
 
 import (
 	"errors"
-	v1 "k8s.io/api/core/v1"
+	v1 "github.com/klovercloud-ci/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strconv"
 )
 
-type MockK8sResource struct {
+type MockK8sService struct {
 }
 
-func (k8s * MockK8sResource) getSecret(name,namespace string)(v1.Secret,error){
+func (k8s MockK8sService) GetPodListByBuildId(namespace, buildId string, option v1.PodListGetOption) *corev1.PodList {
+	panic("implement me")
+}
+
+func (k8s MockK8sService) WaitAndGetInitializedPods(namespace, buildId string) *corev1.PodList {
+	panic("implement me")
+}
+
+func (k8s * MockK8sService) GetSecret(name,namespace string)(corev1.Secret,error){
 	secrets:=InitSecrets()
 	for _,each:=range secrets{
 		if each.Name==name && each.Namespace==namespace{
 			return each,nil
 		}
 	}
-return v1.Secret{},errors.New("No record found")
+return corev1.Secret{},errors.New("No record found")
 }
 
-func (k8s * MockK8sResource) getConfigMap(name,namespace string)(v1.ConfigMap,error){
+func (k8s * MockK8sService) GetConfigMap(name,namespace string)(corev1.ConfigMap,error){
 	configMaps:=InitConfigMaps()
 	for _,each:=range configMaps{
 		if each.Name==name && each.Namespace==namespace{
 			return each,nil
 		}
 	}
-	return v1.ConfigMap{},errors.New("No record found")
+	return corev1.ConfigMap{},errors.New("No record found")
 }
-func InitSecrets()[]v1.Secret{
+func InitSecrets()[]corev1.Secret{
 
-	var data [] v1.Secret
+	var data [] corev1.Secret
 
 	for i:=0;i<10;i++{
-		secret:= v1.Secret{
+		secret:= corev1.Secret{
 			TypeMeta:   metav1.TypeMeta{
 				Kind:       "Secret",
 				APIVersion: "v1",
@@ -58,12 +67,12 @@ func InitSecrets()[]v1.Secret{
 	}
 	return data
 }
-func InitConfigMaps()[]v1.ConfigMap{
+func InitConfigMaps()[]corev1.ConfigMap{
 
-	var data [] v1.ConfigMap
+	var data [] corev1.ConfigMap
 
 	for i:=0;i<10;i++{
-		configMap:=v1.ConfigMap{
+		configMap:=corev1.ConfigMap{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ConfigMap",
 				APIVersion: "v1",

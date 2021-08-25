@@ -32,3 +32,7 @@ type LogEventQueryOption struct {
 type PipelineApplyOption struct {
 	EnablePurging bool
 }
+type PodListGetOption struct {
+	Wait bool
+	Duration int
+}
