@@ -3,12 +3,19 @@ package logic
 import (
 	"errors"
 	v1 "github.com/klovercloud-ci/core/v1"
+	"github.com/klovercloud-ci/core/v1/repository"
+	"github.com/klovercloud-ci/core/v1/service"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strconv"
 )
 
 type mockK8sService struct {
+	repo repository.LogEventRepository
+}
+
+func (k8s mockK8sService) LogContainer(namespace, podName, containerName, step, buildId string) {
+	panic("implement me")
 }
 
 func (k8s mockK8sService) GetPodListByBuildId(namespace, buildId string, option v1.PodListGetOption) *corev1.PodList {
@@ -86,4 +93,10 @@ func InitConfigMaps()[]corev1.ConfigMap{
 		data= append(data, configMap)
 	}
 	return data
+}
+
+func NewMockK8sService(repo repository.LogEventRepository) service.K8s {
+	return &mockK8sService{
+		repo: repo,
+	}
 }

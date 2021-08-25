@@ -1,10 +1,10 @@
 package mongo
 
 import (
+	"context"
 	v1 "github.com/klovercloud-ci/core/v1"
 	"github.com/klovercloud-ci/core/v1/repository"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"time"
 )
@@ -27,51 +27,36 @@ func (l logEventRepository) Store(log v1.LogEvent) {
 }
 
 func (l logEventRepository) GetByBuildId(buildId string, option v1.LogEventQueryOption) []string {
-	query := bson.M{
-		"$and": []bson.M{
-			{"build_id": buildId},
-		},
-	}
-	findOptions := options.Find()
-	if option.IndexTo > 0 {
-		findOptions.SetMin(option.IndexTo)
-	}
-	if option.IndexFrom > 0 {
-		findOptions.SetMax(option.IndexFrom)
-	}
 	var results []string
-	coll := l.manager.Db.Collection(LogEventCollection)
-	result, _ := coll.Find(l.manager.Ctx, findOptions)
+	query:=bson.M{
+		"$and": []bson.M{},
+	}
+	and:=[]bson.M{}
+	and= append(and, map[string]interface{}{"build_id": buildId})
+	if option.IndexTo > 0 {
+		and= append(and, map[string]interface{}{"index": bson.M{
+			"$gte": option.IndexFrom,
+			"$lte": option.IndexTo,
+		}})
+	}
 	if option.Step != "" {
-		query := bson.M{
-			"$and": []bson.M{
-				{"build_id": buildId},
-				{"step": option.Step},
-			},
-		}
-		coll := l.manager.Db.Collection(LogEventCollection)
-		result := coll.FindOne(l.manager.Ctx, query)
-		err := result.Decode(results)
+		and= append(and, map[string]interface{}{"step": option.Step})
+	}
+	query["$and"]=and
+	coll := l.manager.Db.Collection(LogEventCollection)
+	result, err := coll.Find(l.manager.Ctx, query)
+	if err!=nil{
+		log.Println(err.Error())
+	}
+	for result.Next(context.TODO()) {
+		elemValue := new(v1.LogEvent)
+		err := result.Decode(elemValue)
 		if err != nil {
 			log.Println("[ERROR]", err)
+			break
 		}
-		results = append(results)
-		return results
+		results= append(results, elemValue.Log)
 	}
-	if option.Step == "" && option.IndexTo ==  0 && option.IndexFrom == 0{
-		result := coll.FindOne(l.manager.Ctx, query)
-		err := result.Decode(results)
-		if err != nil {
-			log.Println("[ERROR]", err)
-		}
-		results = append(results)
-		return results
-	}
-	err := result.Decode(results)
-	if err != nil {
-		log.Println("[ERROR]", err)
-	}
-	results = append(results)
 	return results
 }
 
