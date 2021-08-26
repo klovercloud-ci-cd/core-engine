@@ -15,15 +15,15 @@ type mockK8sService struct {
 	repo repository.LogEventRepository
 }
 
-func (k8s mockK8sService) LogContainer(namespace, podName, containerName, step, buildId string,stepType enums.STEP_TYPE ) {
+func (k8s mockK8sService) LogContainer(namespace, podName, containerName, step, processId string,stepType enums.STEP_TYPE ) {
 	panic("implement me")
 }
 
-func (k8s mockK8sService) GetPodListByBuildId(namespace, buildId string, option v1.PodListGetOption) *corev1.PodList {
+func (k8s mockK8sService) GetPodListByProcessId(namespace, processId string, option v1.PodListGetOption) *corev1.PodList {
 	panic("implement me")
 }
 
-func (k8s mockK8sService) WaitAndGetInitializedPods(namespace, buildId string) *corev1.PodList {
+func (k8s mockK8sService) WaitAndGetInitializedPods(namespace, processId,step string) *corev1.PodList {
 	panic("implement me")
 }
 

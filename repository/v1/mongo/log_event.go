@@ -26,13 +26,13 @@ func (l logEventRepository) Store(log v1.LogEvent) {
 	}
 }
 
-func (l logEventRepository) GetByBuildId(buildId string, option v1.LogEventQueryOption) []string {
+func (l logEventRepository) GetByProcessId(processId string, option v1.LogEventQueryOption) []string {
 	var results []string
 	query:=bson.M{
 		"$and": []bson.M{},
 	}
 	and:=[]bson.M{}
-	and= append(and, map[string]interface{}{"build_id": buildId})
+	and= append(and, map[string]interface{}{"process_id": processId})
 	if option.IndexTo > 0 {
 		and= append(and, map[string]interface{}{"index": bson.M{
 			"$gte": option.IndexFrom,

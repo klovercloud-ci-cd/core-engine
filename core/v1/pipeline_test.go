@@ -15,8 +15,8 @@ func TestPipeline_Validate(t *testing.T) {
 	pipeline := Pipeline{
 		ApiVersion: "default",
 		Name:       "test",
-		BuildId:    "0125632",
-		Label:       map[string]string{"env1": "value1", "env2": "value2"},
+		ProcessId:  "0125632",
+		Label:      map[string]string{"env1": "value1", "env2": "value2"},
 		Steps:      []Step{{
 			Name: "test",
 			Type: enums.BUILD,
@@ -49,12 +49,12 @@ func TestPipeline_Validate(t *testing.T) {
 		assert.Error(t, actualError)
 	})
 	pipeline.Name = "test"
-	pipeline.BuildId = ""
-	t.Run("when pipeline build id is empty", func(t *testing.T) {
+	pipeline.ProcessId = ""
+	t.Run("when pipeline processId id is empty", func(t *testing.T) {
 		actualError := Pipeline.Validate(pipeline)
 		assert.Error(t, actualError)
 	})
-	pipeline.BuildId = "0125632"
+	pipeline.ProcessId = "0125632"
 	pipeline.Label = nil
 	t.Run("when pipeline label is nil", func(t *testing.T) {
 		actualError := Pipeline.Validate(pipeline)

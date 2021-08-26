@@ -7,9 +7,9 @@ import (
 type K8s interface {
 	GetSecret(name,namespace string) (corev1.Secret,error)
 	GetConfigMap(name,namespace string) (corev1.ConfigMap,error)
-	GetPodListByBuildId(namespace,buildId string,option v1.PodListGetOption)*corev1.PodList
-	WaitAndGetInitializedPods(namespace,buildId string)*corev1.PodList
-	LogContainer(namespace,podName,containerName,step,buildId string,stepType enums.STEP_TYPE )
+	GetPodListByProcessId(namespace,processId string,option v1.PodListGetOption)*corev1.PodList
+	WaitAndGetInitializedPods(namespace,processId,step string)*corev1.PodList
+	LogContainer(namespace,podName,containerName,step,processId string,stepType enums.STEP_TYPE )
 }
 
 

@@ -11,7 +11,7 @@ func InitData() {
 	data = []v1.LogEvent{
 		{
 			Index:     1,
-			BuildId:   "6652",
+			ProcessId: "6652",
 			Log:       "hi",
 			Step:      "first",
 			CreatedAt: time.Now(),
@@ -19,7 +19,7 @@ func InitData() {
 		},
 		{
 			Index:     2,
-			BuildId:   "5231",
+			ProcessId: "5231",
 			Log:       "hello",
 			Step:      "second",
 			CreatedAt: time.Now(),

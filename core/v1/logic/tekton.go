@@ -18,19 +18,19 @@ type tektonService struct {
 	LogEventRepo repository.LogEventRepository
 }
 
-func (tekton *tektonService) InitPipelineResources(step v1.Step,label map[string]string,buildId string)(inputResource v1alpha1.PipelineResource,outputResource []v1alpha1.PipelineResource,err error){
+func (tekton *tektonService) InitPipelineResources(step v1.Step,label map[string]string,processId string)(inputResource v1alpha1.PipelineResource,outputResource []v1alpha1.PipelineResource,err error){
 	if label==nil{
 		label=make(map[string]string)
 	}
 	label["revision"]=step.Input.Revision
-	label["buildId"]=buildId
+	label["processId"]=processId
 	input:=v1alpha1.PipelineResource{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       "PipelineResource",
 			APIVersion: "tekton.dev/v1alpha1",
 		},
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      step.Input.Revision + "-" + buildId,
+			Name:      step.Input.Revision + "-" + processId,
 			Namespace: config.CI_NAMESPACE,
 			Labels:    label,
 		},
@@ -52,7 +52,7 @@ func (tekton *tektonService) InitPipelineResources(step v1.Step,label map[string
 		label["revision"]=step.Outputs[i].Revision
 		output:=v1alpha1.PipelineResource{
 			ObjectMeta: metaV1.ObjectMeta{
-				Name:                     step.Outputs[i].Revision+"-"+buildId,
+				Name:                     step.Outputs[i].Revision+"-"+processId,
 				Namespace:                config.CI_NAMESPACE,
 				Labels:    label,
 			},
@@ -68,19 +68,19 @@ func (tekton *tektonService) InitPipelineResources(step v1.Step,label map[string
 	}
 	return input,outputs,nil
 }
-func (tekton *tektonService) InitTask(step v1.Step,label map[string]string,buildId string) (v1alpha1.Task,error){
+func (tekton *tektonService) InitTask(step v1.Step,label map[string]string,processId string) (v1alpha1.Task,error){
 	if label==nil{
 		label=make(map[string]string)
 	}
 	label["step"]=step.Name
-	label["buildId"]=buildId
+	label["processId"]=processId
 	task:=&v1alpha1.Task{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       "Task",
 			APIVersion: "tekton.dev/v1",
 		},
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      step.Name +"-"+buildId,
+			Name:      step.Name +"-"+processId,
 			Namespace: config.CI_NAMESPACE,
 			Labels:    label,
 		},
@@ -178,7 +178,7 @@ func initAdditionalParams(args map[string]string) []v1alpha1.ParamSpec {
 	}
 	return params
 }
-func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,buildId string)(v1alpha1.TaskRun,error){
+func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,processId string)(v1alpha1.TaskRun,error){
 	label["step"]=step.Name
 	var params []v1alpha1.Param
 	params = append(params, v1alpha1.Param{
@@ -202,7 +202,7 @@ func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,b
 			APIVersion: "tekton.dev/v1alpha1",
 		},
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      step.Name +"-"+buildId,
+			Name:      step.Name +"-"+processId,
 			Namespace: config.CI_NAMESPACE,
 			Labels:    label,
 		},
@@ -224,7 +224,7 @@ func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,b
 		taskrun.Spec=v1alpha1.TaskRunSpec{
 			ServiceAccountName: step.ServiceAccount,
 			TaskRef:            &v1alpha1.TaskRef{
-				Name: step.Name +"-"+buildId,
+				Name: step.Name +"-"+processId,
 			},
 		}
 
@@ -233,7 +233,7 @@ func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,b
 				PipelineResourceBinding: v1alpha1.PipelineResourceBinding{
 					Name: "docker-source",
 					ResourceRef: &v1alpha1.PipelineResourceRef{
-						Name: step.Input.Revision + "-" + buildId,
+						Name: step.Input.Revision + "-" + processId,
 					},
 				},
 			}},
@@ -245,7 +245,7 @@ func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,b
 				PipelineResourceBinding: v1alpha1.PipelineResourceBinding{
 					Name:         "builtImage" + strconv.Itoa(i),
 					ResourceRef:  &v1alpha1.PipelineResourceRef{
-						Name: each.Revision+"-"+buildId,
+						Name: each.Revision+"-"+processId,
 					},
 				},
 			})
@@ -284,9 +284,9 @@ func(tekton *tektonService)CreateTaskRun(resource v1alpha1.TaskRun) error{
 	return nil
 
 }
-func(tekton *tektonService)DeletePipelineResourceByBuildId(buildId string) error{
+func(tekton *tektonService) DeletePipelineResourceByProcessId(processId string) error{
 	list,err:=tekton.Tcs.TektonV1alpha1().PipelineResources(config.CI_NAMESPACE).List(metaV1.ListOptions{
-		LabelSelector: "buildId="+buildId,
+		LabelSelector: "processId="+processId,
 	})
 	if err!=nil{
 		log.Println("[WARNING]:",err.Error())
@@ -300,9 +300,9 @@ func(tekton *tektonService)DeletePipelineResourceByBuildId(buildId string) error
 	}
 	return nil
 }
-func(tekton *tektonService)DeleteTaskByBuildId(buildId string) error{
+func(tekton *tektonService) DeleteTaskByProcessId(processId string) error{
 	list,err:=tekton.Tcs.TektonV1alpha1().Tasks(config.CI_NAMESPACE).List(metaV1.ListOptions{
-		LabelSelector: "buildId="+buildId,
+		LabelSelector: "processId="+processId,
 	})
 	if err!=nil{
 		log.Println("[WARNING]:",err.Error())
@@ -316,9 +316,9 @@ func(tekton *tektonService)DeleteTaskByBuildId(buildId string) error{
 	}
 	return nil
 }
-func(tekton *tektonService)DeleteTaskRunByBuildId(buildId string) error{
+func(tekton *tektonService) DeleteTaskRunByProcessId(processId string) error{
 	list,err:=tekton.Tcs.TektonV1alpha1().TaskRuns(config.CI_NAMESPACE).List(metaV1.ListOptions{
-		LabelSelector: "buildId="+buildId,
+		LabelSelector: "processId="+processId,
 	})
 	if err!=nil{
 		log.Println("[WARNING]:",err.Error())
@@ -332,10 +332,10 @@ func(tekton *tektonService)DeleteTaskRunByBuildId(buildId string) error{
 	}
 	return nil
 }
-func(tekton *tektonService)PurgeByBuildId(buildId string) {
-	tekton.DeletePipelineResourceByBuildId(buildId)
-	tekton.DeleteTaskByBuildId(buildId)
-	tekton.DeleteTaskRunByBuildId(buildId)
+func(tekton *tektonService) PurgeByProcessId(processId string) {
+	tekton.DeletePipelineResourceByProcessId(processId)
+	tekton.DeleteTaskByProcessId(processId)
+	tekton.DeleteTaskRunByProcessId(processId)
 }
 
 func NewTektonService(tcs  *versioned.Clientset,logEventRepo repository.LogEventRepository) service.Tekton{

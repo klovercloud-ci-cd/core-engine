@@ -44,24 +44,24 @@ func (p pipelineService) Build(k8s service.K8s, url, revision string) {
 }
 
 func (p pipelineService) apply() {
-	// all the err logs will be persisted by buildId
+	// all the err logs will be persisted by processId
 	for _,each:=range p.pipeline.Steps{
-		input,outputs,err:=p.tekton.InitPipelineResources(each,p.pipeline.Label,p.pipeline.BuildId)
+		input,outputs,err:=p.tekton.InitPipelineResources(each,p.pipeline.Label,p.pipeline.ProcessId)
 		if err!=nil{
 			log.Println(err.Error())
 			continue
 		}
-		task,err:=p.tekton.InitTask(each,p.pipeline.Label,p.pipeline.BuildId)
+		task,err:=p.tekton.InitTask(each,p.pipeline.Label,p.pipeline.ProcessId)
 		if err!=nil{
 			log.Println(err.Error())
 			continue
 		}
-		taskrun,err:=p.tekton.InitTaskRun(each,p.pipeline.Label, p.pipeline.BuildId)
+		taskrun,err:=p.tekton.InitTaskRun(each,p.pipeline.Label, p.pipeline.ProcessId)
 		if err!=nil{
 			log.Println(err.Error())
 			continue
 		}
-		p.tekton.DeleteTaskRunByBuildId(p.pipeline.BuildId)
+		p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
 		err=p.tekton.CreatePipelineResource(input)
 		if err!=nil{
 			log.Println(err.Error())
@@ -77,19 +77,19 @@ func (p pipelineService) apply() {
 		}
 		if outputErr!=nil{
 			log.Println(outputErr.Error())
-			p.tekton.DeleteTaskRunByBuildId(p.pipeline.BuildId)
+			p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
 			continue
 		}
 		err=p.tekton.CreateTask(task)
 		if err!=nil{
 			log.Println(err.Error())
-			p.tekton.DeleteTaskRunByBuildId(p.pipeline.BuildId)
+			p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
 			continue
 		}
 		err=p.tekton.CreateTaskRun(taskrun)
 		if err!=nil{
 			log.Println(err.Error())
-			p.tekton.DeleteTaskRunByBuildId(p.pipeline.BuildId)
+			p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
 			continue
 		}
 
@@ -101,7 +101,7 @@ func (p pipelineService) Apply(url,revision string) error {
 	if p.pipeline.Label==nil{
 		p.pipeline.Label=make(map[string]string)
 	}
-	p.pipeline.Label["buildId"]=p.pipeline.BuildId
+	p.pipeline.Label["processId"]=p.pipeline.ProcessId
 	p.pipeline.Label["pipeline"]=p.pipeline.Name
 	err:=p.pipeline.Validate()
 	if err!=nil{

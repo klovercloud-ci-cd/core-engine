@@ -15,11 +15,12 @@ import (
 )
 
 type k8sService struct {
-	Kcs *kubernetes.Clientset
-	repo repository.LogEventRepository
+	Kcs          *kubernetes.Clientset
+	logEventRepo repository.LogEventRepository
+	processEventRepo repository.ProcessEventRepository
 }
 
-func (k8s k8sService) LogContainer(namespace, podName, containerName, step, buildId string,stepType enums.STEP_TYPE ) {
+func (k8s k8sService) LogContainer(namespace, podName, containerName, step, processId string,stepType enums.STEP_TYPE ) {
 	req := k8s.Kcs.CoreV1().Pods(namespace).GetLogs(
 		podName,
 		&corev1.PodLogOptions{
@@ -36,11 +37,15 @@ func (k8s k8sService) LogContainer(namespace, podName, containerName, step, buil
 	for err != nil {
 		log.Println(err.Error())
 		if strings.Contains(err.Error(), "image can't be pulled") || strings.Contains(err.Error(), "pods \""+podName+"\" not found") || strings.Contains(err.Error(), "pod \""+podName+"\" is terminated") {
-
 			if stepType==enums.BUILD{
-					//build step failed
-			}else if stepType==enums.DEPLOY{
-				//deploy step failed
+				data:=make(map[string]interface{})
+				data["step"]=step
+				data["status"]=enums.BUILD_FAILED
+				data["reason"]=err.Error()
+				k8s.processEventRepo.Store(v1.PipelineProcessStatus{
+					ProcessId: processId,
+					Data:      data,
+				})
 			}
 			return
 		}else{
@@ -54,7 +59,7 @@ func (k8s k8sService) LogContainer(namespace, podName, containerName, step, buil
 		data, isPrefix, err := reader.ReadLine()
 		if err != nil {
 			log.Println(err)
-			//log.Println("appId=" + taskrun.AppId + ", appType=" + taskrun.AppType + ", buildId=" + buildId + ", taskType=" + taskType + ", revision=" + taskrun.Input.Revision + ", error=" + err.Error())
+			//log.Println("appId=" + taskrun.AppId + ", appType=" + taskrun.AppType + ", processId=" + processId + ", taskType=" + taskType + ", revision=" + taskrun.Input.Revision + ", error=" + err.Error())
 			return
 		}
 
@@ -117,8 +122,8 @@ func (k8s * k8sService) GetConfigMap(name,namespace string)(corev1.ConfigMap,err
 	return *sec,nil
 }
 
-func (k8s * k8sService) GetPodListByBuildId(namespace,buildId string,option v1.PodListGetOption) *corev1.PodList{
-	labelSelector := "buildId=" + buildId
+func (k8s * k8sService) GetPodListByProcessId(namespace,processId string,option v1.PodListGetOption) *corev1.PodList{
+	labelSelector := "processId=" + processId
 	podList, err := k8s.Kcs.CoreV1().Pods(namespace).List(metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
@@ -137,32 +142,42 @@ func (k8s * k8sService) GetPodListByBuildId(namespace,buildId string,option v1.P
 	return podList
 }
 
-func (k8s * k8sService) WaitAndGetInitializedPods(namespace,buildId string) *corev1.PodList{
+func (k8s * k8sService) WaitAndGetInitializedPods(namespace,processId,step string) *corev1.PodList{
 	var podList *corev1.PodList
-
-	podList = k8s.GetPodListByBuildId(namespace,buildId,v1.PodListGetOption{
+	data:=make(map[string]interface{})
+	data["step"]=step
+	pipelineStatus:=v1.PipelineProcessStatus{ProcessId: processId}
+	podList = k8s.GetPodListByProcessId(namespace,processId,v1.PodListGetOption{
 		Wait:     true,
 		Duration: enums.DEFAULT_POD_INITIALIZATION_WAIT_DURATION,
 	})
 	if len(podList.Items) < 1 {
+		data["status"]=enums.WAITING
+		pipelineStatus.Data=data
+		k8s.processEventRepo.Store(pipelineStatus)
 		return podList
 	}
 	podStatus := podList.Items[0].Status.Phase
-	if podStatus == enums.TERMINATING {
-		log.Println("Pod is:", podStatus)
-		return k8s.WaitAndGetInitializedPods(namespace, buildId)
+	if enums.POD_STATUS(podStatus) == enums.POD_TERMINATING {
+		data["status"]=enums.TERMINATING
+		pipelineStatus.Data=data
+		k8s.processEventRepo.Store(pipelineStatus)
+		return k8s.WaitAndGetInitializedPods(namespace, processId,step)
 	}
 
-	if podStatus == enums.POD_INITIALIZING {
-		log.Println("Pod is:", podStatus)
+	if enums.POD_STATUS(podStatus)  == enums.POD_INITIALIZING {
+		data["status"]=enums.INITIALIZING
+		pipelineStatus.Data=data
+		k8s.processEventRepo.Store(pipelineStatus)
 		podStatus = podList.Items[0].Status.Phase
 	}
 	return podList
 }
 
-func NewK8sService(Kcs *kubernetes.Clientset,repo repository.LogEventRepository) service.K8s {
+func NewK8sService(Kcs *kubernetes.Clientset,repo repository.LogEventRepository,processEventRepo repository.ProcessEventRepository) service.K8s {
 	return &k8sService{
-		Kcs:  Kcs,
-		repo: repo,
+		Kcs:          Kcs,
+		logEventRepo: repo,
+		processEventRepo:processEventRepo,
 	}
 }

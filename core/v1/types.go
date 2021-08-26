@@ -36,6 +36,8 @@ type PodListGetOption struct {
 	Duration int
 }
 
+
+
 func(resource Resource)Validate() error{
 	if resource.Type != "" {
 		if resource.Type == enums.GIT || resource.Type == enums.IMAGE {
