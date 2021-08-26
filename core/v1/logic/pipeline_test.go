@@ -3,6 +3,7 @@ package logic
 import (
 	v1 "github.com/klovercloud-ci/core/v1"
 	"github.com/stretchr/testify/assert"
+	"log"
 	"reflect"
 	"testing"
 )
@@ -30,10 +31,9 @@ func Test_loadArgs(t *testing.T) {
 	service:=pipelineService{
 		k8s:      &mockK8sService{},
 		tekton:   nil,
-		pipeline: pipeline,
 	}
-	service.LoadArgs(service.k8s)
-
+	service.LoadArgs(pipeline)
+	log.Println(service.pipeline)
 	testCase.actual = service.pipeline.Steps[0].Arg.Data
 	if !reflect.DeepEqual(testCase.expected, testCase.actual) {
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
@@ -46,8 +46,8 @@ func Test_loadArgs(t *testing.T) {
 	pipeline.Steps[0].Arg = variable
 	testCase.expected = map[string]string{"env1": "value1", "env2": "value2", "key1": "value1", "key2": "value2"}
 
-	service.pipeline=pipeline
-	service.LoadArgs(service.k8s)
+	//service.pipeline=pipeline
+	service.LoadArgs(pipeline)
 
 	testCase.actual = service.pipeline.Steps[0].Arg.Data
 	testCase.actual = pipeline.Steps[0].Arg.Data
@@ -78,9 +78,8 @@ func Test_loadEnvs(t *testing.T) {
 	service:=pipelineService{
 		k8s:      &mockK8sService{},
 		tekton:   nil,
-		pipeline: pipeline,
 	}
-	service.LoadEnvs(service.k8s)
+	service.LoadEnvs(pipeline)
 	testCase.actual = service.pipeline.Steps[0].Env.Data
 	if !reflect.DeepEqual(testCase.expected, testCase.actual) {
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
@@ -91,7 +90,7 @@ func Test_loadEnvs(t *testing.T) {
 	}{Name:"secret0", Namespace:"klovercloud"})
 	pipeline.Steps[0].Env = variable
 	testCase.expected = map[string]string{"env1": "value1", "env2": "value2", "key1": "value1", "key2": "value2"}
-	service.LoadEnvs(service.k8s)
+	service.LoadEnvs(pipeline)
 	testCase.actual = service.pipeline.Steps[0].Env.Data
 	if !reflect.DeepEqual(testCase.expected, testCase.actual) {
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)

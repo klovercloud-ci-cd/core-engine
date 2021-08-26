@@ -11,7 +11,7 @@ type stepService struct {
 }
 
 
-func (service * stepService)SetInput(url,revision string){
+func (service * stepService)SetInput(url,revision string,){
 	if service.step.Type==enums.BUILD{
 		service.step.Input.Url=url
 		service.step.Input.Revision=revision

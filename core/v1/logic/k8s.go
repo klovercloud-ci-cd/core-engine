@@ -21,6 +21,8 @@ type k8sService struct {
 }
 
 func (k8s k8sService) LogContainer(namespace, podName, containerName, step, processId string,stepType enums.STEP_TYPE ) {
+	data:=make(map[string]interface{})
+	data["step"]=step
 	req := k8s.Kcs.CoreV1().Pods(namespace).GetLogs(
 		podName,
 		&corev1.PodLogOptions{
@@ -38,8 +40,6 @@ func (k8s k8sService) LogContainer(namespace, podName, containerName, step, proc
 		log.Println(err.Error())
 		if strings.Contains(err.Error(), "image can't be pulled") || strings.Contains(err.Error(), "pods \""+podName+"\" not found") || strings.Contains(err.Error(), "pod \""+podName+"\" is terminated") {
 			if stepType==enums.BUILD{
-				data:=make(map[string]interface{})
-				data["step"]=step
 				data["status"]=enums.BUILD_FAILED
 				data["reason"]=err.Error()
 				k8s.processEventRepo.Store(v1.PipelineProcessStatus{

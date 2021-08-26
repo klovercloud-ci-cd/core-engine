@@ -12,24 +12,27 @@ type pipelineService struct {
 	pipeline v1.Pipeline
 }
 
-func (p pipelineService) LoadArgs(k8s service.K8s) {
-	for i,_:=range p.pipeline.Steps{
+func (p *pipelineService) LoadArgs(pipeline v1.Pipeline) {
+	p.pipeline=pipeline
+	for i,_:=range p.pipeline.Steps {
 		s := stepService{p.pipeline.Steps[i]}
-		s.SetArgs(k8s)
+		s.SetArgs(p.k8s)
 		p.pipeline.Steps[i]=s.step
 	}
 
 }
 
-func (p pipelineService) LoadEnvs(k8s service.K8s) {
+func (p *pipelineService) LoadEnvs(pipeline v1.Pipeline) {
+	p.pipeline=pipeline
 	for i,_:=range p.pipeline.Steps{
 		s := stepService{p.pipeline.Steps[i]}
-		s.SetEnvs(k8s)
+		s.SetEnvs(p.k8s)
 		p.pipeline.Steps[i]=s.step
 	}
 }
 
-func (p pipelineService) SetInputResource(url, revision string) {
+func (p *pipelineService) SetInputResource(url, revision string,pipeline v1.Pipeline) {
+	p.pipeline=pipeline
 	for i,_:=range p.pipeline.Steps{
 		s := stepService{p.pipeline.Steps[i]}
 		s.SetInput(url,revision)
@@ -37,13 +40,13 @@ func (p pipelineService) SetInputResource(url, revision string) {
 	}
 }
 
-func (p pipelineService) Build(k8s service.K8s, url, revision string) {
-	p.LoadArgs(k8s)
-	p.LoadEnvs(k8s)
-	p.SetInputResource(url,revision)
+func (p *pipelineService) Build( url, revision string,pipeline v1.Pipeline) {
+	p.LoadArgs(pipeline)
+	p.LoadEnvs(pipeline)
+	p.SetInputResource(url,revision,pipeline)
 }
 
-func (p pipelineService) apply() {
+func (p *pipelineService) apply() {
 	// all the err logs will be persisted by processId
 	for _,each:=range p.pipeline.Steps{
 		input,outputs,err:=p.tekton.InitPipelineResources(each,p.pipeline.Label,p.pipeline.ProcessId)
@@ -96,8 +99,8 @@ func (p pipelineService) apply() {
 	}
 }
 
-func (p pipelineService) Apply(url,revision string) error {
-	p.Build(p.k8s,url,revision)
+func (p *pipelineService) Apply(url,revision string,pipeline v1.Pipeline) error {
+	p.Build(url,revision,pipeline)
 	if p.pipeline.Label==nil{
 		p.pipeline.Label=make(map[string]string)
 	}
@@ -112,10 +115,10 @@ func (p pipelineService) Apply(url,revision string) error {
 }
 
 
-func NewPipelineService(k8s service.K8s,tekton service.Tekton,pipeline v1.Pipeline) service.Pipeline {
+func NewPipelineService(k8s service.K8s,tekton service.Tekton) service.Pipeline {
 	return &pipelineService{
 		k8s: k8s,
 		tekton: tekton,
-		pipeline: pipeline,
+		pipeline: v1.Pipeline{},
 	}
 }
