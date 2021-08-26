@@ -5,6 +5,7 @@ import (
 	v1 "github.com/klovercloud-ci/core/v1"
 	"github.com/klovercloud-ci/core/v1/repository"
 	"github.com/klovercloud-ci/core/v1/service"
+	"github.com/klovercloud-ci/enums"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strconv"
@@ -14,7 +15,7 @@ type mockK8sService struct {
 	repo repository.LogEventRepository
 }
 
-func (k8s mockK8sService) LogContainer(namespace, podName, containerName, step, buildId string) {
+func (k8s mockK8sService) LogContainer(namespace, podName, containerName, step, buildId string,stepType enums.STEP_TYPE ) {
 	panic("implement me")
 }
 
