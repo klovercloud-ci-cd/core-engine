@@ -6,7 +6,7 @@ import (
 )
 
 func GetPipelineService() service.Pipeline{
-	k8s:=logic.NewK8sService(nil,nil,nil)
-	tekon:=logic.NewTektonService(nil,nil)
+	var k8s service.K8s
+	var tekon service.Tekton
 	return logic.NewPipelineService(k8s,tekon)
 }
