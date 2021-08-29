@@ -9,11 +9,16 @@ import (
 	"io"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	"strconv"
 )
 
 type mockK8sService struct {
 	repo repository.LogEventRepository
+}
+
+func (k8s mockK8sService) RequestContainerLog(namespace string, podName string, containerName string) *rest.Request {
+	panic("implement me")
 }
 
 func (k8s mockK8sService) GetContainerLog(namespace, podName, containerName string,taskRunLabel map[string]string) (io.ReadCloser, error) {

@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/rest"
 	"log"
 	"strings"
 	"time"
@@ -23,17 +24,7 @@ type k8sService struct {
 }
 
 func (k8s k8sService) GetContainerLog(namespace, podName, containerName string,taskRunLabel map[string]string) (io.ReadCloser, error) {
-	req :=k8s.Kcs.CoreV1().Pods(namespace).GetLogs(
-		podName,
-		&corev1.PodLogOptions{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Task",
-				APIVersion: "tekton.dev/v1",
-			},
-			Container: containerName,
-			Follow:    true,
-		},
-	)
+	req :=k8s.RequestContainerLog(namespace, podName, containerName)
 	readCloser, err := req.Stream()
 
 	if err != nil  {
@@ -58,32 +49,22 @@ func (k8s k8sService) GetContainerLog(namespace, podName, containerName string,t
 func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName, step, processId string,stepType enums.STEP_TYPE ) {
 	processEventData :=make(map[string]interface{})
 	processEventData["step"]=step
-	req := k8s.Kcs.CoreV1().Pods(namespace).GetLogs(
-		podName,
-		&corev1.PodLogOptions{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Task",
-				APIVersion: "tekton.dev/v1",
-			},
-			Container: containerName,
-			Follow:    true,
-		},
-	)
+	req := k8s.RequestContainerLog(namespace, podName, containerName)
 
 	readCloser, err := req.Stream()
 	for err != nil {
 		log.Println(err.Error())
 		if strings.Contains(err.Error(), "image can't be pulled") || strings.Contains(err.Error(), "pods \""+podName+"\" not found") || strings.Contains(err.Error(), "pod \""+podName+"\" is terminated") {
-			if stepType==enums.BUILD{
-				processEventData["status"]=enums.BUILD_FAILED
-				processEventData["reason"]=err.Error()
+			if stepType == enums.BUILD {
+				processEventData["status"] = enums.BUILD_FAILED
+				processEventData["reason"] = err.Error()
 				k8s.processEventRepo.Store(v1.PipelineProcessEvent{
 					ProcessId: processId,
 					Data:      processEventData,
 				})
 			}
 			return
-		}else{
+		} else {
 			readCloser, err = req.Stream()
 		}
 	}
@@ -93,7 +74,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 		data, isPrefix, err := reader.ReadLine()
 		if err != nil {
 			log.Println(err)
-			processEventData["reason"]=err.Error()
+			processEventData["reason"] = err.Error()
 			k8s.processEventRepo.Store(v1.PipelineProcessEvent{
 				ProcessId: processId,
 				Data:      processEventData,
@@ -134,8 +115,20 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 		readCloser.Close()
 	}
 
+}
 
-
+func (k8s k8sService) RequestContainerLog(namespace string, podName string, containerName string) *rest.Request {
+	return k8s.Kcs.CoreV1().Pods(namespace).GetLogs(
+		podName,
+		&corev1.PodLogOptions{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Task",
+				APIVersion: "tekton.dev/v1",
+			},
+			Container: containerName,
+			Follow:    true,
+		},
+	)
 }
 
 func (k8s * k8sService) GetSecret(name,namespace string)(corev1.Secret,error){

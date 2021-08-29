@@ -4,6 +4,7 @@ import (
 	"github.com/klovercloud-ci/enums"
 	"io"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/rest"
 )
 type K8s interface {
 	GetSecret(name,namespace string) (corev1.Secret,error)
@@ -12,6 +13,7 @@ type K8s interface {
 	WaitAndGetInitializedPods(namespace,processId,step string)*corev1.PodList
 	FollowContainerLifeCycle(namespace,podName,containerName,step,processId string,stepType enums.STEP_TYPE )
 	GetContainerLog(namespace,podName,containerName string,taskRunLabel map[string]string) (io.ReadCloser, error)
+	RequestContainerLog(namespace string, podName string, containerName string) *rest.Request
 }
 
 
