@@ -10,6 +10,3 @@ type LogEvent struct {
 	CreatedAt time.Time `bson:"created_at"`
 }
 
-func (e LogEvent) Println(s string, s2 string) {
-
-}

@@ -18,6 +18,22 @@ type tektonService struct {
 	LogEventRepo repository.LogEventRepository
 }
 
+func (tekton *tektonService) GetTaskRun(name string, waitUntilTaskRunIsCompleted bool) (*v1alpha1.TaskRun, error) {
+	tRun, taskrunGetingErr := tekton.Tcs.TektonV1alpha1().TaskRuns(config.CI_NAMESPACE).Get(name, metaV1.GetOptions{
+		TypeMeta: metaV1.TypeMeta{
+			Kind:       "TaskRun",
+			APIVersion: "tekton.dev/v1",
+		},
+	})
+	if taskrunGetingErr != nil {
+		return nil, taskrunGetingErr
+	}
+	if !tRun.IsDone() && waitUntilTaskRunIsCompleted == true {
+		return tekton.GetTaskRun( name, waitUntilTaskRunIsCompleted)
+	}
+	return tRun, nil
+}
+
 func (tekton *tektonService) InitPipelineResources(step v1.Step,label map[string]string,processId string)(inputResource v1alpha1.PipelineResource,outputResource []v1alpha1.PipelineResource,err error){
 	if label==nil{
 		label=make(map[string]string)
@@ -333,9 +349,9 @@ func(tekton *tektonService) DeleteTaskRunByProcessId(processId string) error{
 	return nil
 }
 func(tekton *tektonService) PurgeByProcessId(processId string) {
-	tekton.DeletePipelineResourceByProcessId(processId)
-	tekton.DeleteTaskByProcessId(processId)
-	tekton.DeleteTaskRunByProcessId(processId)
+	_ = tekton.DeletePipelineResourceByProcessId(processId)
+	_ = tekton.DeleteTaskByProcessId(processId)
+	_ = tekton.DeleteTaskRunByProcessId(processId)
 }
 
 func NewTektonService(tcs  *versioned.Clientset,logEventRepo repository.LogEventRepository) service.Tekton{

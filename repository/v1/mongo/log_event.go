@@ -18,9 +18,9 @@ type logEventRepository struct {
 	timeout  time.Duration
 }
 
-func (l logEventRepository) Store(log v1.LogEvent) {
+func (l logEventRepository) Store(event v1.LogEvent) {
 	coll := l.manager.Db.Collection(LogEventCollection)
-	_, err := coll.InsertOne(l.manager.Ctx, log)
+	_, err := coll.InsertOne(l.manager.Ctx, event)
 	if err != nil {
 		log.Println("[ERROR] Insert document:", err.Error())
 	}

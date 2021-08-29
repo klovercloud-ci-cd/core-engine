@@ -1,32 +1,54 @@
 package in_memory
 
 import (
+	"container/list"
 	v1 "github.com/klovercloud-ci/core/v1"
 	"github.com/klovercloud-ci/core/v1/repository"
-	"github.com/orcaman/concurrent-map"
 )
 
-var processEvents cmap.ConcurrentMap
 
+var processEventStore map[string]*list.List
 
 type processEventRepository struct {
 
 }
 
-func (p processEventRepository) Store(data v1.PipelineProcessStatus) {
-	if processEvents==nil{
-		processEvents=cmap.New()
+
+
+func (p processEventRepository) Store(data v1.PipelineProcessEvent) {
+	if processEventStore==nil{
+		processEventStore= map[string]*list.List{}
 	}
-	processEvents.Set(data.ProcessId,data.Data)
+	_,ok:=processEventStore[data.ProcessId]
+	if !ok{
+		processEventStore[data.ProcessId]=list.New()
+	}
+	processEventStore[data.ProcessId].PushBack(&data.Data)
 }
 
 func (p processEventRepository) GetByProcessId(processId string) map[string]interface{}{
-	if tmp, ok := processEvents.Get(processId); ok {
-		return tmp.(map[string]interface{})
+	if _, ok := processEventStore[processId]; ok {
+		e:=processEventStore[processId]
+		if processEventStore[processId].Front()!=nil {
+			t:=e.Front().Value
+			return  t.(map[string]interface{})
+		}
 	}
+
 	return nil
 }
 
+func (p processEventRepository) DequeueByProcessId(processId string) map[string]interface{} {
+	if _, ok := processEventStore[processId]; ok {
+		e:=processEventStore[processId]
+		if processEventStore[processId].Front()!=nil {
+			t:=e.Remove(e.Front())
+			return  t.(map[string]interface{})
+		}
+	}
+
+	return nil
+}
 func NewProcessEventRepository() (repository.ProcessEventRepository) {
 	return &processEventRepository{
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/klovercloud-ci/core/v1/repository"
 	"github.com/klovercloud-ci/core/v1/service"
 	"github.com/klovercloud-ci/enums"
+	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/api/core/v1"
@@ -18,11 +19,45 @@ type k8sService struct {
 	Kcs          *kubernetes.Clientset
 	logEventRepo repository.LogEventRepository
 	processEventRepo repository.ProcessEventRepository
+	tekton service.Tekton
 }
 
-func (k8s k8sService) LogContainer(namespace, podName, containerName, step, processId string,stepType enums.STEP_TYPE ) {
-	data:=make(map[string]interface{})
-	data["step"]=step
+func (k8s k8sService) GetContainerLog(namespace, podName, containerName string,taskRunLabel map[string]string) (io.ReadCloser, error) {
+	req :=k8s.Kcs.CoreV1().Pods(namespace).GetLogs(
+		podName,
+		&corev1.PodLogOptions{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Task",
+				APIVersion: "tekton.dev/v1",
+			},
+			Container: containerName,
+			Follow:    true,
+		},
+	)
+	readCloser, err := req.Stream()
+
+	if err != nil  {
+		log.Println(err.Error())
+
+		if strings.Contains(err.Error(), "not found") {
+			return nil, err
+		}
+		time.Sleep(time.Second)
+		taskRunName:=taskRunLabel["revision"] + "-" +taskRunLabel["processId"]
+		tRun, tRunError := k8s.tekton.GetTaskRun(taskRunName, true)
+
+		if tRunError == nil && !tRun.IsCancelled() {
+			readCloser, err = k8s.GetContainerLog(namespace,podName,containerName,taskRunLabel)
+		}
+		return nil, err
+	}
+
+	return readCloser, nil
+}
+
+func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName, step, processId string,stepType enums.STEP_TYPE ) {
+	processEventData :=make(map[string]interface{})
+	processEventData["step"]=step
 	req := k8s.Kcs.CoreV1().Pods(namespace).GetLogs(
 		podName,
 		&corev1.PodLogOptions{
@@ -40,18 +75,17 @@ func (k8s k8sService) LogContainer(namespace, podName, containerName, step, proc
 		log.Println(err.Error())
 		if strings.Contains(err.Error(), "image can't be pulled") || strings.Contains(err.Error(), "pods \""+podName+"\" not found") || strings.Contains(err.Error(), "pod \""+podName+"\" is terminated") {
 			if stepType==enums.BUILD{
-				data["status"]=enums.BUILD_FAILED
-				data["reason"]=err.Error()
-				k8s.processEventRepo.Store(v1.PipelineProcessStatus{
+				processEventData["status"]=enums.BUILD_FAILED
+				processEventData["reason"]=err.Error()
+				k8s.processEventRepo.Store(v1.PipelineProcessEvent{
 					ProcessId: processId,
-					Data:      data,
+					Data:      processEventData,
 				})
 			}
 			return
 		}else{
 			readCloser, err = req.Stream()
 		}
-
 	}
 	reader := bufio.NewReaderSize(readCloser, 64)
 	lastLine := ""
@@ -59,6 +93,11 @@ func (k8s k8sService) LogContainer(namespace, podName, containerName, step, proc
 		data, isPrefix, err := reader.ReadLine()
 		if err != nil {
 			log.Println(err)
+			processEventData["reason"]=err.Error()
+			k8s.processEventRepo.Store(v1.PipelineProcessEvent{
+				ProcessId: processId,
+				Data:      processEventData,
+			})
 			//log.Println("appId=" + taskrun.AppId + ", appType=" + taskrun.AppType + ", processId=" + processId + ", taskType=" + taskType + ", revision=" + taskrun.Input.Revision + ", error=" + err.Error())
 			return
 		}
@@ -91,7 +130,6 @@ func (k8s k8sService) LogContainer(namespace, podName, containerName, step, proc
 
 		}
 	}
-
 	if readCloser != nil {
 		readCloser.Close()
 	}
@@ -99,8 +137,6 @@ func (k8s k8sService) LogContainer(namespace, podName, containerName, step, proc
 
 
 }
-
-
 
 func (k8s * k8sService) GetSecret(name,namespace string)(corev1.Secret,error){
 	sec,err:=k8s.Kcs.CoreV1().
@@ -146,7 +182,7 @@ func (k8s * k8sService) WaitAndGetInitializedPods(namespace,processId,step strin
 	var podList *corev1.PodList
 	data:=make(map[string]interface{})
 	data["step"]=step
-	pipelineStatus:=v1.PipelineProcessStatus{ProcessId: processId}
+	pipelineStatus:=v1.PipelineProcessEvent{ProcessId: processId}
 	podList = k8s.GetPodListByProcessId(namespace,processId,v1.PodListGetOption{
 		Wait:     true,
 		Duration: enums.DEFAULT_POD_INITIALIZATION_WAIT_DURATION,
@@ -164,7 +200,6 @@ func (k8s * k8sService) WaitAndGetInitializedPods(namespace,processId,step strin
 		k8s.processEventRepo.Store(pipelineStatus)
 		return k8s.WaitAndGetInitializedPods(namespace, processId,step)
 	}
-
 	if enums.POD_STATUS(podStatus)  == enums.POD_INITIALIZING {
 		data["status"]=enums.INITIALIZING
 		pipelineStatus.Data=data
@@ -174,10 +209,11 @@ func (k8s * k8sService) WaitAndGetInitializedPods(namespace,processId,step strin
 	return podList
 }
 
-func NewK8sService(Kcs *kubernetes.Clientset,repo repository.LogEventRepository,processEventRepo repository.ProcessEventRepository) service.K8s {
+func NewK8sService(Kcs *kubernetes.Clientset,repo repository.LogEventRepository,processEventRepo repository.ProcessEventRepository,tekton service.Tekton) service.K8s {
 	return &k8sService{
 		Kcs:          Kcs,
 		logEventRepo: repo,
 		processEventRepo:processEventRepo,
+		tekton: tekton,
 	}
 }

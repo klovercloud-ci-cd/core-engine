@@ -16,4 +16,6 @@ type Tekton interface {
 	DeleteTaskByProcessId(processId string) error
 	DeleteTaskRunByProcessId(processId string) error
 	PurgeByProcessId(processId string)
+    GetTaskRun( name string, waitUntilTaskRunIsCompleted bool) (*v1alpha1.TaskRun, error)
+
 }

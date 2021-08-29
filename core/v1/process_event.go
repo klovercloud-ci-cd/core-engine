@@ -1,5 +1,5 @@
 package v1
-type PipelineProcessStatus struct {
+type PipelineProcessEvent struct {
 	ProcessId string  `bson:"process_id"`
 	Data map[string]interface{}  `bson:"data"`
 }
