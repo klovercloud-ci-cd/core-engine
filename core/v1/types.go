@@ -6,20 +6,20 @@ import (
 )
 
 type Resource struct {
-	Type enums.PIPELINE_RESOURCE_TYPE `json:"type"`
-	Url string `json:"url"`
-	Revision string  `json:"revision"`
+	Type     enums.PIPELINE_RESOURCE_TYPE `json:"type"`
+	Url      string                       `json:"url"`
+	Revision string                       `json:"revision"`
 }
 
 type Variable struct {
-	Secrets     []struct{
-		Name string `json:"name"`
-		Namespace   string `json:"namespace"`
-	}`json:"secrets"`
-	ConfigMaps  [] struct{
-		Name string `json:"name"`
-		Namespace   string `json:"namespace"`
-	}`json:"configMaps"`
+	Secrets []struct {
+		Name      string `json:"name"`
+		Namespace string `json:"namespace"`
+	} `json:"secrets"`
+	ConfigMaps []struct {
+		Name      string `json:"name"`
+		Namespace string `json:"namespace"`
+	} `json:"configMaps"`
 	Data map[string]string `json:"data"`
 }
 
@@ -34,24 +34,22 @@ type PipelineApplyOption struct {
 	EnablePurging bool
 }
 type PodListGetOption struct {
-	Wait bool
+	Wait     bool
 	Duration int
 }
 
-
-
-func(resource Resource)Validate() error{
-	if resource.Type != "" {
-		if resource.Type == enums.GIT || resource.Type == enums.IMAGE {
-			if resource.Url == "" {
-				return errors.New("resource url is empty")
-			}
-			if resource.Revision == "" {
-				return errors.New("resource revision is empty")
-			}
-			return nil
-		}
-		return errors.New("resource type is not match")
+func (resource Resource) Validate() error {
+	if resource.Type!=enums.IMAGE &&  resource.Type!=enums.GIT{
+		return errors.New("Invalid resource type!")
 	}
-	return errors.New("resource type is required")
+	if resource.Type == "" {
+		return errors.New("Resource type is required!")
+	}
+	if resource.Url == "" {
+		return errors.New("Resource url is required!")
+	}
+	if resource.Revision == "" {
+		return errors.New("Resource revision is required!")
+	}
+	return nil
 }

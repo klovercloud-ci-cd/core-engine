@@ -85,7 +85,6 @@ func (p *pipelineService) Build( url, revision string,pipeline v1.Pipeline) {
 }
 
 func (p *pipelineService) apply() {
-	// all the err logs will be persisted by processId
 	for _,each:=range p.pipeline.Steps{
 		input,outputs,err:=p.tekton.InitPipelineResources(each,p.pipeline.Label,p.pipeline.ProcessId)
 		if err!=nil{

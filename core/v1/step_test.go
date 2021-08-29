@@ -3,6 +3,7 @@ package v1
 import (
 	"github.com/klovercloud-ci/enums"
 	"github.com/stretchr/testify/assert"
+	"log"
 	"testing"
 )
 
@@ -57,6 +58,7 @@ func Test_Validate(t *testing.T) {
 	step.Input.Type = ""
 	t.Run("when resource type is empty", func(t *testing.T) {
 		actualError := Step.Validate(step)
+		log.Print(actualError)
 		assert.Error(t, actualError)
 	})
 }

@@ -54,10 +54,4 @@ func TestPipeline_Validate(t *testing.T) {
 		actualError := Pipeline.Validate(pipeline)
 		assert.Error(t, actualError)
 	})
-	pipeline.ProcessId = "0125632"
-	pipeline.Label = nil
-	t.Run("when pipeline label is nil", func(t *testing.T) {
-		actualError := Pipeline.Validate(pipeline)
-		assert.Error(t, actualError)
-	})
 }

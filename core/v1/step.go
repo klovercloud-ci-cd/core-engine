@@ -16,29 +16,24 @@ type Step struct {
 }
 
 func (step Step)Validate()error{
-	if step.Name != ""{
-		if step.Type == enums.BUILD || step.Type == enums.DEPLOY{
-			if step.ServiceAccount == ""{
-				return errors.New("step service account required")
-			}
-			err:=step.Input.Validate()
-			if err!=nil{
-				return err
-			}
-
-			for _,each:=range step.Outputs{
-				err:=each.Validate()
-				if err!=nil{
-					return err
-				}
-			}
-			return nil
-		}
-		if step.Type != "" {
-			return errors.New("step type is required")
-		}
-
-		return errors.New("step type is not match")
+	if step.Name == ""{
+		return errors.New("Step name required!")
 	}
-	return errors.New("step name required")
+	if step.Type!=enums.BUILD && step.Type!=enums.DEPLOY{
+		return errors.New("Invalid step type!")
+	}
+	err:=step.Input.Validate()
+	if err!=nil{
+		return err
+	}
+	for _,each:=range step.Outputs{
+		err:=each.Validate()
+		if err!=nil{
+			return err
+		}
+	}
+	if step.ServiceAccount == ""{
+		return errors.New("Service account required!")
+	}
+return nil
 }

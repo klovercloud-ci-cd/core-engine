@@ -12,17 +12,15 @@ type Pipeline struct {
 }
 func(pipeline Pipeline)Validate()error{
 	if pipeline.ApiVersion == "" {
-		return errors.New("pipeline api version is required")
+		return errors.New("Api version is required!")
 	}
 	if pipeline.Name == "" {
-		return errors.New("pipeline name is required")
+		return errors.New("Pipeline name is required!")
 	}
 	if pipeline.ProcessId == "" {
-		return errors.New("pipeline process id is required")
+		return errors.New("Pipeline process id is required!")
 	}
-	if pipeline.Label == nil {
-		return errors.New("pipeline label is required")
-	}
+
 	for _,each:=range pipeline.Steps{
 		err:=each.Validate()
 		if err!=nil{

@@ -53,15 +53,12 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 
 	readCloser, err := req.Stream()
 	for err != nil {
-		log.Println(err.Error())
+		k8s.logEventRepo.Store(v1.LogEvent{ processId,err.Error(),step,time.Now().UTC()})
 		if strings.Contains(err.Error(), "image can't be pulled") || strings.Contains(err.Error(), "pods \""+podName+"\" not found") || strings.Contains(err.Error(), "pod \""+podName+"\" is terminated") {
 			if stepType == enums.BUILD {
 				processEventData["status"] = enums.BUILD_FAILED
 				processEventData["reason"] = err.Error()
-				k8s.processEventRepo.Store(v1.PipelineProcessEvent{
-					ProcessId: processId,
-					Data:      processEventData,
-				})
+				k8s.processEventRepo.Store(v1.PipelineProcessEvent{processId,processEventData})
 			}
 			return
 		} else {
@@ -73,13 +70,9 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 	for {
 		data, isPrefix, err := reader.ReadLine()
 		if err != nil {
-			log.Println(err)
+			k8s.logEventRepo.Store(v1.LogEvent{ processId,err.Error(),step,time.Now().UTC()})
 			processEventData["reason"] = err.Error()
-			k8s.processEventRepo.Store(v1.PipelineProcessEvent{
-				ProcessId: processId,
-				Data:      processEventData,
-			})
-			//log.Println("appId=" + taskrun.AppId + ", appType=" + taskrun.AppType + ", processId=" + processId + ", taskType=" + taskType + ", revision=" + taskrun.Input.Revision + ", error=" + err.Error())
+			k8s.processEventRepo.Store(v1.PipelineProcessEvent{processId,processEventData})
 			return
 		}
 
@@ -98,6 +91,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 		}
 		for _, line := range lines {
 			temp := strings.ToLower(line)
+			k8s.logEventRepo.Store(v1.LogEvent{ processId,temp,step,time.Now().UTC()})
 			if (!strings.HasPrefix(temp, "progress") && (!strings.HasSuffix(temp, " mb") || !strings.HasSuffix(temp, " kb"))) && !strings.HasPrefix(temp, "downloading from") {
 
 			}
