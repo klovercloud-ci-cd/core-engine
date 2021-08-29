@@ -12,13 +12,16 @@ import (
 func GetPipelineService() service.Pipeline{
 	var k8s service.K8s
 	var tekton service.Tekton
+
+	tektonClientSet,k8sClientSet:=config.GetClientSet()
 	if config.Database==enums.Mongo{
-		k8s=logic.NewK8sService(nil,mongo.NewLogEventRepository(),in_memory.NewProcessEventRepository(),nil)
-		tekton = logic.NewTektonService(nil, mongo.NewLogEventRepository())
+		tekton = logic.NewTektonService(tektonClientSet, mongo.NewLogEventRepository())
+		k8s=logic.NewK8sService(k8sClientSet,logic.NewLogEventService(mongo.NewLogEventRepository()),logic.NewProcessEventService(in_memory.NewProcessEventRepository()),tekton)
+
 	}
 	if config.Database == enums.Inmemory{
-		k8s = logic.NewK8sService(nil, in_memory.NewLogEventRepository(),in_memory.NewProcessEventRepository(),nil)
-		tekton = logic.NewTektonService(nil,in_memory.NewLogEventRepository())
+		tekton = logic.NewTektonService(tektonClientSet,in_memory.NewLogEventRepository())
+		k8s = logic.NewK8sService(k8sClientSet, logic.NewLogEventService(in_memory.NewLogEventRepository()),logic.NewProcessEventService(in_memory.NewProcessEventRepository()),tekton)
 	}
 	return logic.NewPipelineService(k8s,tekton)
 }

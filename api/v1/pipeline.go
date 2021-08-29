@@ -16,6 +16,8 @@ type pipelineApi struct {
 }
 
 func (p pipelineApi) GetLog(context echo.Context)error {
+	processId:=context.Param("processId")
+log.Println(processId)
 	panic("implement me")
 }
 

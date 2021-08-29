@@ -3,7 +3,6 @@ package logic
 import (
 	"errors"
 	v1 "github.com/klovercloud-ci/core/v1"
-	"github.com/klovercloud-ci/core/v1/repository"
 	"github.com/klovercloud-ci/core/v1/service"
 	"github.com/klovercloud-ci/enums"
 	"io"
@@ -14,7 +13,7 @@ import (
 )
 
 type mockK8sService struct {
-	repo repository.LogEventRepository
+	service service.LogEvent
 }
 
 func (k8s mockK8sService) RequestContainerLog(namespace string, podName string, containerName string) *rest.Request {
@@ -106,8 +105,8 @@ func InitConfigMaps()[]corev1.ConfigMap{
 	return data
 }
 
-func NewMockK8sService(repo repository.LogEventRepository) service.K8s {
+func NewMockK8sService(service service.LogEvent) service.K8s {
 	return &mockK8sService{
-		repo: repo,
+		service: service,
 	}
 }

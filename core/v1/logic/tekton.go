@@ -2,20 +2,19 @@ package logic
 
 import (
 	"github.com/klovercloud-ci/config"
-	"github.com/klovercloud-ci/core/v1/repository"
+	"github.com/klovercloud-ci/core/v1"
 	"github.com/klovercloud-ci/core/v1/service"
 	"github.com/klovercloud-ci/enums"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/klovercloud-ci/core/v1"
 	"log"
 	"strconv"
 )
 type tektonService struct {
-	Tcs  *versioned.Clientset
-	LogEventRepo repository.LogEventRepository
+	Tcs             *versioned.Clientset
+	LogEventService service.LogEvent
 }
 
 func (tekton *tektonService) GetTaskRun(name string, waitUntilTaskRunIsCompleted bool) (*v1alpha1.TaskRun, error) {
@@ -354,9 +353,9 @@ func(tekton *tektonService) PurgeByProcessId(processId string) {
 	_ = tekton.DeleteTaskRunByProcessId(processId)
 }
 
-func NewTektonService(tcs  *versioned.Clientset,logEventRepo repository.LogEventRepository) service.Tekton{
+func NewTektonService(tcs  *versioned.Clientset,logEventService service.LogEvent) service.Tekton{
 	return  &tektonService{
-		Tcs:          tcs,
-		LogEventRepo:logEventRepo,
+		Tcs:             tcs,
+		LogEventService: logEventService,
 	}
 }

@@ -3,13 +3,12 @@ package logic
 import (
 	"bufio"
 	v1 "github.com/klovercloud-ci/core/v1"
-	"github.com/klovercloud-ci/core/v1/repository"
 	"github.com/klovercloud-ci/core/v1/service"
 	"github.com/klovercloud-ci/enums"
 	"io"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 	"log"
 	"strings"
@@ -17,10 +16,10 @@ import (
 )
 
 type k8sService struct {
-	Kcs          *kubernetes.Clientset
-	logEventRepo repository.LogEventRepository
-	processEventRepo repository.ProcessEventRepository
-	tekton service.Tekton
+	Kcs                 *kubernetes.Clientset
+	logEventService     service.LogEvent
+	processEventService service.ProcessEvent
+	tekton              service.Tekton
 }
 
 func (k8s k8sService) GetContainerLog(namespace, podName, containerName string,taskRunLabel map[string]string) (io.ReadCloser, error) {
@@ -53,12 +52,12 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 
 	readCloser, err := req.Stream()
 	for err != nil {
-		k8s.logEventRepo.Store(v1.LogEvent{ processId,err.Error(),step,time.Now().UTC()})
+		k8s.logEventService.Store(v1.LogEvent{processId,err.Error(),step,time.Now().UTC()})
 		if strings.Contains(err.Error(), "image can't be pulled") || strings.Contains(err.Error(), "pods \""+podName+"\" not found") || strings.Contains(err.Error(), "pod \""+podName+"\" is terminated") {
 			if stepType == enums.BUILD {
 				processEventData["status"] = enums.BUILD_FAILED
 				processEventData["reason"] = err.Error()
-				k8s.processEventRepo.Store(v1.PipelineProcessEvent{processId,processEventData})
+				k8s.processEventService.Store(v1.PipelineProcessEvent{processId,processEventData})
 			}
 			return
 		} else {
@@ -70,9 +69,9 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 	for {
 		data, isPrefix, err := reader.ReadLine()
 		if err != nil {
-			k8s.logEventRepo.Store(v1.LogEvent{ processId,err.Error(),step,time.Now().UTC()})
+			k8s.logEventService.Store(v1.LogEvent{processId,err.Error(),step,time.Now().UTC()})
 			processEventData["reason"] = err.Error()
-			k8s.processEventRepo.Store(v1.PipelineProcessEvent{processId,processEventData})
+			k8s.processEventService.Store(v1.PipelineProcessEvent{processId,processEventData})
 			return
 		}
 
@@ -91,7 +90,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 		}
 		for _, line := range lines {
 			temp := strings.ToLower(line)
-			k8s.logEventRepo.Store(v1.LogEvent{ processId,temp,step,time.Now().UTC()})
+			k8s.logEventService.Store(v1.LogEvent{processId,temp,step,time.Now().UTC()})
 			if (!strings.HasPrefix(temp, "progress") && (!strings.HasSuffix(temp, " mb") || !strings.HasSuffix(temp, " kb"))) && !strings.HasPrefix(temp, "downloading from") {
 
 			}
@@ -177,30 +176,30 @@ func (k8s * k8sService) WaitAndGetInitializedPods(namespace,processId,step strin
 	if len(podList.Items) < 1 {
 		data["status"]=enums.WAITING
 		pipelineStatus.Data=data
-		k8s.processEventRepo.Store(pipelineStatus)
+		k8s.processEventService.Store(pipelineStatus)
 		return podList
 	}
 	podStatus := podList.Items[0].Status.Phase
 	if enums.POD_STATUS(podStatus) == enums.POD_TERMINATING {
 		data["status"]=enums.TERMINATING
 		pipelineStatus.Data=data
-		k8s.processEventRepo.Store(pipelineStatus)
+		k8s.processEventService.Store(pipelineStatus)
 		return k8s.WaitAndGetInitializedPods(namespace, processId,step)
 	}
 	if enums.POD_STATUS(podStatus)  == enums.POD_INITIALIZING {
 		data["status"]=enums.INITIALIZING
 		pipelineStatus.Data=data
-		k8s.processEventRepo.Store(pipelineStatus)
+		k8s.processEventService.Store(pipelineStatus)
 		podStatus = podList.Items[0].Status.Phase
 	}
 	return podList
 }
 
-func NewK8sService(Kcs *kubernetes.Clientset,repo repository.LogEventRepository,processEventRepo repository.ProcessEventRepository,tekton service.Tekton) service.K8s {
+func NewK8sService(Kcs *kubernetes.Clientset,logEventService service.LogEvent,processEventService service.ProcessEvent,tekton service.Tekton) service.K8s {
 	return &k8sService{
-		Kcs:          Kcs,
-		logEventRepo: repo,
-		processEventRepo:processEventRepo,
-		tekton: tekton,
+		Kcs:                 Kcs,
+		logEventService:     logEventService,
+		processEventService: processEventService,
+		tekton:              tekton,
 	}
 }
