@@ -45,6 +45,7 @@ const (
  	KLOVERCLOUD_KANIKO          = "klovercloud/kaniko:v0.14.0"
 )
 
-
-
-
+const (
+	DEFAULT_PAGE_LIMIT = 10
+	DEFAULT_PAGE       = 0
+)

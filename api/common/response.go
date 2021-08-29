@@ -6,10 +6,10 @@ import (
 )
 
 type MetaData struct {
-	Page       int                 `json:"page"`
-	PerPage    int                 `json:"per_page"`
-	PageCount  int                 `json:"page_count"`
-	TotalCount int                 `json:"total_count"`
+	Page       int64                 `json:"page"`
+	PerPage    int64                 `json:"per_page"`
+	PageCount  int64                 `json:"page_count"`
+	TotalCount int64                 `json:"total_count"`
 	Links      []map[string]string `json:"links"`
 }
 
@@ -43,7 +43,7 @@ func GenerateErrorResponse(c echo.Context, data interface{}, message string) err
 		Data:    data,
 	})
 }
-func GetPaginationMetadata(page, limit, totalRecords, totalPaginatedRecords int) MetaData {
+func GetPaginationMetadata(page, limit, totalRecords, totalPaginatedRecords int64) MetaData {
 	metaData := MetaData{
 		Page:       page,
 		PerPage:    limit,

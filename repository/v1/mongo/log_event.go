@@ -27,7 +27,7 @@ func (l logEventRepository) Store(event v1.LogEvent) {
 	}
 }
 
-func (l logEventRepository) GetByProcessId(processId string, option v1.LogEventQueryOption) []string {
+func (l logEventRepository) GetByProcessId(processId string, option v1.LogEventQueryOption) ([]string,int64) {
 	var results []string
 	query:=bson.M{
 		"$and": []bson.M{
@@ -57,7 +57,11 @@ func (l logEventRepository) GetByProcessId(processId string, option v1.LogEventQ
 		}
 		results= append(results, elemValue.Log)
 	}
-	return results
+	count, err := coll.CountDocuments(l.manager.Ctx, query)
+	if err!=nil{
+		log.Println(err.Error())
+	}
+	return results,count
 }
 
 func NewLogEventRepository() repository.LogEventRepository {

@@ -14,7 +14,7 @@ func (l logEventService) Store(log v1.LogEvent) {
 	l.repo.Store(log)
 }
 
-func (l logEventService) GetByProcessId(processId string, option v1.LogEventQueryOption) []string {
+func (l logEventService) GetByProcessId(processId string, option v1.LogEventQueryOption) ([]string,int64) {
 	return l.repo.GetByProcessId(processId,option)
 }
 

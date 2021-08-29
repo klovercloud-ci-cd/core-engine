@@ -34,7 +34,6 @@ func (p processEventRepository) GetByProcessId(processId string) map[string]inte
 			return  t.(map[string]interface{})
 		}
 	}
-
 	return nil
 }
 
@@ -46,7 +45,6 @@ func (p processEventRepository) DequeueByProcessId(processId string) map[string]
 			return  t.(map[string]interface{})
 		}
 	}
-
 	return nil
 }
 func NewProcessEventRepository() (repository.ProcessEventRepository) {

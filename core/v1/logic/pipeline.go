@@ -15,6 +15,16 @@ type pipelineService struct {
 	k8s service.K8s
 	tekton service.Tekton
 	pipeline v1.Pipeline
+	logEventService service.LogEvent
+	processEventService service.ProcessEvent
+}
+
+func (p *pipelineService) ReadEventByProcessId(processId string) map[string]interface{} {
+	return p.processEventService.DequeueByProcessId(processId)
+}
+
+func (p *pipelineService) GetLogsByProcessId(processId string, option v1.LogEventQueryOption) ([]string, int64) {
+	return p.logEventService.GetByProcessId(processId,option)
 }
 
 func (p *pipelineService) PostOperations(revision,step  string,stepType enums.STEP_TYPE, pipeline v1.Pipeline) {
@@ -155,10 +165,12 @@ func (p *pipelineService) Apply(url,revision string,pipeline v1.Pipeline) error 
 }
 
 
-func NewPipelineService(k8s service.K8s,tekton service.Tekton) service.Pipeline {
+func NewPipelineService(k8s service.K8s,tekton service.Tekton,logEventService service.LogEvent,	processEventService service.ProcessEvent) service.Pipeline {
 	return &pipelineService{
 		k8s: k8s,
 		tekton: tekton,
 		pipeline: v1.Pipeline{},
+		logEventService: logEventService,
+		processEventService: processEventService,
 	}
 }

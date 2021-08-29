@@ -66,7 +66,7 @@ func TestLogEventRepository_Store(t *testing.T) {
 	l:=NewMockLogEventRepository()
 	for _,each:=range testCases{
 		l.Store(each.data)
-		each.actual=l.GetByProcessId(each.data.ProcessId,v1.LogEventQueryOption{})
+		each.actual,_=l.GetByProcessId(each.data.ProcessId,v1.LogEventQueryOption{})
 		if !reflect.DeepEqual(each.expected, each.actual){
 			assert.ElementsMatch(t, each.expected, each.actual)
 		}
@@ -176,7 +176,7 @@ func TestLogEventRepository_GetByProcessId(t *testing.T) {
 		l.Store(each)
 	}
 	for _,each:=range testCases{
-		each.actual=l.GetByProcessId(each.processId,each.option)
+		each.actual,_=l.GetByProcessId(each.processId,each.option)
 		if !reflect.DeepEqual(each.expected, each.actual){
 			assert.ElementsMatch(t, each.expected, each.actual)
 		}
