@@ -42,9 +42,6 @@ func (resource Resource) Validate() error {
 	if resource.Type!=enums.IMAGE &&  resource.Type!=enums.GIT{
 		return errors.New("Invalid resource type!")
 	}
-	if resource.Type == "" {
-		return errors.New("Resource type is required!")
-	}
 	if resource.Url == "" {
 		return errors.New("Resource url is required!")
 	}
