@@ -72,3 +72,113 @@ func TestLogEventRepository_Store(t *testing.T) {
 		}
 	}
 }
+
+func TestLogEventRepository_GetByProcessId(t *testing.T) {
+	type TestCase struct {
+		processId string
+		option v1.LogEventQueryOption
+		expected []string
+		actual []string
+	}
+	testCases:=[]TestCase{}
+	testCases= append(testCases, TestCase{
+		processId: "1",
+		option:    v1.LogEventQueryOption{
+			Pagination: struct {
+				Page  int64
+				Limit int64
+			}{
+				Page:  0,
+				Limit: 0,
+			},
+		},
+		expected:  []string{"Initializing pod","Pulling Image"},
+	})
+	testCases= append(testCases, TestCase{
+		processId: "1",
+		option:    v1.LogEventQueryOption{
+			Pagination: struct {
+				Page  int64
+				Limit int64
+			}{
+				Page:  0,
+				Limit: 1,
+			},
+		},
+		expected:  []string{"Initializing pod"},
+	})
+	testCases= append(testCases, TestCase{
+		processId: "1",
+		option:    v1.LogEventQueryOption{
+			Pagination: struct {
+				Page  int64
+				Limit int64
+			}{
+				Page:  1,
+				Limit: 1,
+			},
+		},
+		expected:  []string{"Pulling Image"},
+	})
+	testCases= append(testCases, TestCase{
+		processId: "1",
+		option:    v1.LogEventQueryOption{
+			Pagination: struct {
+				Page  int64
+				Limit int64
+			}{
+				Page:  0,
+				Limit: 2,
+			},
+		},
+		expected:  []string{"Initializing pod","Pulling Image"},
+	})
+	testCases= append(testCases, TestCase{
+		processId: "1",
+		option:    v1.LogEventQueryOption{
+			Pagination: struct {
+				Page  int64
+				Limit int64
+			}{
+				Page:  0,
+				Limit: 3,
+			},
+		},
+		expected:  []string{"Initializing pod","Pulling Image"},
+	})
+
+	testCases= append(testCases, TestCase{
+		processId: "2",
+		option:    v1.LogEventQueryOption{
+			Step: "buildImage",
+			Pagination: struct {
+				Page  int64
+				Limit int64
+			}{Page:0 , Limit:10 },
+		},
+		expected:  []string{"Failed to initialize pod"},
+	})
+
+	testCases= append(testCases, TestCase{
+		processId: "2",
+		option:    v1.LogEventQueryOption{
+			Step: "deployImage",
+			Pagination: struct {
+				Page  int64
+				Limit int64
+			}{Page:0 , Limit:1 },
+		},
+		expected:  []string{"Initializing pod"},
+	})
+	l:=NewMockLogEventRepository()
+	data:= InitLogEventData()
+	for _,each:=range data{
+		l.Store(each)
+	}
+	for _,each:=range testCases{
+		each.actual=l.GetByProcessId(each.processId,each.option)
+		if !reflect.DeepEqual(each.expected, each.actual){
+			assert.ElementsMatch(t, each.expected, each.actual)
+		}
+	}
+}

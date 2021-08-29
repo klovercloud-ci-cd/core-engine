@@ -10,11 +10,15 @@ type pipelineApi struct {
 	pipelineService service.Pipeline
 }
 
-func (p pipelineApi) Apply(context echo.Context) error {
+func (p pipelineApi) GetLog(context echo.Context)error {
 	panic("implement me")
 }
 
-func (p pipelineApi) GetLog(context echo.Context) error {
+func (p pipelineApi) GetEvents(context echo.Context) error {
+	panic("implement me")
+}
+
+func (p pipelineApi) Apply(context echo.Context) error {
 	panic("implement me")
 }
 

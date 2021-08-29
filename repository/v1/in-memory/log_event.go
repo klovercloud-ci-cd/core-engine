@@ -9,18 +9,15 @@ type logEventRepository struct {
 }
 
 func (l logEventRepository) Store(log v1.LogEvent)  {
-	if IndexedLogEvents[log.ProcessId]==nil{
-		IndexedLogEvents[log.ProcessId]=make(map[int32]v1.LogEvent)
-	}
-	IndexedLogEvents[log.ProcessId][log.Index]=log
+	IndexedLogEvents[log.ProcessId]= append(IndexedLogEvents[log.ProcessId], log)
 }
 
 func (l logEventRepository) GetByProcessId(processId string, option v1.LogEventQueryOption) []string {
-	IndexedData:=IndexedLogEvents[processId]
+	logEvents:=IndexedLogEvents[processId]
 
 	var data []string
-	for i:=option.IndexFrom;i<=option.IndexTo;i++{
-		data= append(data, IndexedData[i].Log)
+	for i:=0;i<len(logEvents);i++{
+		data= append(data, logEvents[i].Log)
 
 	}
 	return data

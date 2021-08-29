@@ -5,6 +5,7 @@ import (
 	v1 "github.com/klovercloud-ci/core/v1"
 	"github.com/klovercloud-ci/core/v1/repository"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"time"
 )
@@ -29,22 +30,21 @@ func (l logEventRepository) Store(event v1.LogEvent) {
 func (l logEventRepository) GetByProcessId(processId string, option v1.LogEventQueryOption) []string {
 	var results []string
 	query:=bson.M{
-		"$and": []bson.M{},
+		"$and": []bson.M{
+
+		},
 	}
-	and:=[]bson.M{}
-	and= append(and, map[string]interface{}{"process_id": processId})
-	if option.IndexTo > 0 {
-		and= append(and, map[string]interface{}{"index": bson.M{
-			"$gte": option.IndexFrom,
-			"$lte": option.IndexTo,
-		}})
-	}
+	and:=[]bson.M{{"process_id": processId}}
 	if option.Step != "" {
 		and= append(and, map[string]interface{}{"step": option.Step})
 	}
 	query["$and"]=and
 	coll := l.manager.Db.Collection(LogEventCollection)
-	result, err := coll.Find(l.manager.Ctx, query)
+	skip:=option.Pagination.Page*option.Pagination.Limit
+	result, err := coll.Find(l.manager.Ctx, query,&options.FindOptions{
+		Limit: &option.Pagination.Limit,
+		Skip:  &skip,
+	})
 	if err!=nil{
 		log.Println(err.Error())
 	}

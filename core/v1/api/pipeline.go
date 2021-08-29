@@ -8,4 +8,5 @@ import (
 type Pipeline interface {
 	Apply(context echo.Context) error
 	GetLog(context echo.Context) error
+	GetEvents(context echo.Context) error
 }

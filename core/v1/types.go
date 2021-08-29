@@ -24,8 +24,10 @@ type Variable struct {
 }
 
 type LogEventQueryOption struct {
-	IndexFrom int32
-	IndexTo int32
+	Pagination struct {
+		Page  int64
+		Limit int64
+	}
 	Step string
 }
 type PipelineApplyOption struct {

@@ -9,29 +9,44 @@ import (
 
 var data []v1.LogEvent
 
-func InitData() {
+func InitLogEventData() [] v1.LogEvent{
 	data = []v1.LogEvent{
 		{
-			Index:     1,
-			ProcessId: "6652",
-			Log:       "hi",
-			Step:      "first",
-			CreatedAt: time.Now(),
+			ProcessId: "1",
+			Log:       "Initializing pod",
+			Step:      "buildImage",
+			CreatedAt: time.Time{},
+		},
+		{
+			ProcessId: "1",
+			Log:       "Pulling Image",
+			Step:      "buildImage",
+			CreatedAt: time.Time{},
 
 		},
 		{
-			Index:     2,
-			ProcessId: "5231",
-			Log:       "hello",
-			Step:      "second",
-			CreatedAt: time.Now(),
+			ProcessId: "2",
+			Log:       "Failed to initialize pod",
+			Step:      "buildImage",
+			CreatedAt: time.Time{},
+		},
+		{
+			ProcessId: "2",
+			Log:        "Initializing pod",
+			Step:      "deployImage",
+			CreatedAt: time.Time{},
+
+		},
+		{
+			ProcessId: "2",
+			Log:        "Pulling Image",
+			Step:      "deployImage",
+			CreatedAt: time.Time{},
 
 		},
 	}
-	this := new(logEventRepository)
-	for _,each:=range data{
-		this.Store(each)
-	}
+
+	return data
 }
 func NewMockLogEventRepository() repository.LogEventRepository{
 	manager:=GetMockDmManager()
