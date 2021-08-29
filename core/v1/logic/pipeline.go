@@ -8,6 +8,7 @@ import (
 	"github.com/klovercloud-ci/enums"
 	"io"
 	"log"
+	"strings"
 )
 
 type pipelineService struct {
@@ -86,6 +87,8 @@ func (p *pipelineService) Build( url, revision string,pipeline v1.Pipeline) {
 
 func (p *pipelineService) apply() {
 	for _,each:=range p.pipeline.Steps{
+		nss := strings.ReplaceAll(each.Name, " ", "")
+		each.Name = nss
 		input,outputs,err:=p.tekton.InitPipelineResources(each,p.pipeline.Label,p.pipeline.ProcessId)
 		if err!=nil{
 			log.Println(err.Error())
