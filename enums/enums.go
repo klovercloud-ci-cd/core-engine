@@ -7,7 +7,12 @@ const (
 	BUILD=STEP_TYPE("BUILD")
 	DEPLOY=STEP_TYPE("DEPLOY")
 )
+const (
+	Mongo = "MONGO"
+	Inmemory = "INMEMORY"
+)
 
+const Api_version = "api/v1"
 type PIPELINE_RESOURCE_TYPE string
 const  (
 	GIT=PIPELINE_RESOURCE_TYPE("git")
