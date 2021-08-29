@@ -1,7 +1,9 @@
 package mongo
 
 import (
+	"context"
 	v1 "github.com/klovercloud-ci/core/v1"
+	"github.com/klovercloud-ci/core/v1/repository"
 	"time"
 )
 
@@ -30,4 +32,13 @@ func InitData() {
 	for _,each:=range data{
 		this.Store(each)
 	}
+}
+func NewMockLogEventRepository() repository.LogEventRepository{
+	manager:=GetMockDmManager()
+	manager.Db.Drop(context.Background())
+	return &logEventRepository{
+		manager: GetMockDmManager(),
+		timeout: 3000,
+	}
+
 }

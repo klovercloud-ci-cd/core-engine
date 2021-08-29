@@ -62,7 +62,6 @@ func (l logEventRepository) GetByProcessId(processId string, option v1.LogEventQ
 
 func NewLogEventRepository() repository.LogEventRepository {
 	return &logEventRepository{
-
 	}
 
 }

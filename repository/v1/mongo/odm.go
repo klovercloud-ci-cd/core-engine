@@ -1,13 +1,11 @@
 package mongo
 
-
 import (
 	"context"
 	"github.com/klovercloud-ci/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
-	"reflect"
 	"sync"
 )
 
@@ -54,20 +52,3 @@ func (dm *dmManager) initConnection() {
 	log.Println("[INFO] Initialized Singleton DB Manager")
 }
 
-func (dm *dmManager) FindOne(collectionName string, filter interface{}, objType reflect.Type) interface{} {
-	coll := dm.Db.Collection(collectionName)
-
-	findResult := coll.FindOne(dm.Ctx, filter)
-	if err := findResult.Err(); err != nil {
-		return nil
-	}
-
-	objValue := reflect.New(objType)
-	obj := objValue.Interface()
-	err := findResult.Decode(obj)
-	if err != nil {
-		log.Println("[ERROR] Find document decoding:", err.Error())
-		return nil
-	}
-	return obj
-}
