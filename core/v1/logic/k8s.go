@@ -92,8 +92,8 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 		for _, line := range lines {
 			temp := strings.ToLower(line)
 			processEventData["log"] = temp
+			processEventData["reason"] = "n/a"
 			listener:=v1.Listener{ProcessId: processId,Log: temp,Step: step}
-			processEventData["reason"] = temp
 			listener.EventData=processEventData
 			go k8s.notifyAll(listener)
 			if (!strings.HasPrefix(temp, "progress") && (!strings.HasSuffix(temp, " mb") || !strings.HasSuffix(temp, " kb"))) && !strings.HasPrefix(temp, "downloading from") {
@@ -171,13 +171,10 @@ func (k8s * k8sService) GetPodListByProcessId(namespace,processId string,option 
 
 func (k8s * k8sService) WaitAndGetInitializedPods(namespace,processId,step string) *corev1.PodList{
 	var podList *corev1.PodList
-
 	listener:=v1.Listener{}
-
 	data:=make(map[string]interface{})
 	data["step"]=step
 	listener.ProcessId=processId
-	//pipelineStatus:=v1.PipelineProcessEvent{ProcessId: processId}
 	podList = k8s.GetPodListByProcessId(namespace,processId,v1.PodListGetOption{
 		Wait:     true,
 		Duration: enums.DEFAULT_POD_INITIALIZATION_WAIT_DURATION,

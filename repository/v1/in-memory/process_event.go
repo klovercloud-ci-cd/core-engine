@@ -22,7 +22,7 @@ func (p processEventRepository) Store(data v1.PipelineProcessEvent) {
 	if !ok{
 		ProcessEventStore[data.ProcessId]=list.New()
 	}
-	ProcessEventStore[data.ProcessId].PushBack(&data.Data)
+	ProcessEventStore[data.ProcessId].PushBack(data.Data)
 }
 
 func (p processEventRepository) GetByProcessId(processId string) map[string]interface{}{

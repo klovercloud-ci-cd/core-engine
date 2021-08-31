@@ -1,11 +1,11 @@
 package logic
 
 import (
+	"errors"
 	"github.com/klovercloud-ci/config"
 	v1 "github.com/klovercloud-ci/core/v1"
 	"github.com/klovercloud-ci/core/v1/service"
 	"github.com/klovercloud-ci/enums"
-	"log"
 	"strings"
 )
 
@@ -95,58 +95,71 @@ func (p *pipelineService) Build( url, revision string,pipeline v1.Pipeline) {
 
 func (p *pipelineService) apply() {
 	for _,each:=range p.pipeline.Steps{
-		nss := strings.ReplaceAll(each.Name, " ", "")
-		each.Name = nss
-		input,outputs,err:=p.tekton.InitPipelineResources(each,p.pipeline.Label,p.pipeline.ProcessId)
-		if err!=nil{
-			log.Println(err.Error())
-			continue
-		}
-		task,err:=p.tekton.InitTask(each,p.pipeline.Label,p.pipeline.ProcessId)
-		if err!=nil{
-			log.Println(err.Error())
-			continue
-		}
-		taskrun,err:=p.tekton.InitTaskRun(each,p.pipeline.Label, p.pipeline.ProcessId)
-		if err!=nil{
-			log.Println(err.Error())
-			continue
-		}
-		_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
-		err=p.tekton.CreatePipelineResource(input)
-		if err!=nil{
-			log.Println(err.Error())
-			continue
-		}
-		var outputErr error
-		for _,output:=range outputs{
-			err=p.tekton.CreatePipelineResource(output)
+		processEventData :=make(map[string]interface{})
+		processEventData["step"]=each.Name
+		listener:=v1.Listener{ProcessId: p.pipeline.ProcessId,Step: each.Name}
+		if each.Type==enums.BUILD{
+			err:=p.applyBuildStep(each)
 			if err!=nil{
-				outputErr=err
+				processEventData["status"]=enums.BUILD_FAILED
+				processEventData["log"]=err
+				listener.EventData=processEventData
+				go p.notifyAll(listener)
 				break
 			}
+
+			processEventData["status"]=enums.INITIALIZING
+			listener.EventData=processEventData
+			go p.notifyAll(listener)
 		}
-		if outputErr!=nil{
-			log.Println(outputErr.Error())
-			_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
-			continue
-		}
-		err=p.tekton.CreateTask(task)
-		if err!=nil{
-			log.Println(err.Error())
-			_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
-			continue
-		}
-		err=p.tekton.CreateTaskRun(taskrun)
-		if err!=nil{
-			log.Println(err.Error())
-			_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
-			continue
-		}
-	  go p.PostOperations(each.Input.Revision,each.Name,each.Type,p.pipeline)
 	}
 }
 
+func (p *pipelineService) applyBuildStep(step v1.Step) error{
+	nss := strings.ReplaceAll(step.Name, " ", "")
+	step.Name = nss
+	input,outputs,err:=p.tekton.InitPipelineResources(step,p.pipeline.Label,p.pipeline.ProcessId)
+	if err!=nil{
+		return errors.New("Failed to initialize input/output resource"+err.Error())
+	}
+	task,err:=p.tekton.InitTask(step,p.pipeline.Label,p.pipeline.ProcessId)
+	if err!=nil{
+		return errors.New("Failed to initialize task"+err.Error())
+	}
+	taskrun,err:=p.tekton.InitTaskRun(step,p.pipeline.Label, p.pipeline.ProcessId)
+	if err!=nil{
+		return errors.New("Failed to initialize pipeline job"+err.Error())
+	}
+	_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
+	err=p.tekton.CreatePipelineResource(input)
+	if err!=nil{
+		return errors.New("Failed to apply input resource"+err.Error())
+	}
+	var outputErr error
+	for _,output:=range outputs{
+		err=p.tekton.CreatePipelineResource(output)
+		if err!=nil{
+			outputErr=err
+			break
+		}
+	}
+	if outputErr!=nil{
+		_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
+		return errors.New("Failed to apply output resource"+outputErr.Error())
+	}
+	err=p.tekton.CreateTask(task)
+	if err!=nil{
+		_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
+		return errors.New("Failed to apply task"+err.Error())
+	}
+	err=p.tekton.CreateTaskRun(taskrun)
+	if err!=nil{
+		_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
+		return errors.New("Failed to apply taskrun"+err.Error())
+	}
+	go p.PostOperations(step.Input.Revision,step.Name,step.Type,p.pipeline)
+	return nil
+}
 func (p *pipelineService) Apply(url,revision string,pipeline v1.Pipeline) error {
 	p.Build(url,revision,pipeline)
 	if p.pipeline.Label==nil{
