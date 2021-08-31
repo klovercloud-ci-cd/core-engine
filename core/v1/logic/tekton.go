@@ -14,7 +14,6 @@ import (
 )
 type tektonService struct {
 	Tcs             *versioned.Clientset
-	LogEventService service.LogEvent
 }
 
 func (tekton *tektonService) GetTaskRun(name string, waitUntilTaskRunIsCompleted bool) (*v1alpha1.TaskRun, error) {
@@ -357,9 +356,8 @@ func(tekton *tektonService) PurgeByProcessId(processId string) {
 	_ = tekton.DeleteTaskRunByProcessId(processId)
 }
 
-func NewTektonService(tcs  *versioned.Clientset,logEventService service.LogEvent) service.Tekton{
+func NewTektonService(tcs  *versioned.Clientset) service.Tekton{
 	return  &tektonService{
 		Tcs:             tcs,
-		LogEventService: logEventService,
 	}
 }

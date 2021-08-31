@@ -17,6 +17,7 @@ type pipelineService struct {
 	pipeline v1.Pipeline
 	logEventService service.LogEvent
 	processEventService service.ProcessEvent
+	observerList []service.Observer
 }
 
 func (p *pipelineService) ReadEventByProcessId(c chan map[string]interface{},processId string)  {
@@ -62,10 +63,9 @@ func (p *pipelineService) PostOperations(revision,step  string,stepType enums.ST
 	processEventData :=make(map[string]interface{})
 	processEventData["step"]=step
 	processEventData["status"]=tRunStatus
-	p.processEventService.Store(v1.PipelineProcessEvent{
-		ProcessId: p.pipeline.ProcessId,
-		Data:      processEventData,
-	})
+	listener:=v1.Listener{ProcessId: p.pipeline.ProcessId,Step: step}
+	listener.EventData=processEventData
+	p.notifyAll(listener)
 }
 
 func (p *pipelineService) LoadArgs(pipeline v1.Pipeline) {
@@ -169,14 +169,19 @@ func (p *pipelineService) Apply(url,revision string,pipeline v1.Pipeline) error 
 	go p.apply()
 	return nil
 }
+func (k8s *pipelineService)notifyAll(listener v1.Listener){
+	for _, observer := range k8s.observerList {
+		observer.Listen(listener)
+	}
+}
 
-
-func NewPipelineService(k8s service.K8s,tekton service.Tekton,logEventService service.LogEvent,	processEventService service.ProcessEvent) service.Pipeline {
+func NewPipelineService(k8s service.K8s,tekton service.Tekton,logEventService service.LogEvent,	processEventService service.ProcessEvent,observerList []service.Observer) service.Pipeline {
 	return &pipelineService{
 		k8s: k8s,
 		tekton: tekton,
 		pipeline: v1.Pipeline{},
 		logEventService: logEventService,
 		processEventService: processEventService,
+		observerList: observerList,
 	}
 }

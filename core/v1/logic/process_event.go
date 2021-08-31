@@ -10,6 +10,15 @@ type processEventService struct {
 	repo repository.ProcessEventRepository
 }
 
+func (p processEventService) Listen(listener v1.Listener) {
+	if listener.EventData!=nil{
+		p.repo.Store(v1.PipelineProcessEvent{
+			ProcessId: listener.ProcessId,
+			Data:      listener.EventData,
+		})
+	}
+}
+
 func (p processEventService) Store(data v1.PipelineProcessEvent) {
 	p.repo.Store(data)
 }

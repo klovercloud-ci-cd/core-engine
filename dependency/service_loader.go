@@ -14,19 +14,24 @@ func GetPipelineService() service.Pipeline{
 	var tekton service.Tekton
 	var logEventService service.LogEvent
 	var processEventService service.ProcessEvent
+	var observers [] service.Observer
 	tektonClientSet,k8sClientSet:=config.GetClientSet()
 	if config.Database==enums.Mongo{
 		logEventService=logic.NewLogEventService(mongo.NewLogEventRepository(3000))
 		processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
-		tekton = logic.NewTektonService(tektonClientSet, logEventService)
-		k8s=logic.NewK8sService(k8sClientSet,logEventService,processEventService,tekton)
+		observers= append(observers, logEventService)
+		observers= append(observers, processEventService)
+		tekton = logic.NewTektonService(tektonClientSet)
+		k8s=logic.NewK8sService(k8sClientSet,tekton,observers)
 
 	}
 	if config.Database == enums.Inmemory{
 		logEventService=logic.NewLogEventService(in_memory.NewLogEventRepository())
 		processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
-		tekton = logic.NewTektonService(tektonClientSet,logEventService)
-		k8s = logic.NewK8sService(k8sClientSet, logEventService,processEventService,tekton)
+		observers= append(observers, logEventService)
+		observers= append(observers, processEventService)
+		tekton = logic.NewTektonService(tektonClientSet)
+		k8s=logic.NewK8sService(k8sClientSet,tekton,observers)
 	}
-	return logic.NewPipelineService(k8s,tekton,logEventService,processEventService)
+	return logic.NewPipelineService(k8s,tekton,logEventService,processEventService,observers)
 }

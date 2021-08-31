@@ -37,7 +37,12 @@ type PodListGetOption struct {
 	Wait     bool
 	Duration int
 }
-
+type Listener struct {
+	Name,Namespace,ContainerName,Step,ProcessId,Log string
+	StepType enums.STEP_TYPE
+	EventData map[string]interface{}
+	ProcessLabel map[string]string
+}
 func (resource Resource) Validate() error {
 	if resource.Type!=enums.IMAGE &&  resource.Type!=enums.GIT{
 		return errors.New("Invalid resource type!")

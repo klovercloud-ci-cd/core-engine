@@ -53,7 +53,6 @@ func getQueryOption(context echo.Context) v1.LogEventQueryOption {
 
 func (p pipelineApi) GetEvents(context echo.Context) error {
 	processId:=context.QueryParam("processId")
-	log.Println(processId)
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(context.Response(), context.Request(), nil)
 	if err != nil {
