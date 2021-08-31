@@ -13,6 +13,6 @@ func PipelineRouter(g *echo.Group) {
 	pipelineRouter := NewPipelineApi(dependency.GetPipelineService())
 	g.POST("", pipelineRouter.Apply, AuthenticationAndAuthorizationHandler)
 	g.GET("/:processId",pipelineRouter.GetLog,AuthenticationAndAuthorizationHandler)
-	g.GET("/",pipelineRouter.GetEvents,AuthenticationAndAuthorizationHandler)
+	g.GET("/ws",pipelineRouter.GetEvents,AuthenticationAndAuthorizationHandler)
 
 }

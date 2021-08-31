@@ -16,7 +16,7 @@ func GetPipelineService() service.Pipeline{
 	var processEventService service.ProcessEvent
 	tektonClientSet,k8sClientSet:=config.GetClientSet()
 	if config.Database==enums.Mongo{
-		logEventService=logic.NewLogEventService(mongo.NewLogEventRepository())
+		logEventService=logic.NewLogEventService(mongo.NewLogEventRepository(3000))
 		processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
 		tekton = logic.NewTektonService(tektonClientSet, logEventService)
 		k8s=logic.NewK8sService(k8sClientSet,logEventService,processEventService,tekton)

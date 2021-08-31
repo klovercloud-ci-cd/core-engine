@@ -33,7 +33,7 @@ func (k8s k8sService) GetContainerLog(namespace, podName, containerName string,t
 			return nil, err
 		}
 		time.Sleep(time.Second)
-		taskRunName:=taskRunLabel["revision"] + "-" +taskRunLabel["processId"]
+		taskRunName:=taskRunLabel["step"]+ "-" +taskRunLabel["processId"]
 		tRun, tRunError := k8s.tekton.GetTaskRun(taskRunName, true)
 
 		if tRunError == nil && !tRun.IsCancelled() {

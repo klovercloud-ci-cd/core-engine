@@ -42,7 +42,6 @@ const (
 
 const (
  	DEFAULT_POD_INITIALIZATION_WAIT_DURATION = 10
- 	KLOVERCLOUD_KANIKO          = "klovercloud/kaniko:v0.14.0"
 )
 
 const (

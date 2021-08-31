@@ -7,7 +7,7 @@ import (
 )
 
 var IsK8 string
-var CI_NAMESPACE string
+var CiNamespace string
 var ServerPort string
 var DbServer string
 var DbPort string
@@ -16,11 +16,12 @@ var DbPassword string
 var DatabaseConnectionString string
 var DatabaseName string
 var Database string
-
+var KanikoImage string
 
 type DATABASE string
 const (
 	MONGO DATABASE= "MONGO"
+	IN_MEMORY DATABASE= "IN_MEMORY"
 )
 
 func InitEnvironmentVariables(){
@@ -36,6 +37,14 @@ func InitEnvironmentVariables(){
 	DbPassword = os.Getenv("MONGO_PASSWORD")
 	DatabaseName = os.Getenv("DATABASE_NAME")
 	Database=os.Getenv("DATABASE")
+	KanikoImage=os.Getenv("KLOVERCLOUD_KANIKO")
+	CiNamespace =os.Getenv("CI_NAMESPACE")
+	if CiNamespace==""{
+		CiNamespace="tekton"
+	}
+	if KanikoImage==""{
+		KanikoImage="klovercloud/kaniko:v0.14.0"
+	}
 	if Database==string(MONGO){
 		DatabaseConnectionString = "mongodb://" + DbUsername + ":" + DbPassword + "@" + DbServer + ":" + DbPort
 	}

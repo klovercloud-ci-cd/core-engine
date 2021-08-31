@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 	guuid "github.com/google/uuid"
 	"log"
+	"net/http"
 	"strconv"
 )
 
@@ -26,12 +27,12 @@ func (p pipelineApi) GetLog(context echo.Context)error {
 	logs,total:=p.pipelineService.GetLogsByProcessId(processId,option)
 	metadata := common.GetPaginationMetadata(option.Pagination.Page, option.Pagination.Limit, total, int64(len(logs)))
 	if option.Pagination.Page > 0 {
-		metadata.Links = append(metadata.Links, map[string]string{"prev": context.Path() + "?order=" + context.QueryParam("order") + "&page=" + string(option.Pagination.Page-1) + "&limit=" + string(option.Pagination.Limit)})
+		metadata.Links = append(metadata.Links, map[string]string{"prev": context.Path() + "?order=" + context.QueryParam("order") + "&page=" + strconv.FormatInt(option.Pagination.Page-1, 10) + "&limit=" + strconv.FormatInt(option.Pagination.Limit, 10)})
 	}
-	metadata.Links = append(metadata.Links, map[string]string{"self": context.Path() + "?order=" + context.QueryParam("order") + "&page=" + string(option.Pagination.Page) + "&limit=" + string(option.Pagination.Limit)})
+	metadata.Links = append(metadata.Links, map[string]string{"self": context.Path() + "?order=" + context.QueryParam("order") + "&page=" + strconv.FormatInt(option.Pagination.Page, 10) + "&limit=" + strconv.FormatInt(option.Pagination.Limit, 10)})
 
 	if (option.Pagination.Page+1)*option.Pagination.Limit < metadata.TotalCount {
-		metadata.Links = append(metadata.Links, map[string]string{"next": context.Path() + "?order=" + context.QueryParam("order") + "&page=" + string(option.Pagination.Page+1) + "&limit=" + string(option.Pagination.Limit)})
+		metadata.Links = append(metadata.Links, map[string]string{"next": context.Path() + "?order=" + context.QueryParam("order") + "&page=" + strconv.FormatInt(option.Pagination.Page+1, 10) + "&limit=" + string(option.Pagination.Limit)})
 	}
 	return common.GenerateSuccessResponse(context,logs,&metadata,"")
 }
@@ -51,17 +52,20 @@ func getQueryOption(context echo.Context) v1.LogEventQueryOption {
 }
 
 func (p pipelineApi) GetEvents(context echo.Context) error {
-	processId:=context.Param("processId")
-	ws, err := upgrader.Upgrade(context.Response(), context.Request(), nil)
+	processId:=context.QueryParam("processId")
+	log.Println(processId)
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+	ws, err := upgrader.Upgrade(context.Response(), context.Request(), map[string][]string{"Access-Control-Allow-Origin": {"*"}} )
 	if err != nil {
+		log.Println(err.Error())
 		return err
 	}
 	defer ws.Close()
-	status :=make(chan string)
+	//status :=make(chan string)
 	for {
-		go p.pipelineService.ReadEventByProcessId(processId)
+		//go p.pipelineService.ReadEventByProcessId(processId)
 		// Write
-		err := ws.WriteMessage(websocket.TextMessage, []byte(<-status))
+		err := ws.WriteMessage(websocket.TextMessage, []byte(fmt.Sprint(p.pipelineService.ReadEventByProcessId(processId))))
 		if err != nil {
 			context.Logger().Error(err)
 		}

@@ -64,8 +64,10 @@ func (l logEventRepository) GetByProcessId(processId string, option v1.LogEventQ
 	return results,count
 }
 
-func NewLogEventRepository() repository.LogEventRepository {
+func NewLogEventRepository(timeout int) repository.LogEventRepository {
 	return &logEventRepository{
+		manager: GetDmManager(),
+		timeout: time.Duration(timeout),
 	}
 
 }

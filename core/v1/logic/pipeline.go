@@ -29,7 +29,7 @@ func (p *pipelineService) GetLogsByProcessId(processId string, option v1.LogEven
 
 func (p *pipelineService) PostOperations(revision,step  string,stepType enums.STEP_TYPE, pipeline v1.Pipeline) {
 	var  buf bytes.Buffer
-	podList:=p.k8s.WaitAndGetInitializedPods(config.CI_NAMESPACE,pipeline.ProcessId,step)
+	podList:=p.k8s.WaitAndGetInitializedPods(config.CiNamespace,pipeline.ProcessId,step)
 	if len(podList.Items) > 0 {
 		pod := podList.Items[0]
 		for index := range pod.Spec.Containers {
@@ -45,7 +45,7 @@ func (p *pipelineService) PostOperations(revision,step  string,stepType enums.ST
 			}
 		}
 	}
-	tRun, tRunError :=p.tekton.GetTaskRun(revision + "-" + pipeline.ProcessId,true)
+	tRun, tRunError :=p.tekton.GetTaskRun(step + "-" + pipeline.ProcessId,true)
 	tRunStatus := ""
 	if tRunError != nil {
 		tRunStatus = tRunError.Error()

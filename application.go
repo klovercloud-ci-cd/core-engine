@@ -1,13 +1,18 @@
 package main
 
 import (
+	"github.com/klovercloud-ci/api"
 	"github.com/klovercloud-ci/config"
-	"github.com/klovercloud-ci/repository/v1/mongo"
+	"github.com/labstack/echo/v4/middleware"
+	"net/http"
 )
 
 func main(){
-	config.New()
-	if config.Database == string(config.MONGO){
-		mongo.GetDmManager()
-	}
+	e:=config.New()
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
+	}))
+	api.Routes(e)
+	e.Logger.Fatal(e.Start(":" + config.ServerPort))
 }
