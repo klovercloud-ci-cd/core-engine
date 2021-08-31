@@ -12,7 +12,7 @@ import (
 
 
 func TestProcessEventRepository_GetByProcessId(t *testing.T){
-	processEventStore= map[string]*list.List{}
+	ProcessEventStore = map[string]*list.List{}
 	type TestCase struct {
 		processId string
 		data     []v1.PipelineProcessEvent
@@ -63,7 +63,7 @@ func TestProcessEventRepository_GetByProcessId(t *testing.T){
 }
 
 func TestProcessEventRepository_store(t *testing.T) {
-	processEventStore= map[string]*list.List{}
+	ProcessEventStore = map[string]*list.List{}
 	type TestCase struct {
 		data     v1.PipelineProcessEvent
 		expected map[string]interface{}

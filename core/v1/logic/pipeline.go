@@ -19,8 +19,8 @@ type pipelineService struct {
 	processEventService service.ProcessEvent
 }
 
-func (p *pipelineService) ReadEventByProcessId(processId string) map[string]interface{} {
-	return p.processEventService.DequeueByProcessId(processId)
+func (p *pipelineService) ReadEventByProcessId(c chan map[string]interface{},processId string)  {
+	c<- p.processEventService.DequeueByProcessId(processId)
 }
 
 func (p *pipelineService) GetLogsByProcessId(processId string, option v1.LogEventQueryOption) ([]string, int64) {
@@ -59,7 +59,13 @@ func (p *pipelineService) PostOperations(revision,step  string,stepType enums.ST
 
 		}
 	}
-	log.Println(tRunStatus)
+	processEventData :=make(map[string]interface{})
+	processEventData["step"]=step
+	processEventData["status"]=tRunStatus
+	p.processEventService.Store(v1.PipelineProcessEvent{
+		ProcessId: p.pipeline.ProcessId,
+		Data:      processEventData,
+	})
 }
 
 func (p *pipelineService) LoadArgs(pipeline v1.Pipeline) {

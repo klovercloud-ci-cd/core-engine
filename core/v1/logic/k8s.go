@@ -90,6 +90,8 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 		}
 		for _, line := range lines {
 			temp := strings.ToLower(line)
+			processEventData["log"] = temp
+			k8s.processEventService.Store(v1.PipelineProcessEvent{processId,processEventData})
 			k8s.logEventService.Store(v1.LogEvent{processId,temp,step,time.Now().UTC()})
 			if (!strings.HasPrefix(temp, "progress") && (!strings.HasSuffix(temp, " mb") || !strings.HasSuffix(temp, " kb"))) && !strings.HasPrefix(temp, "downloading from") {
 

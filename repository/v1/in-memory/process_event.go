@@ -9,44 +9,47 @@ import (
 )
 
 
-var processEventStore map[string]*list.List
 
 type processEventRepository struct {
 
 }
 
 func (p processEventRepository) Store(data v1.PipelineProcessEvent) {
-	if processEventStore==nil{
-		processEventStore= map[string]*list.List{}
+	if ProcessEventStore ==nil{
+		ProcessEventStore = map[string]*list.List{}
 	}
-	_,ok:=processEventStore[data.ProcessId]
+	_,ok:= ProcessEventStore[data.ProcessId]
 	if !ok{
-		processEventStore[data.ProcessId]=list.New()
+		ProcessEventStore[data.ProcessId]=list.New()
 	}
-	processEventStore[data.ProcessId].PushBack(&data.Data)
+	ProcessEventStore[data.ProcessId].PushBack(&data.Data)
 }
 
 func (p processEventRepository) GetByProcessId(processId string) map[string]interface{}{
-	if _, ok := processEventStore[processId]; ok {
-		e:=processEventStore[processId]
-		if processEventStore[processId].Front()!=nil {
+	if _, ok := ProcessEventStore[processId]; ok {
+		e:= ProcessEventStore[processId]
+		if ProcessEventStore[processId].Front()!=nil {
 			m:=make(map[string]interface{})
 			t:=&e.Front().Value
 			jsonString, err := json.Marshal(t)
+			if err!=nil{
+				log.Println(err.Error())
+			}
 			err=json.Unmarshal(jsonString, &m)
 			if err!=nil{
 				log.Println(err.Error())
 			}
 			return  m
+
 		}
 	}
 	return nil
 }
 
 func (p processEventRepository) DequeueByProcessId(processId string) map[string]interface{} {
-	if _, ok := processEventStore[processId]; ok {
-		e:=processEventStore[processId]
-		if processEventStore[processId].Front()!=nil {
+	if _, ok := ProcessEventStore[processId]; ok {
+		e:= ProcessEventStore[processId]
+		if ProcessEventStore[processId].Front()!=nil {
 			m:=make(map[string]interface{})
 			t:=e.Remove(e.Front())
 			jsonString, err := json.Marshal(&t)

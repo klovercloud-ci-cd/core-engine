@@ -1,7 +1,8 @@
 package v1
 
 import (
-	"fmt"
+	"encoding/json"
+	guuid "github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/klovercloud-ci/api/common"
 	v1 "github.com/klovercloud-ci/core/v1"
@@ -9,7 +10,6 @@ import (
 	"github.com/klovercloud-ci/core/v1/service"
 	"github.com/klovercloud-ci/enums"
 	"github.com/labstack/echo/v4"
-	guuid "github.com/google/uuid"
 	"log"
 	"net/http"
 	"strconv"
@@ -55,26 +55,31 @@ func (p pipelineApi) GetEvents(context echo.Context) error {
 	processId:=context.QueryParam("processId")
 	log.Println(processId)
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-	ws, err := upgrader.Upgrade(context.Response(), context.Request(), map[string][]string{"Access-Control-Allow-Origin": {"*"}} )
+	ws, err := upgrader.Upgrade(context.Response(), context.Request(), nil)
 	if err != nil {
 		log.Println(err.Error())
 		return err
 	}
 	defer ws.Close()
-	//status :=make(chan string)
+
+	status :=make(chan map[string]interface{})
 	for {
-		//go p.pipelineService.ReadEventByProcessId(processId)
+		go p.pipelineService.ReadEventByProcessId(status,processId)
 		// Write
-		err := ws.WriteMessage(websocket.TextMessage, []byte(fmt.Sprint(p.pipelineService.ReadEventByProcessId(processId))))
+		jsonStr, err := json.Marshal(<-status)
+		if err!=nil{
+			log.Println(err.Error())
+		}
+		err = ws.WriteMessage(websocket.TextMessage, []byte(jsonStr))
 		if err != nil {
 			context.Logger().Error(err)
 		}
 		// Read
-		_, msg, err := ws.ReadMessage()
+		_, _, err = ws.ReadMessage()
 		if err != nil {
 			context.Logger().Error(err)
 		}
-		fmt.Printf("%s\n", msg)
+
 	}
 }
 

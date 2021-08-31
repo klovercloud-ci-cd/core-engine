@@ -13,5 +13,5 @@ type Pipeline interface {
 	Build(url,revision string,pipeline v1.Pipeline)
 	PostOperations(revision,step string,stepType enums.STEP_TYPE,pipeline v1.Pipeline)
 	GetLogsByProcessId(processId string,option v1.LogEventQueryOption)([]string,int64)
-	ReadEventByProcessId(processId string)map[string]interface{}
+	ReadEventByProcessId(c chan map[string]interface{},processId string)
 }
