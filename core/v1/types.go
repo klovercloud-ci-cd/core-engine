@@ -31,7 +31,7 @@ type LogEventQueryOption struct {
 	Step string
 }
 type PipelineApplyOption struct {
-	EnablePurging bool
+	Purging enums.PIPELINE_PURGING
 }
 type PodListGetOption struct {
 	Wait     bool

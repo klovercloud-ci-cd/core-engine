@@ -57,7 +57,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 				processEventData["status"] = enums.BUILD_FAILED
 				processEventData["reason"] = err.Error()
 				listener.EventData=processEventData
-				k8s.notifyAll(listener)
+			go k8s.notifyAll(listener)
 			}
 			return
 		} else {
@@ -72,7 +72,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 			listener:=v1.Listener{ProcessId: processId,Log: err.Error(),Step: step}
 			processEventData["reason"] = err.Error()
 			listener.EventData=processEventData
-			k8s.notifyAll(listener)
+			go k8s.notifyAll(listener)
 			return
 		}
 
@@ -95,7 +95,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 			listener:=v1.Listener{ProcessId: processId,Log: temp,Step: step}
 			processEventData["reason"] = temp
 			listener.EventData=processEventData
-			k8s.notifyAll(listener)
+			go k8s.notifyAll(listener)
 			if (!strings.HasPrefix(temp, "progress") && (!strings.HasSuffix(temp, " mb") || !strings.HasSuffix(temp, " kb"))) && !strings.HasPrefix(temp, "downloading from") {
 
 			}
@@ -185,20 +185,20 @@ func (k8s * k8sService) WaitAndGetInitializedPods(namespace,processId,step strin
 	if len(podList.Items) < 1 {
 		data["status"]=enums.WAITING
 		listener.EventData=data
-		k8s.notifyAll(listener)
+		go k8s.notifyAll(listener)
 		return podList
 	}
 	podStatus := podList.Items[0].Status.Phase
 	if enums.POD_STATUS(podStatus) == enums.POD_TERMINATING {
 		data["status"]=enums.TERMINATING
 		listener.EventData=data
-		k8s.notifyAll(listener)
+		go k8s.notifyAll(listener)
 		return k8s.WaitAndGetInitializedPods(namespace, processId,step)
 	}
 	if enums.POD_STATUS(podStatus)  == enums.POD_INITIALIZING {
 		data["status"]=enums.INITIALIZING
 		listener.EventData=data
-		k8s.notifyAll(listener)
+		go k8s.notifyAll(listener)
 		podStatus = podList.Items[0].Status.Phase
 	}
 	return podList
@@ -206,7 +206,7 @@ func (k8s * k8sService) WaitAndGetInitializedPods(namespace,processId,step strin
 
 func (k8s k8sService)notifyAll(listener v1.Listener){
 	for _, observer := range k8s.observerList {
-		observer.Listen(listener)
+		go observer.Listen(listener)
 	}
 }
 

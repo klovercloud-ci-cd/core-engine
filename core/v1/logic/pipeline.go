@@ -1,12 +1,10 @@
 package logic
 
 import (
-	"bytes"
 	"github.com/klovercloud-ci/config"
 	v1 "github.com/klovercloud-ci/core/v1"
 	"github.com/klovercloud-ci/core/v1/service"
 	"github.com/klovercloud-ci/enums"
-	"io"
 	"log"
 	"strings"
 )
@@ -29,21 +27,11 @@ func (p *pipelineService) GetLogsByProcessId(processId string, option v1.LogEven
 }
 
 func (p *pipelineService) PostOperations(revision,step  string,stepType enums.STEP_TYPE, pipeline v1.Pipeline) {
-	var  buf bytes.Buffer
 	podList:=p.k8s.WaitAndGetInitializedPods(config.CiNamespace,pipeline.ProcessId,step)
 	if len(podList.Items) > 0 {
 		pod := podList.Items[0]
 		for index := range pod.Spec.Containers {
-			go p.k8s.FollowContainerLifeCycle(pod.Namespace,pod.Name, pod.Spec.Containers[index].Name,step,pipeline.ProcessId,stepType)
-		}
-		for index := range pod.Spec.Containers {
-			readCloser, _ := p.k8s.GetContainerLog(pod.Namespace,pod.Name,pod.Spec.Containers[index].Name,pod.Labels)
-			if readCloser != nil {
-				var tempBuf bytes.Buffer
-				io.Copy(&tempBuf, readCloser)
-				buf.WriteString(tempBuf.String())
-				readCloser.Close()
-			}
+			 p.k8s.FollowContainerLifeCycle(pod.Namespace,pod.Name, pod.Spec.Containers[index].Name,step,pipeline.ProcessId,stepType)
 		}
 	}
 	tRun, tRunError :=p.tekton.GetTaskRun(step + "-" + pipeline.ProcessId,true)
@@ -65,7 +53,11 @@ func (p *pipelineService) PostOperations(revision,step  string,stepType enums.ST
 	processEventData["status"]=tRunStatus
 	listener:=v1.Listener{ProcessId: p.pipeline.ProcessId,Step: step}
 	listener.EventData=processEventData
-	p.notifyAll(listener)
+	go p.notifyAll(listener)
+
+	if pipeline.Option.Purging==enums.PIPELINE_PURGING_ENABLE{
+		go p.tekton.PurgeByProcessId(p.pipeline.ProcessId)
+	}
 }
 
 func (p *pipelineService) LoadArgs(pipeline v1.Pipeline) {
@@ -171,7 +163,7 @@ func (p *pipelineService) Apply(url,revision string,pipeline v1.Pipeline) error 
 }
 func (k8s *pipelineService)notifyAll(listener v1.Listener){
 	for _, observer := range k8s.observerList {
-		observer.Listen(listener)
+		go observer.Listen(listener)
 	}
 }
 

@@ -17,7 +17,6 @@ var DatabaseConnectionString string
 var DatabaseName string
 var Database string
 var KanikoImage string
-
 type DATABASE string
 const (
 	MONGO DATABASE= "MONGO"
@@ -39,6 +38,7 @@ func InitEnvironmentVariables(){
 	Database=os.Getenv("DATABASE")
 	KanikoImage=os.Getenv("KLOVERCLOUD_KANIKO")
 	CiNamespace =os.Getenv("CI_NAMESPACE")
+
 	if CiNamespace==""{
 		CiNamespace="tekton"
 	}

@@ -64,7 +64,6 @@ func (p pipelineApi) GetEvents(context echo.Context) error {
 	status :=make(chan map[string]interface{})
 	for {
 		go p.pipelineService.ReadEventByProcessId(status,processId)
-		// Write
 		jsonStr, err := json.Marshal(<-status)
 		if err!=nil{
 			log.Println(err.Error())
@@ -73,7 +72,6 @@ func (p pipelineApi) GetEvents(context echo.Context) error {
 		if err != nil {
 			context.Logger().Error(err)
 		}
-		// Read
 		_, _, err = ws.ReadMessage()
 		if err != nil {
 			context.Logger().Error(err)
@@ -91,7 +89,12 @@ func (p pipelineApi) Apply(context echo.Context) error {
 	}
 	url:=context.QueryParam("url")
 	revision:=context.QueryParam("revision")
-
+	purgingOption:=context.QueryParam("purging")
+	if purgingOption==string(enums.PIPELINE_PURGING_ENABLE){
+		data.Option.Purging=enums.PIPELINE_PURGING_ENABLE
+	}else{
+		data.Option.Purging=enums.PIPELINE_PURGING_DISABLE
+	}
 	data.ApiVersion = enums.Api_version
 	data.ProcessId = guuid.New().String()
 	error := p.pipelineService.Apply(url,revision, data)
