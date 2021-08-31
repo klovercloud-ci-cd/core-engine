@@ -28,5 +28,5 @@ func GetPipelineService() service.Pipeline{
 		tekton = logic.NewTektonService(tektonClientSet,logEventService)
 		k8s = logic.NewK8sService(k8sClientSet, logEventService,processEventService,tekton)
 	}
-	return logic.NewPipelineService(k8s,tekton,logEventService)
+	return logic.NewPipelineService(k8s,tekton,logEventService,processEventService)
 }

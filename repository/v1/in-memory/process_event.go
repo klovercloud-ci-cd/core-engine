@@ -2,8 +2,10 @@ package in_memory
 
 import (
 	"container/list"
+	"encoding/json"
 	v1 "github.com/klovercloud-ci/core/v1"
 	"github.com/klovercloud-ci/core/v1/repository"
+	"log"
 )
 
 
@@ -12,8 +14,6 @@ var processEventStore map[string]*list.List
 type processEventRepository struct {
 
 }
-
-
 
 func (p processEventRepository) Store(data v1.PipelineProcessEvent) {
 	if processEventStore==nil{
@@ -30,8 +30,14 @@ func (p processEventRepository) GetByProcessId(processId string) map[string]inte
 	if _, ok := processEventStore[processId]; ok {
 		e:=processEventStore[processId]
 		if processEventStore[processId].Front()!=nil {
-			t:=e.Front().Value
-			return  t.(map[string]interface{})
+			m:=make(map[string]interface{})
+			t:=&e.Front().Value
+			jsonString, err := json.Marshal(t)
+			err=json.Unmarshal(jsonString, &m)
+			if err!=nil{
+				log.Println(err.Error())
+			}
+			return  m
 		}
 	}
 	return nil
@@ -41,8 +47,14 @@ func (p processEventRepository) DequeueByProcessId(processId string) map[string]
 	if _, ok := processEventStore[processId]; ok {
 		e:=processEventStore[processId]
 		if processEventStore[processId].Front()!=nil {
+			m:=make(map[string]interface{})
 			t:=e.Remove(e.Front())
-			return  t.(map[string]interface{})
+			jsonString, err := json.Marshal(&t)
+			err=json.Unmarshal(jsonString, &m)
+			if err!=nil{
+				log.Println(err.Error())
+			}
+			return  m
 		}
 	}
 	return nil
