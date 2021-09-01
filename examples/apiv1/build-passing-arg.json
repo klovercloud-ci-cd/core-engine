@@ -1,0 +1,28 @@
+
+{
+  "name": "test",
+  "steps": [
+    {
+      "name": "build",
+      "type": "BUILD",
+      "service_account": "test-sa",
+      "input": {
+        "type": "git"
+      },
+      "outputs": [{
+        "type":"image",
+        "url":"zeromsi2/spring-boot-image:1.1.0",
+        "revision":"1.1.0"
+      }
+      ],
+      "arg":{
+        "data":{
+          "NEXUS_USER":"zeromsi"
+        }
+
+      }
+    }
+
+  ]
+
+}

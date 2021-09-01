@@ -66,7 +66,7 @@ func (tekton *tektonService) InitPipelineResources(step v1.Step,label map[string
 		label["revision"]=step.Outputs[i].Revision
 		output:=v1alpha1.PipelineResource{
 			ObjectMeta: metaV1.ObjectMeta{
-				Name:                     step.Outputs[i].Revision+"-"+processId,
+				Name:                     step.Outputs[i].Revision+"-"+processId+""+strconv.Itoa(i),
 				Namespace:                config.CiNamespace,
 				Labels:    label,
 			},
@@ -165,7 +165,7 @@ func initBuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
 		args = append(args, "--destination=$(outputs.resources.builtImage"+strconv.Itoa(i)+".url)")
 		steps = append(steps, v1alpha1.Step{
 			Container: corev1.Container{
-				Name:    "build-and-push",
+				Name:    "build-and-push"+strconv.Itoa(i),
 				Image:   config.KanikoImage,
 				Command: []string{"/kaniko/executor"},
 				Args:    args,
@@ -264,7 +264,7 @@ func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,p
 				PipelineResourceBinding: v1alpha1.PipelineResourceBinding{
 					Name:         "builtImage" + strconv.Itoa(i),
 					ResourceRef:  &v1alpha1.PipelineResourceRef{
-						Name: each.Revision+"-"+processId,
+						Name: each.Revision+"-"+processId+strconv.Itoa(i),
 					},
 				},
 			})
@@ -276,7 +276,6 @@ func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,p
 	}
 
 	return taskrun,nil
-	return v1alpha1.TaskRun{},nil
 }
 func (tekton *tektonService) CreatePipelineResource(resource v1alpha1.PipelineResource)error {
 	_,err:=tekton.Tcs.TektonV1alpha1().PipelineResources(config.CiNamespace).Create(&resource)
