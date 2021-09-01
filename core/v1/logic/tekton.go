@@ -110,6 +110,7 @@ func (tekton *tektonService) InitTask(step v1.Step,label map[string]string,proce
 		log.Print("Please provide a valid step type!")
 	}
 
+
 	return *task, nil
 
 }

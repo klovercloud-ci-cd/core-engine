@@ -24,7 +24,6 @@ type k8sService struct {
 func (k8s k8sService) GetContainerLog(namespace, podName, containerName string,taskRunLabel map[string]string) (io.ReadCloser, error) {
 	req :=k8s.RequestContainerLog(namespace, podName, containerName)
 	readCloser, err := req.Stream()
-
 	if err != nil  {
 		log.Println(err.Error())
 
@@ -150,6 +149,9 @@ func (k8s * k8sService) GetConfigMap(name,namespace string)(corev1.ConfigMap,err
 }
 
 func (k8s * k8sService) GetPodListByProcessId(namespace,processId string,option v1.PodListGetOption) *corev1.PodList{
+	listener:=v1.Listener{}
+	data:=make(map[string]interface{})
+	listener.ProcessId=processId
 	labelSelector := "processId=" + processId
 	podList, err := k8s.Kcs.CoreV1().Pods(namespace).List(metav1.ListOptions{
 		LabelSelector: labelSelector,
@@ -157,6 +159,9 @@ func (k8s * k8sService) GetPodListByProcessId(namespace,processId string,option 
 
 	count := 0
 	for len(podList.Items) == 0 && option.Wait {
+		data["status"]=enums.POD_INITIALIZING
+		listener.EventData=data
+		go k8s.notifyAll(listener)
 		count++
 		podList, err = k8s.Kcs.CoreV1().Pods(namespace).List(metav1.ListOptions{
 			LabelSelector: labelSelector,

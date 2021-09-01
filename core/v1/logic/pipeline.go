@@ -45,7 +45,7 @@ func (p *pipelineService) PostOperations(revision,step  string,stepType enums.ST
 		} else if tRun.IsCancelled(){
 			tRunStatus=string(enums.CANCELLED)
 		}else {
-
+			tRunStatus=string(enums.ERROR)
 		}
 	}
 	processEventData :=make(map[string]interface{})
