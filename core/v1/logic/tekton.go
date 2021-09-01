@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"context"
 	"github.com/klovercloud-ci/config"
 	"github.com/klovercloud-ci/core/v1"
 	"github.com/klovercloud-ci/core/v1/service"
@@ -60,13 +61,18 @@ func (tekton *tektonService) InitPipelineResources(step v1.Step,label map[string
 			Value string `json:"value"`
 		}{Name: "url", Value:step.Input.Url })
 	}
+	error := input.Validate(context.Background())
+	if error!=nil{
+		return input,nil,error
+	}
+
 	outputs:=[]v1alpha1.PipelineResource{}
 	for i,_:=range step.Outputs{
 		label["step"]=step.Name
 		label["revision"]=step.Outputs[i].Revision
 		output:=v1alpha1.PipelineResource{
 			ObjectMeta: metaV1.ObjectMeta{
-				Name:                     step.Outputs[i].Revision+"-"+processId+""+strconv.Itoa(i),
+				Name:                     step.Name+""+processId+""+strconv.Itoa(i),
 				Namespace:                config.CiNamespace,
 				Labels:    label,
 			},
@@ -82,8 +88,14 @@ func (tekton *tektonService) InitPipelineResources(step v1.Step,label map[string
 				Value string `json:"value"`
 			}{Name: "revision", Value:step.Outputs[i].Revision })
 		}
+		err:=output.Validate(context.Background())
+		if err!=nil{
+			return input,nil,err
+		}
 		outputs= append(outputs, output)
 	}
+
+
 	return input,outputs,nil
 }
 func (tekton *tektonService) InitTask(step v1.Step,label map[string]string,processId string) (v1alpha1.Task,error){
@@ -109,8 +121,10 @@ func (tekton *tektonService) InitTask(step v1.Step,label map[string]string,proce
 	}else {
 		log.Print("Please provide a valid step type!")
 	}
-
-
+	err:=task.Validate(context.Background())
+	if err!=nil{
+		return *task,err
+	}
 	return *task, nil
 
 }
@@ -259,12 +273,12 @@ func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,p
 			Params:    params,
 		}
 		resourceBindings:=[]v1alpha1.TaskResourceBinding{}
-		for i,each:=range step.Outputs{
+		for i,_:=range step.Outputs{
 			resourceBindings= append(resourceBindings, 	v1alpha1.TaskResourceBinding{
 				PipelineResourceBinding: v1alpha1.PipelineResourceBinding{
 					Name:         "builtImage" + strconv.Itoa(i),
 					ResourceRef:  &v1alpha1.PipelineResourceRef{
-						Name: each.Revision+"-"+processId+strconv.Itoa(i),
+						Name:  step.Name+""+processId+""+strconv.Itoa(i),
 					},
 				},
 			})
@@ -274,7 +288,10 @@ func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,p
 		}
 		taskrun.Spec.Outputs=taskRunOutputs
 	}
-
+	err:=taskrun.Validate(context.Background())
+	if err!=nil{
+		return taskrun,err
+	}
 	return taskrun,nil
 }
 func (tekton *tektonService) CreatePipelineResource(resource v1alpha1.PipelineResource)error {
