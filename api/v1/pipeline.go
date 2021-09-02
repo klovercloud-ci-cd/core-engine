@@ -32,7 +32,7 @@ func (p pipelineApi) GetLog(context echo.Context)error {
 	metadata.Links = append(metadata.Links, map[string]string{"self": context.Path() + "?order=" + context.QueryParam("order") + "&page=" + strconv.FormatInt(option.Pagination.Page, 10) + "&limit=" + strconv.FormatInt(option.Pagination.Limit, 10)})
 
 	if (option.Pagination.Page+1)*option.Pagination.Limit < metadata.TotalCount {
-		metadata.Links = append(metadata.Links, map[string]string{"next": context.Path() + "?order=" + context.QueryParam("order") + "&page=" + strconv.FormatInt(option.Pagination.Page+1, 10) + "&limit=" + string(option.Pagination.Limit)})
+		metadata.Links = append(metadata.Links, map[string]string{"next": context.Path() + "?order=" + context.QueryParam("order") + "&page=" + strconv.FormatInt(option.Pagination.Page+1, 10) + "&limit=" + strconv.FormatInt(option.Pagination.Limit, 10)})
 	}
 	return common.GenerateSuccessResponse(context,logs,&metadata,"")
 }
@@ -95,7 +95,7 @@ func (p pipelineApi) Apply(context echo.Context) error {
 	}else{
 		data.Option.Purging=enums.PIPELINE_PURGING_DISABLE
 	}
-	data.ApiVersion = enums.Api_version
+	data.ApiVersion =string(enums.API_V1)
 	data.ProcessId = guuid.New().String()
 	error := p.pipelineService.Apply(url,revision, data)
 

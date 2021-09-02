@@ -11,12 +11,20 @@ const (
 	Mongo = "MONGO"
 	Inmemory = "INMEMORY"
 )
+type API_VERSION string
 
-const Api_version = "api/v1"
+const (
+	API_V1=API_VERSION("api/v1")
+)
 type PIPELINE_RESOURCE_TYPE string
 const  (
 	GIT=PIPELINE_RESOURCE_TYPE("git")
 	IMAGE=PIPELINE_RESOURCE_TYPE("image")
+	DEPLOYMENT=PIPELINE_RESOURCE_TYPE("deployment")
+	STATEFULSET=PIPELINE_RESOURCE_TYPE("statefulset")
+	DAEMONSET=PIPELINE_RESOURCE_TYPE("daemonset")
+	POD=PIPELINE_RESOURCE_TYPE("pod")
+	REPLICASET=PIPELINE_RESOURCE_TYPE("replicaset")
 )
 
 

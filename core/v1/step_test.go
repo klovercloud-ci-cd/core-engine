@@ -60,37 +60,4 @@ func Test_Validate(t *testing.T) {
 		}
 	}
 
-	//t.Run("when resource type is git", func(t *testing.T) {
-	//	actualError := Step.Validate(step)
-	//	assert.Equal(t, nil, actualError)
-	//})
-	//step.Input.Type = "build"
-	//t.Run("when resource type not match", func(t *testing.T) {
-	//	actualError := Step.Validate(step)
-	//	assert.Error(t, actualError)
-	//})
-	//step.Input.Type = "git"
-	//step.ServiceAccount = ""
-	//t.Run("when step service account is empty", func(t *testing.T) {
-	//	actualError := Step.Validate(step)
-	//	assert.Error(t, actualError)
-	//})
-	//step.ServiceAccount = "Testacc"
-	//step.Type = "develop"
-	//t.Run("when step type not match", func(t *testing.T) {
-	//	actualError := Step.Validate(step)
-	//	assert.Error(t, actualError)
-	//})
-	//step.Type = ""
-	//t.Run("when step type is empty", func(t *testing.T) {
-	//	actualError := Step.Validate(step)
-	//	assert.Error(t, actualError)
-	//})
-	//step.Type = enums.BUILD
-	//step.Input.Type = ""
-	//t.Run("when resource type is empty", func(t *testing.T) {
-	//	actualError := Step.Validate(step)
-	//	log.Print(actualError)
-	//	assert.Error(t, actualError)
-	//})
 }
