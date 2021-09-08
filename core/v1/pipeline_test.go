@@ -3,6 +3,8 @@ package v1
 import (
 	"github.com/klovercloud-ci/enums"
 	"github.com/stretchr/testify/assert"
+	"log"
+	"reflect"
 	"testing"
 )
 
@@ -33,25 +35,38 @@ func TestPipeline_Validate(t *testing.T) {
 			}},
 		}},
 	}
-	t.Run("when pipeline is validated", func(t *testing.T) {
-		actualError := Pipeline.Validate(pipeline)
-		assert.Equal(t, nil, actualError)
+	testcases:=[]TestCase{}
+	testcases= append(testcases, TestCase{
+		data:     pipeline,
+		expected: "",
 	})
 	pipeline.ApiVersion = ""
-	t.Run("when pipeline api version is empty", func(t *testing.T) {
-		actualError := Pipeline.Validate(pipeline)
-		assert.Error(t, actualError)
+	testcases =  append(testcases, TestCase{
+		data:     pipeline,
+		expected: "Api version is required!",
 	})
 	pipeline.ApiVersion = "default"
 	pipeline.Name = ""
-	t.Run("when pipeline name is empty", func(t *testing.T) {
-		actualError := Pipeline.Validate(pipeline)
-		assert.Error(t, actualError)
+	testcases = append(testcases, TestCase{
+		data:     pipeline,
+		expected: "Pipeline name is required!",
 	})
 	pipeline.Name = "test"
 	pipeline.ProcessId = ""
-	t.Run("when pipeline processId id is empty", func(t *testing.T) {
-		actualError := Pipeline.Validate(pipeline)
-		assert.Error(t, actualError)
+	testcases = append(testcases, TestCase{
+		data:     pipeline,
+		expected: "Pipeline process id is required!",
 	})
+	for i,_:=range testcases{
+		err:=Pipeline.Validate(testcases[i].data)
+		if err!=nil{
+			log.Print(err.Error())
+			testcases[i].actual =err.Error()
+		}else{
+			testcases[i].actual=""
+		}
+		if !reflect.DeepEqual(testcases[i].expected, testcases[i].actual) {
+			assert.ElementsMatch(t, testcases[i].expected, testcases[i].actual)
+		}
+	}
 }

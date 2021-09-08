@@ -27,13 +27,19 @@ func Test_SetEnvs(t *testing.T) {
 	step := &v1.Step{
 		Env: v1.Variable{
 			Secrets: []struct {
+				Name      string `json:"name" yaml:"name"`
+				Namespace string `json:"namespace" yaml:"namespace"`
+			}([]struct {
 				Name      string `json:"name"`
 				Namespace string `json:"namespace"`
-			}{{Name: "secret0", Namespace:"klovercloud" }},
+			}{{Name: "secret0", Namespace: "klovercloud"}}),
 			ConfigMaps: []struct {
+				Name      string `json:"name" yaml:"name"`
+				Namespace string `json:"namespace" yaml:"namespace"`
+			}([]struct {
 				Name      string `json:"name"`
 				Namespace string `json:"namespace"`
-			}{{Name: "configMap0", Namespace: "klovercloud"}},
+			}{{Name: "configMap0", Namespace: "klovercloud"}}),
 		},
 	}
 	service:=stepService{
@@ -64,13 +70,19 @@ func Test_SetArgs(t *testing.T) {
 	step := &v1.Step{
 		Arg: v1.Variable{
 			Secrets: []struct {
+				Name      string `json:"name" yaml:"name"`
+				Namespace string `json:"namespace" yaml:"namespace"`
+			}([]struct {
 				Name      string `json:"name"`
 				Namespace string `json:"namespace"`
-			}{{Name: "secret0", Namespace:"klovercloud" }},
+			}{{Name: "secret0", Namespace: "klovercloud"}}),
 			ConfigMaps: []struct {
+				Name      string `json:"name" yaml:"name"`
+				Namespace string `json:"namespace" yaml:"namespace"`
+			}([]struct {
 				Name      string `json:"name"`
 				Namespace string `json:"namespace"`
-			}{{Name: "configMap0", Namespace: "klovercloud"}},
+			}{{Name: "configMap0", Namespace: "klovercloud"}}),
 		},
 	}
 	service:=stepService{
