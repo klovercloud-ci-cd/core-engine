@@ -6,21 +6,21 @@ import (
 )
 
 type Resource struct {
-	Type     enums.PIPELINE_RESOURCE_TYPE `json:"type"`
-	Url      string                       `json:"url"`
-	Revision string                       `json:"revision"`
+	Type     enums.PIPELINE_RESOURCE_TYPE `json:"type" yaml:"type"`
+	Url      string                       `json:"url"  yaml:"url"`
+	Revision string                       `json:"revision"  yaml:"revision"`
 }
 
 type Variable struct {
 	Secrets []struct {
-		Name      string `json:"name"`
-		Namespace string `json:"namespace"`
-	} `json:"secrets"`
+		Name      string `json:"name" yaml:"name"`
+		Namespace string `json:"namespace" yaml:"namespace"`
+	} `json:"secrets" yaml:"secrets"`
 	ConfigMaps []struct {
-		Name      string `json:"name"`
-		Namespace string `json:"namespace"`
-	} `json:"configMaps"`
-	Data map[string]string `json:"data"`
+		Name      string `json:"name" yaml:"name"`
+		Namespace string `json:"namespace" yaml:"namespace"`
+	} `json:"configMaps"  yaml:"configMaps"`
+	Data map[string]string `json:"data"  yaml:"data"`
 }
 
 type LogEventQueryOption struct {

@@ -10,6 +10,8 @@ import (
 	"github.com/klovercloud-ci/core/v1/service"
 	"github.com/klovercloud-ci/enums"
 	"github.com/labstack/echo/v4"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -81,11 +83,16 @@ func (p pipelineApi) GetEvents(context echo.Context) error {
 }
 
 func (p pipelineApi) Apply(context echo.Context) error {
-	data:=v1.Pipeline{}
-	err := context.Bind(&data)
+	var data v1.Pipeline
+	body, err := ioutil.ReadAll(context.Request().Body)
 	if  err != nil{
 		log.Println("Input Error:", err.Error())
 		return common.GenerateErrorResponse(context,nil,err.Error())
+	}
+	if err := json.Unmarshal(body, &data); err != nil {
+		if err := yaml.Unmarshal(body, &data); err != nil {
+			return common.GenerateErrorResponse(context,nil,err.Error())
+		}
 	}
 	url:=context.QueryParam("url")
 	revision:=context.QueryParam("revision")

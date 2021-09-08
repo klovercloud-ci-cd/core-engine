@@ -6,13 +6,13 @@ import (
 )
 
 type Step struct {
-	Name string `json:"name"`
-	Type enums.STEP_TYPE `json:"type"`
-	ServiceAccount string `json:"service_account"`
-	Input Resource `json:"input"`
-	Outputs []Resource `json:"outputs"`
-	Arg Variable  `json:"arg"`
-	Env Variable  `json:"env"`
+	Name string `json:"name" yaml:"name"`
+	Type enums.STEP_TYPE `json:"type" yaml:"type"`
+	ServiceAccount string `json:"service_account" yaml:"service_account"`
+	Input Resource `json:"input"  yaml:"input"`
+	Outputs []Resource `json:"outputs"  yaml:"outputs"`
+	Arg Variable  `json:"arg"  yaml:"arg"`
+	Env Variable  `json:"env"  yaml:"env"`
 }
 
 func (step Step)Validate()error{
