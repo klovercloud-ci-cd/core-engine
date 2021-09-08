@@ -12,7 +12,7 @@ type logEventService struct {
 }
 
 
-func (l logEventService) Listen(listener v1.Listener){
+func (l logEventService) Listen(listener v1.Subject){
 	if listener.Log!=""{
 		l.repo.Store(v1.LogEvent{
 			ProcessId: listener.ProcessId,

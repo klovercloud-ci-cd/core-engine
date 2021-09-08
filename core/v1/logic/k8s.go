@@ -50,7 +50,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 
 	readCloser, err := req.Stream()
 	for err != nil {
-		listener:=v1.Listener{ProcessId: processId,Log: err.Error(),Step: step}
+		listener:=v1.Subject{ProcessId: processId,Log: err.Error(),Step: step}
 		if strings.Contains(err.Error(), "image can't be pulled") || strings.Contains(err.Error(), "pods \""+podName+"\" not found") || strings.Contains(err.Error(), "pod \""+podName+"\" is terminated") {
 			if stepType == enums.BUILD {
 				processEventData["status"] = enums.BUILD_FAILED
@@ -68,7 +68,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 	for {
 		data, isPrefix, err := reader.ReadLine()
 		if err != nil {
-			listener:=v1.Listener{ProcessId: processId,Log: err.Error(),Step: step}
+			listener:=v1.Subject{ProcessId: processId,Log: err.Error(),Step: step}
 			processEventData["reason"] = err.Error()
 			listener.EventData=processEventData
 			go k8s.notifyAll(listener)
@@ -92,7 +92,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 			temp := strings.ToLower(line)
 			processEventData["log"] = temp
 			processEventData["reason"] = "n/a"
-			listener:=v1.Listener{ProcessId: processId,Log: temp,Step: step}
+			listener:=v1.Subject{ProcessId: processId,Log: temp,Step: step}
 			listener.EventData=processEventData
 			go k8s.notifyAll(listener)
 			if (!strings.HasPrefix(temp, "progress") && (!strings.HasSuffix(temp, " mb") || !strings.HasSuffix(temp, " kb"))) && !strings.HasPrefix(temp, "downloading from") {
@@ -149,7 +149,7 @@ func (k8s * k8sService) GetConfigMap(name,namespace string)(corev1.ConfigMap,err
 }
 
 func (k8s * k8sService) GetPodListByProcessId(namespace,processId string,option v1.PodListGetOption) *corev1.PodList{
-	listener:=v1.Listener{}
+	listener:=v1.Subject{}
 	data:=make(map[string]interface{})
 	listener.ProcessId=processId
 	labelSelector := "processId=" + processId
@@ -176,7 +176,7 @@ func (k8s * k8sService) GetPodListByProcessId(namespace,processId string,option 
 
 func (k8s * k8sService) WaitAndGetInitializedPods(namespace,processId,step string) *corev1.PodList{
 	var podList *corev1.PodList
-	listener:=v1.Listener{}
+	listener:=v1.Subject{}
 	data:=make(map[string]interface{})
 	data["step"]=step
 	listener.ProcessId=processId
@@ -206,7 +206,7 @@ func (k8s * k8sService) WaitAndGetInitializedPods(namespace,processId,step strin
 	return podList
 }
 
-func (k8s k8sService)notifyAll(listener v1.Listener){
+func (k8s k8sService)notifyAll(listener v1.Subject){
 	for _, observer := range k8s.observerList {
 		go observer.Listen(listener)
 	}

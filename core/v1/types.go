@@ -37,7 +37,7 @@ type PodListGetOption struct {
 	Wait     bool
 	Duration int
 }
-type Listener struct {
+type Subject struct {
 	Name,Namespace,ContainerName,Step,ProcessId,Log string
 	StepType enums.STEP_TYPE
 	EventData map[string]interface{}

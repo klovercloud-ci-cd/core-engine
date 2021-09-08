@@ -9,6 +9,9 @@ type logEventRepository struct {
 }
 
 func (l logEventRepository) Store(log v1.LogEvent)  {
+	if len(IndexedLogEvents)==0{
+		IndexedLogEvents=make(map[string][]v1.LogEvent)
+	}
 	IndexedLogEvents[log.ProcessId]= append(IndexedLogEvents[log.ProcessId], log)
 }
 

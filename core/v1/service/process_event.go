@@ -7,5 +7,5 @@ type ProcessEvent interface {
 	Store( data v1.PipelineProcessEvent)
 	GetByProcessId(processId string)map[string]interface{}
 	DequeueByProcessId(processId string)map[string]interface{}
-	Listen(v1.Listener)
+	Listen(v1.Subject)
 }

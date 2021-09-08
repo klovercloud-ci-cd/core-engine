@@ -7,5 +7,5 @@ import (
 type LogEvent interface {
 	Store( log v1.LogEvent)
 	GetByProcessId(processId string,option v1.LogEventQueryOption)([]string,int64)
-	Listen(v1.Listener)
+	Listen(v1.Subject)
 }
