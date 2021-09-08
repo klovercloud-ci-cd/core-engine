@@ -16,8 +16,8 @@ func Test_loadArgs(t *testing.T) {
 	}
 	variable := v1.Variable{}
 	variable.ConfigMaps = append(variable.ConfigMaps, struct {
-		Name      string `json:"name"`
-		Namespace string `json:"namespace"`
+		Name      string `json:"name" yaml:"name"`
+		Namespace string `json:"namespace" yaml:"namespace"`
 	}{Name: "configMap0", Namespace: "klovercloud"})
 	pipeline := v1.Pipeline{
 		Steps: []v1.Step{v1.Step{
@@ -39,8 +39,8 @@ func Test_loadArgs(t *testing.T) {
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
 	}
 	variable.Secrets = append(variable.Secrets, struct {
-		Name      string `json:"name"`
-		Namespace string `json:"namespace"`
+		Name      string `json:"name" yaml:"name"`
+		Namespace string `json:"namespace" yaml:"namespace"`
 	}{Name: "secret0", Namespace: "klovercloud"})
 
 	pipeline.Steps[0].Arg = variable
@@ -63,8 +63,8 @@ func Test_loadEnvs(t *testing.T) {
 	}
 	variable := v1.Variable{}
 	variable.ConfigMaps = append(variable.ConfigMaps, struct {
-		Name      string `json:"name"`
-		Namespace string `json:"namespace"`
+		Name      string `json:"name" yaml:"name"`
+		Namespace string `json:"namespace" yaml:"namespace"`
 	}{Name: "configMap0", Namespace: "klovercloud"})
 	pipeline := v1.Pipeline{Steps: []v1.Step{
 		{
@@ -85,8 +85,8 @@ func Test_loadEnvs(t *testing.T) {
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
 	}
 	variable.Secrets = append(variable.Secrets, struct {
-		Name      string `json:"name"`
-		Namespace string  `json:"namespace"`
+		Name      string `json:"name" yaml:"name"`
+		Namespace string `json:"namespace" yaml:"namespace"`
 	}{Name:"secret0", Namespace:"klovercloud"})
 	pipeline.Steps[0].Env = variable
 	testCase.expected = map[string]string{"env1": "value1", "env2": "value2", "key1": "value1", "key2": "value2"}
