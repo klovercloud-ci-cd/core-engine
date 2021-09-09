@@ -51,7 +51,7 @@ func (p *pipelineService) PostOperations(revision,step  string,stepType enums.ST
 	processEventData :=make(map[string]interface{})
 	processEventData["step"]=step
 	processEventData["status"]=tRunStatus
-	listener:=v1.Subject{ProcessId: p.pipeline.ProcessId,Step: step}
+	listener:=v1.Subject{Pipeline: pipeline,Step: step}
 	listener.EventData=processEventData
 	go p.notifyAll(listener)
 
@@ -97,7 +97,7 @@ func (p *pipelineService) apply() {
 	for _,each:=range p.pipeline.Steps{
 		processEventData :=make(map[string]interface{})
 		processEventData["step"]=each.Name
-		listener:=v1.Subject{ProcessId: p.pipeline.ProcessId,Step: each.Name}
+		listener:=v1.Subject{Pipeline: p.pipeline,Step: each.Name}
 		if each.Type==enums.BUILD{
 			err:=p.applyBuildStep(each)
 			if err!=nil{

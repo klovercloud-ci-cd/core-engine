@@ -46,7 +46,6 @@ func Test_loadArgs(t *testing.T) {
 	pipeline.Steps[0].Arg = variable
 	testCase.expected = map[string]string{"env1": "value1", "env2": "value2", "key1": "value1", "key2": "value2"}
 
-	//service.pipeline=pipeline
 	service.LoadArgs(pipeline)
 
 	testCase.actual = service.pipeline.Steps[0].Arg.Data

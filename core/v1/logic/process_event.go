@@ -13,7 +13,7 @@ type processEventService struct {
 func (p processEventService) Listen(listener v1.Subject) {
 	if listener.EventData!=nil{
 		p.repo.Store(v1.PipelineProcessEvent{
-			ProcessId: listener.ProcessId,
+			ProcessId: listener.Pipeline.ProcessId,
 			Data:      listener.EventData,
 		})
 	}

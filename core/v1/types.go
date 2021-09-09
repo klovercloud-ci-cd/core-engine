@@ -9,6 +9,19 @@ type Resource struct {
 	Type     enums.PIPELINE_RESOURCE_TYPE `json:"type" yaml:"type"`
 	Url      string                       `json:"url"  yaml:"url"`
 	Revision string                       `json:"revision"  yaml:"revision"`
+	DeploymentResource *DeploymentResource  `json:"deployment_resource"  yaml:"deployment_resource"`
+}
+
+type DeploymentResource struct {
+	ProcessId string `json:"processId" yaml:"processId"`
+	Agent string `json:"agent" yaml:"agent"`
+	Name string                  `json:"name" yaml:"name"`
+	Namespace string             `json:"namespace" yaml:"namespace"`
+	Replica int32                `json:"replica" yaml:"replica"`
+	Images [] struct {
+		ImageIndex int `json:"image_index" yaml:"image_index"`
+		Image      string `json:"image" yaml:"image"`
+	}`json:"images" yaml:"images"`
 }
 
 type Variable struct {
@@ -23,6 +36,9 @@ type Variable struct {
 	Data map[string]string `json:"data"  yaml:"data"`
 }
 
+type Agent struct {
+	Url, Token string
+}
 type LogEventQueryOption struct {
 	Pagination struct {
 		Page  int64
@@ -38,10 +54,11 @@ type PodListGetOption struct {
 	Duration int
 }
 type Subject struct {
-	Name,Namespace,ContainerName,Step,ProcessId,Log string
+	Step,Log string
 	StepType enums.STEP_TYPE
 	EventData map[string]interface{}
 	ProcessLabel map[string]string
+	Pipeline Pipeline
 }
 func (resource Resource) Validate() error {
 	if resource.Type!=enums.IMAGE &&  resource.Type!=enums.GIT{

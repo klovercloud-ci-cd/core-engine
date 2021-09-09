@@ -3,7 +3,6 @@ package v1
 import (
 	"github.com/klovercloud-ci/enums"
 	"github.com/stretchr/testify/assert"
-	"log"
 	"reflect"
 	"testing"
 )
@@ -50,7 +49,6 @@ func Test_Validate(t *testing.T) {
 	for i,_:=range testcases{
 		err:=Step.Validate(testcases[i].data)
 		if err!=nil{
-			log.Print(err.Error())
 			testcases[i].actual =err.Error()
 		}else{
 			testcases[i].actual=""

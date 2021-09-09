@@ -43,14 +43,14 @@ func (k8s k8sService) GetContainerLog(namespace, podName, containerName string,t
 	return readCloser, nil
 }
 
-func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName, step, processId string,stepType enums.STEP_TYPE ) {
+func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName, step string,processId string,stepType enums.STEP_TYPE ) {
 	processEventData :=make(map[string]interface{})
 	processEventData["step"]=step
 	req := k8s.RequestContainerLog(namespace, podName, containerName)
 
 	readCloser, err := req.Stream()
 	for err != nil {
-		listener:=v1.Subject{ProcessId: processId,Log: err.Error(),Step: step}
+		listener:=v1.Subject{Pipeline: v1.Pipeline{ProcessId: processId},Log: err.Error(),Step: step}
 		if strings.Contains(err.Error(), "image can't be pulled") || strings.Contains(err.Error(), "pods \""+podName+"\" not found") || strings.Contains(err.Error(), "pod \""+podName+"\" is terminated") {
 			if stepType == enums.BUILD {
 				processEventData["status"] = enums.BUILD_FAILED
@@ -68,7 +68,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 	for {
 		data, isPrefix, err := reader.ReadLine()
 		if err != nil {
-			listener:=v1.Subject{ProcessId: processId,Log: err.Error(),Step: step}
+			listener:=v1.Subject{Pipeline: v1.Pipeline{ProcessId: processId},Log: err.Error(),Step: step}
 			processEventData["reason"] = err.Error()
 			listener.EventData=processEventData
 			go k8s.notifyAll(listener)
@@ -92,7 +92,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 			temp := strings.ToLower(line)
 			processEventData["log"] = temp
 			processEventData["reason"] = "n/a"
-			listener:=v1.Subject{ProcessId: processId,Log: temp,Step: step}
+			listener:=v1.Subject{Pipeline: v1.Pipeline{ProcessId: processId},Log: temp,Step: step}
 			listener.EventData=processEventData
 			go k8s.notifyAll(listener)
 			if (!strings.HasPrefix(temp, "progress") && (!strings.HasSuffix(temp, " mb") || !strings.HasSuffix(temp, " kb"))) && !strings.HasPrefix(temp, "downloading from") {
@@ -151,7 +151,7 @@ func (k8s * k8sService) GetConfigMap(name,namespace string)(corev1.ConfigMap,err
 func (k8s * k8sService) GetPodListByProcessId(namespace,processId string,option v1.PodListGetOption) *corev1.PodList{
 	listener:=v1.Subject{}
 	data:=make(map[string]interface{})
-	listener.ProcessId=processId
+	listener.Pipeline.ProcessId=processId
 	labelSelector := "processId=" + processId
 	podList, err := k8s.Kcs.CoreV1().Pods(namespace).List(metav1.ListOptions{
 		LabelSelector: labelSelector,
@@ -179,7 +179,7 @@ func (k8s * k8sService) WaitAndGetInitializedPods(namespace,processId,step strin
 	listener:=v1.Subject{}
 	data:=make(map[string]interface{})
 	data["step"]=step
-	listener.ProcessId=processId
+	listener.Pipeline.ProcessId=processId
 	podList = k8s.GetPodListByProcessId(namespace,processId,v1.PodListGetOption{
 		Wait:     true,
 		Duration: enums.DEFAULT_POD_INITIALIZATION_WAIT_DURATION,
