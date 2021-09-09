@@ -41,7 +41,6 @@ func (p *pipelineService) PostOperations(revision,step  string,stepType enums.ST
 	}else{
 		if tRun.IsSuccessful(){
 			tRunStatus=string(enums.SUCCESSFUL)
-
 		} else if tRun.IsCancelled(){
 			tRunStatus=string(enums.CANCELLED)
 		}else {

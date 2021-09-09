@@ -18,7 +18,7 @@ func (a agentEventService) Listen(subject v1.Subject) {
 	var deploymentResources []v1.DeploymentResource
 	if subject.Step==string(enums.DEPLOY){
 		for _,each:=range subject.Pipeline.Steps{
-			if each.Type==enums.DEPLOY{
+			if each.Type==enums.DEPLOY && subject.EventData["status"]==enums.SUCCESSFUL{
 				step=each
 			}
 		}
