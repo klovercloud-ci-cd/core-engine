@@ -55,7 +55,7 @@ func InitEnvironmentVariables(){
 	agents:=strings.Split(os.Getenv("AGENTS"),",")
 	AGENT=make(map[string]v1.Agent)
 	for _,each:=range agents{
-		attrs:=strings.Split(each,":")
+		attrs:=strings.Split(each,"&&")
 		AGENT[attrs[0]]=v1.Agent{
 			Url:   attrs[1],
 			Token: attrs[2],

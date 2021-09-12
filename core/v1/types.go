@@ -15,6 +15,7 @@ type Resource struct {
 type DeploymentResource struct {
 	ProcessId string `json:"processId" yaml:"processId"`
 	Agent string `json:"agent" yaml:"agent"`
+	Type     enums.PIPELINE_RESOURCE_TYPE `json:"type"`
 	Name string                  `json:"name" yaml:"name"`
 	Namespace string             `json:"namespace" yaml:"namespace"`
 	Replica int32                `json:"replica" yaml:"replica"`
@@ -61,14 +62,14 @@ type Subject struct {
 	Pipeline Pipeline
 }
 func (resource Resource) Validate() error {
-	if resource.Type!=enums.IMAGE &&  resource.Type!=enums.GIT{
+	if resource.Type != enums.IMAGE && resource.Type != enums.GIT && resource.Type != enums.DEPLOYMENT && resource.Type != enums.STATEFULSET && resource.Type != enums.POD && resource.Type != enums.DAEMONSET {
 		return errors.New("Invalid resource type!")
 	}
-	if resource.Url == "" {
-		return errors.New("Resource url is required!")
-	}
-	if resource.Revision == "" {
-		return errors.New("Resource revision is required!")
-	}
+	//if resource.Url == "" {
+	//	return errors.New("Resource url is required!")
+	//}
+	//if resource.Revision == "" {
+	//	return errors.New("Resource revision is required!")
+	//}
 	return nil
 }

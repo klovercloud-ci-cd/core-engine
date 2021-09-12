@@ -17,9 +17,9 @@ func (a agentEventService) Listen(subject v1.Subject) {
 	var step v1.Step
 	var deploymentResources []v1.DeploymentResource
 	if subject.Step==string(enums.DEPLOY){
-		for _,each:=range subject.Pipeline.Steps{
-			if each.Type==enums.DEPLOY && subject.EventData["status"]==enums.SUCCESSFUL{
-				step=each
+		for i,_:=range subject.Pipeline.Steps{
+			if subject.Pipeline.Steps[i].Type==enums.DEPLOY && subject.EventData["status"]==string(enums.SUCCESSFUL){
+				step=subject.Pipeline.Steps[i]
 			}
 		}
 	}
@@ -33,13 +33,13 @@ func (a agentEventService) Listen(subject v1.Subject) {
 		for _,each:=range deploymentResources{
 			agentInfo:=config.AGENT[each.Agent]
 			each.ProcessId=subject.Pipeline.ProcessId
-
 			header:=make(map[string]string)
 			header["token"]=agentInfo.Token
 			header["Content-Type"]="application/json"
 			b, err := json.Marshal(each)
 			if err!=nil{
 				log.Println(err.Error())
+				continue
 			}
 			go a.httpPublisher.Post(agentInfo.Url,header,b)
 		}

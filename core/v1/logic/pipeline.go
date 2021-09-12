@@ -26,7 +26,7 @@ func (p *pipelineService) GetLogsByProcessId(processId string, option v1.LogEven
 	return p.logEventService.GetByProcessId(processId,option)
 }
 
-func (p *pipelineService) PostOperations(revision,step  string,stepType enums.STEP_TYPE, pipeline v1.Pipeline) {
+func (p *pipelineService) PostOperations(step  string,stepType enums.STEP_TYPE, pipeline v1.Pipeline) {
 	podList:=p.k8s.WaitAndGetInitializedPods(config.CiNamespace,pipeline.ProcessId,step)
 	if len(podList.Items) > 0 {
 		pod := podList.Items[0]
@@ -54,6 +54,10 @@ func (p *pipelineService) PostOperations(revision,step  string,stepType enums.ST
 	listener.EventData=processEventData
 	go p.notifyAll(listener)
 
+	if len(pipeline.Steps)>1 && pipeline.Steps[1].Type==enums.DEPLOY{
+			listener.Step=string(enums.DEPLOY)
+			go p.notifyAll(listener)
+	}
 	if pipeline.Option.Purging==enums.PIPELINE_PURGING_ENABLE{
 		go p.tekton.PurgeByProcessId(p.pipeline.ProcessId)
 	}
@@ -156,7 +160,7 @@ func (p *pipelineService) applyBuildStep(step v1.Step) error{
 		_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
 		return errors.New("Failed to apply taskrun"+err.Error())
 	}
-	go p.PostOperations(step.Input.Revision,step.Name,step.Type,p.pipeline)
+	go p.PostOperations(step.Name,step.Type,p.pipeline)
 	return nil
 }
 func (p *pipelineService) Apply(url,revision string,pipeline v1.Pipeline) error {

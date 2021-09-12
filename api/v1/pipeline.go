@@ -104,9 +104,9 @@ func (p pipelineApi) Apply(context echo.Context) error {
 	}
 	data.ApiVersion =string(enums.API_V1)
 	data.ProcessId = guuid.New().String()
-	error := p.pipelineService.Apply(url,revision, data)
+	err = p.pipelineService.Apply(url,revision, data)
 
-	if error != nil{
+	if err != nil{
 		log.Println("Input Error:", err.Error())
 		return common.GenerateErrorResponse(context,err.Error(),"Failed to trigger pipeline!")
 	}
