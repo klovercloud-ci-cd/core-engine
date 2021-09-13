@@ -56,6 +56,7 @@ func (p *pipelineService) PostOperations(step  string,stepType enums.STEP_TYPE, 
 
 	if len(pipeline.Steps)>1 && pipeline.Steps[1].Type==enums.DEPLOY{
 			listener.Step=string(enums.DEPLOY)
+		    listener.EventData["log"]="Notifying agent ..."
 			go p.notifyAll(listener)
 	}
 	if pipeline.Option.Purging==enums.PIPELINE_PURGING_ENABLE{

@@ -22,18 +22,23 @@ func (step Step)Validate()error{
 	if step.Type!=enums.BUILD && step.Type!=enums.DEPLOY{
 		return errors.New("Invalid step type!")
 	}
-	err:=step.Input.Validate()
-	if err!=nil{
-		return err
+	if step.Type==enums.BUILD{
+		err:=step.Input.Validate()
+		if err!=nil{
+			return err
+		}
 	}
+
 	for _,each:=range step.Outputs{
 		err:=each.Validate()
 		if err!=nil{
 			return err
 		}
 	}
-	if step.ServiceAccount == ""{
-		return errors.New("Service account required!")
+	if step.Type==enums.BUILD {
+		if step.ServiceAccount == "" {
+			return errors.New("Service account required!")
+		}
 	}
 return nil
 }

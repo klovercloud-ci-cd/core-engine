@@ -62,14 +62,36 @@ type Subject struct {
 	Pipeline Pipeline
 }
 func (resource Resource) Validate() error {
-	if resource.Type != enums.IMAGE && resource.Type != enums.GIT && resource.Type != enums.DEPLOYMENT && resource.Type != enums.STATEFULSET && resource.Type != enums.POD && resource.Type != enums.DAEMONSET {
+	if resource.Type!=enums.IMAGE && resource.Type!=enums.GIT && resource.DeploymentResource==nil{
 		return errors.New("Invalid resource type!")
 	}
-	//if resource.Url == "" {
-	//	return errors.New("Resource url is required!")
-	//}
-	//if resource.Revision == "" {
-	//	return errors.New("Resource revision is required!")
-	//}
+	if resource.Type==enums.IMAGE || resource.Type==enums.GIT{
+		if resource.Url == "" {
+			return errors.New("Resource url is required!")
+		}
+		if resource.Revision == "" {
+			return errors.New("Resource revision is required!")
+		}
+	}else{
+		if  resource.DeploymentResource.Type != enums.DEPLOYMENT && resource.DeploymentResource.Type != enums.STATEFULSET && resource.DeploymentResource.Type != enums.POD && resource.DeploymentResource.Type != enums.DAEMONSET {
+			return errors.New("Invalid Deployment resource type!")
+		}
+		if resource.DeploymentResource==nil{
+			return errors.New("Deployment resource is required!")
+		}
+		if resource.DeploymentResource.Name==""{
+			return errors.New("Deployment resource name is required!")
+		}
+		if resource.DeploymentResource.Namespace==""{
+			return errors.New("Deployment resource namespace is required!")
+		}
+
+		if resource.DeploymentResource.Agent==""{
+			return errors.New("Deployment resource agent is required!")
+		}
+		if len(resource.DeploymentResource.Images)==0{
+			return errors.New("Deployment resource image info is required!")
+		}
+	}
 	return nil
 }
