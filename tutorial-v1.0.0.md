@@ -132,6 +132,73 @@ Responsibility: Apply pipeline
   ]
 }
 ````
+
+##### Build and deploy 
+
+```
+{
+  "name": "test",
+  "steps": [
+    {
+      "name": "build",
+      "type": "BUILD",
+      "service_account": "test-sa",
+      "input": {
+        "type": "git"
+      },
+      "outputs": [
+        {
+          "type": "image",
+          "url": "zeromsi2/spring-boot-image:1.0.0",
+          "revision": "1.0.0"
+        }
+      ],
+      "arg": {
+        "configMaps": [
+          {
+            "name": "cm-test",
+            "namespace": "tekton"
+          }
+        ]
+      }
+    },
+    {
+      "name": "deploy",
+      "type": "DEPLOY",
+      "outputs": [
+        {
+          "deployment_resource": {
+            "agent": "local_agent",
+            "name": "ubuntu",
+            "namespace": "default",
+            "type": "deployment",
+            "replica": 2,
+            "images": [
+              {
+                "image_index": 0,
+                "image": "zeromsi2/spring-boot-image:1.0.0"
+              },
+              {
+                "image_index": 1,
+                "image": "ubuntu"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+
+```
+
+
+---
+**NOTE**
+Inorder to register any new agent add agent info for key ```AGENTS``` in environment like , 
+[name]&&[url]&&[token] separated by comma (,)
+---
+
 ## API 2
 
 Responsibility: Get pipeline logs
@@ -156,3 +223,4 @@ Responsibility: Get pipeline events
 |Url | [ws://host:port/api/v1/pipelines/ws?[processId]]()       |
 |Request Type |  GET |                            
 |Tekton Version |  v1alpha1 |
+
