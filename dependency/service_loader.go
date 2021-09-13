@@ -15,15 +15,18 @@ func GetPipelineService() service.Pipeline{
 	var logEventService service.LogEvent
 	var processEventService service.ProcessEvent
 	var agentEventService service.AgentEvent
+	var eventStoreLogEventService service.EventStoreLogEvent
 	var observers [] service.Observer
 	tektonClientSet,k8sClientSet:=config.GetClientSet()
 	if config.Database==enums.Mongo{
 		logEventService=logic.NewLogEventService(mongo.NewLogEventRepository(3000))
 		processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
 		agentEventService=logic.NewAgentEventService(logic.NewHttpPublisherService())
+		eventStoreLogEventService=logic.NewEventStoreLogEventService(logic.NewHttpPublisherService())
 		observers= append(observers, logEventService)
 		observers= append(observers, processEventService)
 		observers= append(observers, agentEventService)
+		observers= append(observers, eventStoreLogEventService)
 		tekton = logic.NewTektonService(tektonClientSet)
 		k8s=logic.NewK8sService(k8sClientSet,tekton,observers)
 
@@ -32,9 +35,11 @@ func GetPipelineService() service.Pipeline{
 		logEventService=logic.NewLogEventService(in_memory.NewLogEventRepository())
 		processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
 		agentEventService=logic.NewAgentEventService(logic.NewHttpPublisherService())
+		eventStoreLogEventService=logic.NewEventStoreLogEventService(logic.NewHttpPublisherService())
 		observers= append(observers, logEventService)
 		observers= append(observers, processEventService)
 		observers= append(observers, agentEventService)
+		observers= append(observers, eventStoreLogEventService)
 		tekton = logic.NewTektonService(tektonClientSet)
 		k8s=logic.NewK8sService(k8sClientSet,tekton,observers)
 	}

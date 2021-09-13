@@ -33,6 +33,7 @@ func (a agentEventService) Listen(subject v1.Subject) {
 		for _,each:=range deploymentResources{
 			agentInfo:=config.AGENT[each.Agent]
 			each.ProcessId=subject.Pipeline.ProcessId
+			each.Step=string(enums.DEPLOY)
 			header:=make(map[string]string)
 			header["token"]=agentInfo.Token
 			header["Content-Type"]="application/json"

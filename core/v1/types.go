@@ -13,9 +13,10 @@ type Resource struct {
 }
 
 type DeploymentResource struct {
-	ProcessId string `json:"processId" yaml:"processId"`
+	ProcessId string `json:"process_id" yaml:"process_id"`
 	Agent string `json:"agent" yaml:"agent"`
 	Type     enums.PIPELINE_RESOURCE_TYPE `json:"type"`
+	Step string `json:"step" yaml:"step"`
 	Name string                  `json:"name" yaml:"name"`
 	Namespace string             `json:"namespace" yaml:"namespace"`
 	Replica int32                `json:"replica" yaml:"replica"`

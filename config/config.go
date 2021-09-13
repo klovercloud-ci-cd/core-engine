@@ -21,6 +21,7 @@ var Database string
 var KanikoImage string
 type DATABASE string
 var AGENT map[string]v1.Agent
+var EventStoreUrl string
 const (
 	MONGO DATABASE= "MONGO"
 	IN_MEMORY DATABASE= "IN_MEMORY"
@@ -41,7 +42,7 @@ func InitEnvironmentVariables(){
 	Database=os.Getenv("DATABASE")
 	KanikoImage=os.Getenv("KLOVERCLOUD_KANIKO")
 	CiNamespace =os.Getenv("CI_NAMESPACE")
-
+	EventStoreUrl=os.Getenv("EVENT_STORE_URL")
 	if CiNamespace==""{
 		CiNamespace="tekton"
 	}
