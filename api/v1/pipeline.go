@@ -24,7 +24,7 @@ type pipelineApi struct {
 var (
 	upgrader = websocket.Upgrader{}
 )
-func (p pipelineApi) GetLog(context echo.Context)error {
+func (p pipelineApi) GetLogs(context echo.Context)error {
 	processId:=context.Param("processId")
 	option := getQueryOption(context)
 	logs,total:=p.pipelineService.GetLogsByProcessId(processId,option)

@@ -16,6 +16,7 @@ func GetPipelineService() service.Pipeline{
 	var processEventService service.ProcessEvent
 	var agentEventService service.AgentEvent
 	var eventStoreLogEventService service.EventStoreLogEvent
+	var eventStoreProcessEvent service.EventStoreProcessEvent
 	var observers [] service.Observer
 	tektonClientSet,k8sClientSet:=config.GetClientSet()
 	if config.Database==enums.Mongo{
@@ -23,10 +24,12 @@ func GetPipelineService() service.Pipeline{
 		processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
 		agentEventService=logic.NewAgentEventService(logic.NewHttpPublisherService())
 		eventStoreLogEventService=logic.NewEventStoreLogEventService(logic.NewHttpPublisherService())
+		eventStoreProcessEvent=logic.NewEventStoreProcessEventService(logic.NewHttpPublisherService())
 		observers= append(observers, logEventService)
 		observers= append(observers, processEventService)
 		observers= append(observers, agentEventService)
 		observers= append(observers, eventStoreLogEventService)
+		observers= append(observers, eventStoreProcessEvent)
 		tekton = logic.NewTektonService(tektonClientSet)
 		k8s=logic.NewK8sService(k8sClientSet,tekton,observers)
 
@@ -36,10 +39,12 @@ func GetPipelineService() service.Pipeline{
 		processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
 		agentEventService=logic.NewAgentEventService(logic.NewHttpPublisherService())
 		eventStoreLogEventService=logic.NewEventStoreLogEventService(logic.NewHttpPublisherService())
+		eventStoreProcessEvent=logic.NewEventStoreProcessEventService(logic.NewHttpPublisherService())
 		observers= append(observers, logEventService)
 		observers= append(observers, processEventService)
 		observers= append(observers, agentEventService)
 		observers= append(observers, eventStoreLogEventService)
+		observers= append(observers, eventStoreProcessEvent)
 		tekton = logic.NewTektonService(tektonClientSet)
 		k8s=logic.NewK8sService(k8sClientSet,tekton,observers)
 	}

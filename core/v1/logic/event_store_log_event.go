@@ -6,7 +6,6 @@ import (
 	v1 "github.com/klovercloud-ci/core/v1"
 	"github.com/klovercloud-ci/core/v1/service"
 	"log"
-	"time"
 )
 
 type eventStoreEventService struct {
@@ -18,7 +17,6 @@ func (e eventStoreEventService) Listen(subject v1.Subject) {
 		ProcessId: subject.Pipeline.ProcessId,
 		Log:       subject.Log,
 		Step:      subject.Step,
-		CreatedAt: time.Time{},
 	}
 	header:=make(map[string]string)
 	header["Content-Type"]="application/json"
@@ -27,7 +25,7 @@ func (e eventStoreEventService) Listen(subject v1.Subject) {
 		log.Println(err.Error())
 		return
 	}
-	e.httpPublisher.Post(config.EventStoreUrl,header,b)
+	e.httpPublisher.Post(config.EventStoreUrl+"/logs",header,b)
 }
 
 func NewEventStoreLogEventService(httpPublisher service.HttpPublisher) service.EventStoreLogEvent {
