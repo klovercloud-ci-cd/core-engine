@@ -18,7 +18,6 @@ func loadEnv(t *testing.T) error {
 		log.Println("ERROR:", err.Error())
 		t.Fail()
 	}
-
 	dir, err := os.Open(path.Join(dirname, "..\\..\\..\\"))
 	if err != nil {
 		log.Println("ERROR:", err.Error())
