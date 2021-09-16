@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/joho/godotenv"
 	v1 "github.com/klovercloud-ci/core/v1"
+	"github.com/klovercloud-ci/enums"
 	"log"
 	"os"
 	"strings"
@@ -22,10 +23,6 @@ var KanikoImage string
 type DATABASE string
 var AGENT map[string]v1.Agent
 var EventStoreUrl string
-const (
-	MONGO DATABASE= "MONGO"
-	IN_MEMORY DATABASE= "IN_MEMORY"
-)
 
 func InitEnvironmentVariables(){
 	err := godotenv.Load()
@@ -49,7 +46,7 @@ func InitEnvironmentVariables(){
 	if KanikoImage==""{
 		KanikoImage="klovercloud/kaniko:v0.14.0"
 	}
-	if Database==string(MONGO){
+	if Database==enums.Mongo{
 		DatabaseConnectionString = "mongodb://" + DbUsername + ":" + DbPassword + "@" + DbServer + ":" + DbPort
 	}
 
