@@ -23,6 +23,7 @@ var KanikoImage string
 type DATABASE string
 var AGENT map[string]v1.Agent
 var EventStoreUrl string
+var UseLocalEventStore bool
 
 func InitEnvironmentVariables(){
 	err := godotenv.Load()
@@ -40,6 +41,11 @@ func InitEnvironmentVariables(){
 	KanikoImage=os.Getenv("KLOVERCLOUD_KANIKO")
 	CiNamespace =os.Getenv("CI_NAMESPACE")
 	EventStoreUrl=os.Getenv("EVENT_STORE_URL")
+	if os.Getenv("USE_LOCAL_EVENT_STORE")=="true"{
+		UseLocalEventStore=true
+	}else{
+		UseLocalEventStore=false
+	}
 	if CiNamespace==""{
 		CiNamespace="tekton"
 	}

@@ -20,6 +20,7 @@ import (
 
 type pipelineApi struct {
 	pipelineService service.Pipeline
+	observerList []service.Observer
 }
 var (
 	upgrader = websocket.Upgrader{}
@@ -105,20 +106,28 @@ func (p pipelineApi) Apply(context echo.Context) error {
 		data.Option.Purging=enums.PIPELINE_PURGING_DISABLE
 	}
 	data.ApiVersion =string(enums.API_V1)
-	if data.ProcessId!=""{
+	if data.ProcessId==""{
 		data.ProcessId = guuid.New().String()
 	}
+log.Println(data.ProcessId)
 	err = p.pipelineService.Apply(url,revision, data)
 
 	if err != nil{
 		log.Println("Input Error:", err.Error())
+		listener:=v1.Subject{Pipeline: data,Step: "n/a",Log: err.Error()}
+		go p.notifyAll(listener)
 		return common.GenerateErrorResponse(context,err.Error(),"Failed to trigger pipeline!")
 	}
 	return common.GenerateSuccessResponse(context,data.ProcessId,nil,"Pipeline successfully triggered!")
 }
-
-func NewPipelineApi(pipelineService service.Pipeline) api.Pipeline {
+func (p pipelineApi)notifyAll(listener v1.Subject){
+	for _, observer := range p.observerList {
+		go observer.Listen(listener)
+	}
+}
+func NewPipelineApi(pipelineService service.Pipeline,	observerList []service.Observer) api.Pipeline {
 	return &pipelineApi{
 		pipelineService: pipelineService,
+		observerList: observerList,
 	}
 }
