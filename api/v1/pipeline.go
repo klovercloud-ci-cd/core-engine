@@ -105,7 +105,9 @@ func (p pipelineApi) Apply(context echo.Context) error {
 		data.Option.Purging=enums.PIPELINE_PURGING_DISABLE
 	}
 	data.ApiVersion =string(enums.API_V1)
-	data.ProcessId = guuid.New().String()
+	if data.ProcessId!=""{
+		data.ProcessId = guuid.New().String()
+	}
 	err = p.pipelineService.Apply(url,revision, data)
 
 	if err != nil{
