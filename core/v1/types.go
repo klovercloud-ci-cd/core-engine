@@ -3,6 +3,7 @@ package v1
 import (
 	"errors"
 	"github.com/klovercloud-ci/enums"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 type Resource struct {
@@ -13,7 +14,7 @@ type Resource struct {
 }
 
 type DeploymentResource struct {
-	Descriptors *[]interface{} `json:"descriptors" yaml:"descriptors"`
+	Descriptors *[]unstructured.Unstructured  `json:"descriptors" yaml:"descriptors"`
 	ProcessId string `json:"process_id" yaml:"process_id"`
 	Agent string `json:"agent" yaml:"agent"`
 	Type     enums.PIPELINE_RESOURCE_TYPE `json:"type"`
