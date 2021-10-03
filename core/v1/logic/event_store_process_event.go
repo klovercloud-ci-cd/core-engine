@@ -29,7 +29,7 @@ func (e eventStoreProcessService) Listen(subject v1.Subject) {
 	}
 }
 
-func NewEventStoreProcessEventService(httpPublisher service.HttpPublisher) service.EventStoreProcessEvent {
+func NewV1EventStoreProcessEventService(httpPublisher service.HttpPublisher) service.EventStoreProcessEvent {
 	return &eventStoreProcessService{
 		httpPublisher: httpPublisher,
 	}

@@ -50,15 +50,10 @@ func (p *pipelineService) PostOperations(step  string,stepType enums.STEP_TYPE, 
 	processEventData :=make(map[string]interface{})
 	processEventData["step"]=step
 	processEventData["status"]=tRunStatus
+	processEventData["type"]=stepType
 	listener:=v1.Subject{Pipeline: pipeline,Step: step}
 	listener.EventData=processEventData
 	go p.notifyAll(listener)
-
-	if len(pipeline.Steps)>1 && pipeline.Steps[1].Type==enums.DEPLOY{
-			listener.Step=string(enums.DEPLOY)
-		    listener.EventData["log"]="Notifying agent ..."
-			go p.notifyAll(listener)
-	}
 	if pipeline.Option.Purging==enums.PIPELINE_PURGING_ENABLE{
 		go p.tekton.PurgeByProcessId(p.pipeline.ProcessId)
 	}
@@ -98,21 +93,26 @@ func (p *pipelineService) Build( url, revision string,pipeline v1.Pipeline) {
 }
 
 func (p *pipelineService) apply() {
-	for _,each:=range p.pipeline.Steps{
+	if len(p.pipeline.Steps)>0{
+		initialStep:=p.pipeline.Steps[0]
 		processEventData :=make(map[string]interface{})
-		processEventData["step"]=each.Name
-		listener:=v1.Subject{Pipeline: p.pipeline,Step: each.Name}
-		if each.Type==enums.BUILD{
-			err:=p.applyBuildStep(each)
+		processEventData["step"]=initialStep.Name
+		listener:=v1.Subject{Pipeline: p.pipeline,Step: initialStep.Name}
+		if initialStep.Type==enums.BUILD{
+			err:=p.applyBuildStep(initialStep)
+			processEventData["trigger"]=initialStep.Params["trigger"]
+			processEventData["agent"]=initialStep.Params[enums.AGENT]
+			processEventData["type"]=enums.BUILD
 			if err!=nil{
 				processEventData["status"]=enums.BUILD_FAILED
 				processEventData["log"]=err
 				listener.EventData=processEventData
 				go p.notifyAll(listener)
-				break
+				return
 			}
 
 			processEventData["status"]=enums.INITIALIZING
+			processEventData["next"]=strings.Join(initialStep.Next,",")
 			listener.EventData=processEventData
 			go p.notifyAll(listener)
 		}
@@ -175,7 +175,7 @@ func (p *pipelineService) Apply(url,revision string,pipeline v1.Pipeline) error 
 	if err!=nil{
 		return err
 	}
-	go p.apply()
+	p.apply()
 	return nil
 }
 func (k8s *pipelineService)notifyAll(listener v1.Subject){

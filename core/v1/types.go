@@ -57,12 +57,13 @@ type PodListGetOption struct {
 	Wait     bool
 	Duration int
 }
+
 type Subject struct {
-	Step,Log string
-	StepType enums.STEP_TYPE
-	EventData map[string]interface{}
+	Step,Log     string
+	StepType     enums.STEP_TYPE
+	EventData    map[string]interface{}
 	ProcessLabel map[string]string
-	Pipeline Pipeline
+	Pipeline     Pipeline
 }
 func (resource Resource) Validate() error {
 	if resource.Type!=enums.IMAGE && resource.Type!=enums.GIT && resource.DeploymentResource==nil{

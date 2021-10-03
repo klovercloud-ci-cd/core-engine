@@ -41,7 +41,6 @@ func (p pipelineApi) GetLogs(context echo.Context)error {
 	}
 	return common.GenerateSuccessResponse(context,logs,&metadata,"")
 }
-
 func getQueryOption(context echo.Context) v1.LogEventQueryOption {
 	option := v1.LogEventQueryOption{}
 	page := context.QueryParam("page")
@@ -109,7 +108,6 @@ func (p pipelineApi) Apply(context echo.Context) error {
 	if data.ProcessId==""{
 		data.ProcessId = guuid.New().String()
 	}
-log.Println(data.ProcessId)
 	err = p.pipelineService.Apply(url,revision, data)
 
 	if err != nil{

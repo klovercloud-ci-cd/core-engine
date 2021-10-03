@@ -9,51 +9,43 @@ import (
 	"github.com/klovercloud-ci/repository/v1/mongo"
 )
 
-func GetObserverServices()[]service.Observer{
+func GetObserverServices()[]service.Observer {
 	var observers [] service.Observer
 	var processEventService service.ProcessEvent
-	var agentEventService service.AgentEvent
 	var eventStoreLogEventService service.EventStoreLogEvent
 	var eventStoreProcessEvent service.EventStoreProcessEvent
+	var processLifeCycleEvent service.ProcessLifeCycleEvent
 	if config.UseLocalEventStore{
 		if config.Database==enums.Mongo{
 			processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
-			agentEventService=logic.NewAgentEventService(logic.NewHttpPublisherService())
-			eventStoreLogEventService=logic.NewEventStoreLogEventService(logic.NewHttpPublisherService())
-			eventStoreProcessEvent=logic.NewEventStoreProcessEventService(logic.NewHttpPublisherService())
 			observers= append(observers, processEventService)
-			observers= append(observers, agentEventService)
-			observers= append(observers, eventStoreLogEventService)
-			observers= append(observers, eventStoreProcessEvent)
+			observers= append(observers, processLifeCycleEvent)
 		}
 		if config.Database == enums.Inmemory{
 			processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
-			agentEventService=logic.NewAgentEventService(logic.NewHttpPublisherService())
-			eventStoreLogEventService=logic.NewEventStoreLogEventService(logic.NewHttpPublisherService())
-			eventStoreProcessEvent=logic.NewEventStoreProcessEventService(logic.NewHttpPublisherService())
+			eventStoreLogEventService=logic.NewV1EventStoreLogEventService(logic.NewHttpPublisherService())
+			eventStoreProcessEvent=logic.NewV1EventStoreProcessEventService(logic.NewHttpPublisherService())
 			observers= append(observers, processEventService)
-			observers= append(observers, agentEventService)
 			observers= append(observers, eventStoreLogEventService)
 			observers= append(observers, eventStoreProcessEvent)
 		}
 	}else{
-		agentEventService=logic.NewAgentEventService(logic.NewHttpPublisherService())
-		eventStoreLogEventService=logic.NewEventStoreLogEventService(logic.NewHttpPublisherService())
-		eventStoreProcessEvent=logic.NewEventStoreProcessEventService(logic.NewHttpPublisherService())
-		observers= append(observers, agentEventService)
+		eventStoreLogEventService=logic.NewV1EventStoreLogEventService(logic.NewHttpPublisherService())
+		eventStoreProcessEvent=logic.NewV1EventStoreProcessEventService(logic.NewHttpPublisherService())
 		observers= append(observers, eventStoreLogEventService)
 		observers= append(observers, eventStoreProcessEvent)
 	}
 	return observers
 }
-func GetPipelineService() service.Pipeline{
+func GetPipelineService() service.Pipeline {
 	var k8s service.K8s
 	var tekton service.Tekton
 	var logEventService service.LogEvent
 	var processEventService service.ProcessEvent
-	var agentEventService service.AgentEvent
 	var eventStoreLogEventService service.EventStoreLogEvent
 	var eventStoreProcessEvent service.EventStoreProcessEvent
+	var processLifeCycleEvent service.ProcessLifeCycleEvent
+	var eventStoreProcessLifeCycleEvent service.EventStoreProcessLifeCycleEvent
 	var observers [] service.Observer
 	tektonClientSet,k8sClientSet:=config.GetClientSet()
 
@@ -61,14 +53,9 @@ func GetPipelineService() service.Pipeline{
 		if config.Database==enums.Mongo{
 			logEventService=logic.NewLogEventService(mongo.NewLogEventRepository(3000))
 			processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
-			agentEventService=logic.NewAgentEventService(logic.NewHttpPublisherService())
-			eventStoreLogEventService=logic.NewEventStoreLogEventService(logic.NewHttpPublisherService())
-			eventStoreProcessEvent=logic.NewEventStoreProcessEventService(logic.NewHttpPublisherService())
 			observers= append(observers, logEventService)
 			observers= append(observers, processEventService)
-			observers= append(observers, agentEventService)
-			observers= append(observers, eventStoreLogEventService)
-			observers= append(observers, eventStoreProcessEvent)
+			observers= append(observers, processLifeCycleEvent)
 			tekton = logic.NewTektonService(tektonClientSet)
 			k8s=logic.NewK8sService(k8sClientSet,tekton,observers)
 
@@ -76,24 +63,22 @@ func GetPipelineService() service.Pipeline{
 		if config.Database == enums.Inmemory{
 			logEventService=logic.NewLogEventService(in_memory.NewLogEventRepository())
 			processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
-			agentEventService=logic.NewAgentEventService(logic.NewHttpPublisherService())
-			eventStoreLogEventService=logic.NewEventStoreLogEventService(logic.NewHttpPublisherService())
-			eventStoreProcessEvent=logic.NewEventStoreProcessEventService(logic.NewHttpPublisherService())
+			eventStoreLogEventService=logic.NewV1EventStoreLogEventService(logic.NewHttpPublisherService())
+			eventStoreProcessEvent=logic.NewV1EventStoreProcessEventService(logic.NewHttpPublisherService())
 			observers= append(observers, logEventService)
 			observers= append(observers, processEventService)
-			observers= append(observers, agentEventService)
 			observers= append(observers, eventStoreLogEventService)
 			observers= append(observers, eventStoreProcessEvent)
 			tekton = logic.NewTektonService(tektonClientSet)
 			k8s=logic.NewK8sService(k8sClientSet,tekton,observers)
 		}
 	}else{
-		agentEventService=logic.NewAgentEventService(logic.NewHttpPublisherService())
-		eventStoreLogEventService=logic.NewEventStoreLogEventService(logic.NewHttpPublisherService())
-		eventStoreProcessEvent=logic.NewEventStoreProcessEventService(logic.NewHttpPublisherService())
-		observers= append(observers, agentEventService)
+		eventStoreLogEventService=logic.NewV1EventStoreLogEventService(logic.NewHttpPublisherService())
+		eventStoreProcessEvent=logic.NewV1EventStoreProcessEventService(logic.NewHttpPublisherService())
+		eventStoreProcessLifeCycleEvent=logic.NewEventStoreProcessLifeCycleService(logic.NewHttpPublisherService())
 		observers= append(observers, eventStoreLogEventService)
 		observers= append(observers, eventStoreProcessEvent)
+		observers= append(observers, eventStoreProcessLifeCycleEvent)
 		tekton = logic.NewTektonService(tektonClientSet)
 		k8s=logic.NewK8sService(k8sClientSet,tekton,observers)
 	}

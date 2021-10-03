@@ -55,6 +55,39 @@ const (
 	PIPELINE_PURGING_DISABLE =PIPELINE_PURGING("DISABLE")
 )
 
+type TRIGGER string
+const (
+	AUTO      = TRIGGER("AUTO")
+	MANUAL =TRIGGER("MANUAL")
+)
+
+type PARAMS string
+const (
+	REPOSITORY_TYPE      = PARAMS("repository_type")
+	REVISION             =PARAMS("revision")
+	SERVICE_ACCOUNT      =PARAMS("service_account")
+	IMAGES               =PARAMS("images")
+	ARGS_FROM_CONFIGMAPS =PARAMS("args_from_configmaps")
+	ARGS_FROM_SECRETS    =PARAMS("args_from_secrets")
+	ENVS_FROM_CONFIGMAPS =PARAMS("envs_from_configmaps")
+	ENVS_FROM_SECRETS    =PARAMS("envs_from_secrets")
+	ARGS                 =PARAMS("arg")
+	ENVS                 =PARAMS("envs")
+	AGENT                =PARAMS("agent")
+	NAME                 =PARAMS("name")
+	NAMESPACE            =PARAMS("namespace")
+	ENV                  =PARAMS("env")
+	URL                  =PARAMS("url")
+)
+
+type PROCESS_STATUS string
+
+const (
+	ACTIVE   = PROCESS_STATUS("active")
+	COMPLETED   = PROCESS_STATUS("completed")
+	FAILED             =PROCESS_STATUS("failed")
+	PAUSED             =PROCESS_STATUS("paused")
+)
 
 const (
  	DEFAULT_POD_INITIALIZATION_WAIT_DURATION = 10

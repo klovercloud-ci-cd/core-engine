@@ -12,6 +12,7 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"strconv"
+	"strings"
 )
 type tektonService struct {
 	Tcs             *versioned.Clientset
@@ -37,7 +38,7 @@ func (tekton *tektonService) InitPipelineResources(step v1.Step,label map[string
 	if label==nil{
 		label=make(map[string]string)
 	}
-	label["revision"]=step.Input.Revision
+	label["revision"]=step.Params[enums.REVISION]
 	label["processId"]=processId
 	input:=v1alpha1.PipelineResource{
 		TypeMeta: metaV1.TypeMeta{
@@ -45,21 +46,21 @@ func (tekton *tektonService) InitPipelineResources(step v1.Step,label map[string
 			APIVersion: "tekton.dev/v1alpha1",
 		},
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      step.Input.Revision[:15] + "-" + processId,
+			Name:      step.Params[enums.REVISION][:15] + "-" + processId,
 			Namespace: config.CiNamespace,
 			Labels:    label,
 		},
 	}
-	if step.Input.Type==enums.GIT{
+	if step.Params[enums.REPOSITORY_TYPE]==string(enums.GIT){
 		input.Spec.Type= v1alpha1.PipelineResourceType(enums.GIT)
 		input.Spec.Params=append(input.Spec.Params, struct {
 			Name  string `json:"name"`
 			Value string `json:"value"`
-		}{Name: "revision", Value:step.Input.Revision })
+		}{Name: "revision",Value: step.Params[enums.REVISION] })
 		input.Spec.Params=append(input.Spec.Params, struct {
 			Name  string `json:"name"`
 			Value string `json:"value"`
-		}{Name: "url", Value:step.Input.Url })
+		}{Name: "url", Value: step.Params[enums.URL]})
 	}
 	error := input.Validate(context.Background())
 	if error!=nil{
@@ -67,9 +68,15 @@ func (tekton *tektonService) InitPipelineResources(step v1.Step,label map[string
 	}
 
 	outputs:=[]v1alpha1.PipelineResource{}
-	for i,_:=range step.Outputs{
+
+	for i,each:=range strings.Split(step.Params[enums.IMAGES],","){
+		attrs:=strings.Split(each,":")
+		imageRevision:="latest"
+		if len(attrs)==2{
+			imageRevision=attrs[1]
+		}
+		label["revision"]=imageRevision
 		label["step"]=step.Name
-		label["revision"]=step.Outputs[i].Revision
 		output:=v1alpha1.PipelineResource{
 			ObjectMeta: metaV1.ObjectMeta{
 				Name:                     step.Name+""+processId+""+strconv.Itoa(i),
@@ -77,25 +84,21 @@ func (tekton *tektonService) InitPipelineResources(step v1.Step,label map[string
 				Labels:    label,
 			},
 		}
-		if step.Outputs[i].Type==enums.IMAGE{
 			output.Spec.Type= v1alpha1.PipelineResourceType(enums.IMAGE)
 			output.Spec.Params=append(output.Spec.Params, struct {
 				Name  string `json:"name"`
 				Value string `json:"value"`
-			}{Name: "url", Value:step.Outputs[i].Url })
+			}{Name: "url", Value:each })
 			output.Spec.Params=append(output.Spec.Params, struct {
 				Name  string `json:"name"`
 				Value string `json:"value"`
-			}{Name: "revision", Value:step.Outputs[i].Revision })
-		}
+			}{Name: "revision", Value: imageRevision})
 		err:=output.Validate(context.Background())
 		if err!=nil{
 			return input,nil,err
 		}
 		outputs= append(outputs, output)
 	}
-
-
 	return input,outputs,nil
 }
 func (tekton *tektonService) InitTask(step v1.Step,label map[string]string,processId string) (v1alpha1.Task,error){
@@ -117,7 +120,7 @@ func (tekton *tektonService) InitTask(step v1.Step,label map[string]string,proce
 	}
 
 	if step.Type==enums.BUILD{
-		initBuildTaskSpec(step, task)
+		initV1BuildTaskSpec(step, task)
 	}else {
 		log.Print("Please provide a valid step type!")
 	}
@@ -128,7 +131,7 @@ func (tekton *tektonService) InitTask(step v1.Step,label map[string]string,proce
 	return *task, nil
 
 }
-func initBuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
+func initV1BuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
 	params := []v1alpha1.ParamSpec{}
 	params = append(params, v1alpha1.ParamSpec{
 		Name:        "pathToDockerFile",
@@ -148,7 +151,7 @@ func initBuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
 			StringVal: "/workspace/docker-source",
 		},
 	})
-	params = append(params, initAdditionalParams(step.Arg.Data)...)
+	params = append(params, initAdditionalParams(step.ArgData)...)
 
 	task.Spec.Inputs = &v1alpha1.Inputs{
 		Resources: []v1alpha1.TaskResource{
@@ -160,7 +163,7 @@ func initBuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
 		Params: params,
 	}
 	taskResource := []v1alpha1.TaskResource{}
-	for i, _ := range step.Outputs {
+	for i,_:=range strings.Split(step.Params[enums.IMAGES],","){
 		declaration := v1alpha1.ResourceDeclaration{
 			Name: "builtImage" + strconv.Itoa(i),
 			Type: "image",
@@ -168,14 +171,15 @@ func initBuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
 		resource := v1alpha1.TaskResource{declaration}
 		taskResource = append(taskResource, resource)
 	}
+
 	task.Spec.Outputs = &v1alpha1.Outputs{
 		Resources: taskResource,
 	}
 	var steps []v1alpha1.Step
-	args := initBuildArgs(step.Arg.Data)
+	args := initBuildArgs(step.ArgData)
 	args = append(args, "--dockerfile=$(inputs.params.pathToDockerFile)")
 	args = append(args, "--context=$(inputs.params.pathToContext)")
-	for i, _ := range step.Outputs {
+	for i, _ := range strings.Split(step.Params[enums.IMAGES],",") {
 		args = append(args, "--destination=$(outputs.resources.builtImage"+strconv.Itoa(i)+".url)")
 		steps = append(steps, v1alpha1.Step{
 			Container: corev1.Container{
@@ -193,24 +197,7 @@ func initBuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
 	}
 	task.Spec.Steps = steps
 }
-func initBuildArgs(arg map[string]string) [] string{
-	var args [] string
-	for key,_:=range arg{
-		args= append(args, "--build-arg="+key+"=$(inputs.params."+key+")")
-	}
-	return args
-}
-func initAdditionalParams(args map[string]string) []v1alpha1.ParamSpec {
-	var params []v1alpha1.ParamSpec
-	for key,_:=range args{
-		params = append(params, v1alpha1.ParamSpec{
-			Name:    key,
-			Type:    "string",
-			Default: nil,
-		})
-	}
-	return params
-}
+
 func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,processId string)(v1alpha1.TaskRun,error){
 	label["step"]=step.Name
 	var params []v1alpha1.Param
@@ -242,8 +229,8 @@ func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,p
 	}
 
 	if step.Type==enums.BUILD{
-		if step.Arg.Data!=nil{
-			for k,v:=range step.Arg.Data{
+		if step.ArgData!=nil{
+			for k,v:=range step.ArgData{
 				params= append(params,v1alpha1.Param{
 					Name:  k,
 					Value: v1alpha1.ArrayOrString{
@@ -255,7 +242,7 @@ func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,p
 
 		}
 		taskrun.Spec=v1alpha1.TaskRunSpec{
-			ServiceAccountName: step.ServiceAccount,
+			ServiceAccountName: step.Params[enums.SERVICE_ACCOUNT],
 			TaskRef:            &v1alpha1.TaskRef{
 				Name: step.Name +"-"+processId,
 			},
@@ -266,14 +253,14 @@ func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,p
 				PipelineResourceBinding: v1alpha1.PipelineResourceBinding{
 					Name: "docker-source",
 					ResourceRef: &v1alpha1.PipelineResourceRef{
-						Name: step.Input.Revision[:15] + "-" + processId,
+						Name: step.Params[enums.REVISION][:15] + "-" + processId,
 					},
 				},
 			}},
 			Params:    params,
 		}
 		resourceBindings:=[]v1alpha1.TaskResourceBinding{}
-		for i,_:=range step.Outputs{
+		for i,_:=range strings.Split(step.Params[enums.IMAGES],","){
 			resourceBindings= append(resourceBindings, 	v1alpha1.TaskResourceBinding{
 				PipelineResourceBinding: v1alpha1.PipelineResourceBinding{
 					Name:         "builtImage" + strconv.Itoa(i),
@@ -372,8 +359,25 @@ func(tekton *tektonService) PurgeByProcessId(processId string) {
 	_ = tekton.DeleteTaskByProcessId(processId)
 	_ = tekton.DeleteTaskRunByProcessId(processId)
 }
-
-func NewTektonService(tcs  *versioned.Clientset) service.Tekton{
+func initAdditionalParams(args map[string]string) []v1alpha1.ParamSpec {
+	var params []v1alpha1.ParamSpec
+	for key,_:=range args{
+		params = append(params, v1alpha1.ParamSpec{
+			Name:    key,
+			Type:    "string",
+			Default: nil,
+		})
+	}
+	return params
+}
+func initBuildArgs(arg map[string]string) [] string{
+	var args [] string
+	for key,_:=range arg{
+		args= append(args, "--build-arg="+key+"=$(inputs.params."+key+")")
+	}
+	return args
+}
+func NewTektonService(tcs  *versioned.Clientset) service.Tekton {
 	return  &tektonService{
 		Tcs:             tcs,
 	}

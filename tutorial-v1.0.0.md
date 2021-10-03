@@ -195,9 +195,69 @@ Responsibility: Apply pipeline
 
 ---
 **NOTE**
-Inorder to register any new agent add agent info for key ```AGENTS``` in environment like , 
+In order to register any new agent add agent info for key ```AGENTS``` in environment like , 
 [name]&&[url]&&[token] separated by comma (,)
 ---
+
+##### Mount descriptors to apply prerequisites 
+
+```
+{
+  "name": "test",
+  "steps": [
+    {
+      "name": "build",
+      "type": "BUILD",
+      "service_account": "test-sa",
+      "input": {
+        "type": "git"
+      },
+      "outputs": [
+        {
+          "type": "image",
+          "url": "zeromsi2/spring-boot-image:1.0.0",
+          "revision": "1.0.0"
+        }
+      ],
+      "arg": {
+        "configMaps": [
+          {
+            "name": "cm-test",
+            "namespace": "tekton"
+          }
+        ]
+      }
+    },
+    {
+      "name": "deploy",
+      "type": "DEPLOY",
+      "outputs": [
+        {
+          "deployment_resource": {
+            "descriptors":[],
+            "agent": "local_agent",
+            "name": "ubuntu",
+            "namespace": "default",
+            "type": "deployment",
+            "replica": 2,
+            "images": [
+              {
+                "image_index": 0,
+                "image": "zeromsi2/spring-boot-image:1.0.0"
+              },
+              {
+                "image_index": 1,
+                "image": "ubuntu"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+
+```
 
 ## API 2
 

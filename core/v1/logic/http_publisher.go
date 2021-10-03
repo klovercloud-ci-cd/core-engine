@@ -19,11 +19,12 @@ func (h httpPublisherService) Post(url string, header map[string]string, body []
 	}
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	if err != nil {
 		log.Println("[ERROR] Failed communicate agent:", err.Error())
 		return err
-	}else if resp.StatusCode != 200 {
+	}
+	defer resp.Body.Close()
+    if resp.StatusCode != 200 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Println("[ERROR] Failed communicate agent:", err.Error())

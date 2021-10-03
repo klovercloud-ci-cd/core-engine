@@ -128,7 +128,7 @@ func (k8s k8sService) RequestContainerLog(namespace string, podName string, cont
 	)
 }
 
-func (k8s * k8sService) GetSecret(name,namespace string)(corev1.Secret,error){
+func (k8s *k8sService) GetSecret(name,namespace string)(corev1.Secret,error){
 	sec,err:=k8s.Kcs.CoreV1().
 		Secrets(namespace).
 		Get(name,metav1.GetOptions{})
@@ -138,7 +138,7 @@ func (k8s * k8sService) GetSecret(name,namespace string)(corev1.Secret,error){
 	return *sec,nil
 }
 
-func (k8s * k8sService) GetConfigMap(name,namespace string)(corev1.ConfigMap,error){
+func (k8s *k8sService) GetConfigMap(name,namespace string)(corev1.ConfigMap,error){
 	sec,err:=k8s.Kcs.CoreV1().
 		ConfigMaps(namespace).
 		Get(name,metav1.GetOptions{})
@@ -148,7 +148,7 @@ func (k8s * k8sService) GetConfigMap(name,namespace string)(corev1.ConfigMap,err
 	return *sec,nil
 }
 
-func (k8s * k8sService) GetPodListByProcessId(namespace,processId string,option v1.PodListGetOption) *corev1.PodList{
+func (k8s *k8sService) GetPodListByProcessId(namespace,processId string,option v1.PodListGetOption) *corev1.PodList{
 	listener:=v1.Subject{}
 	data:=make(map[string]interface{})
 	listener.Pipeline.ProcessId=processId
@@ -174,7 +174,7 @@ func (k8s * k8sService) GetPodListByProcessId(namespace,processId string,option 
 	return podList
 }
 
-func (k8s * k8sService) WaitAndGetInitializedPods(namespace,processId,step string) *corev1.PodList{
+func (k8s *k8sService) WaitAndGetInitializedPods(namespace,processId,step string) *corev1.PodList{
 	var podList *corev1.PodList
 	listener:=v1.Subject{}
 	data:=make(map[string]interface{})

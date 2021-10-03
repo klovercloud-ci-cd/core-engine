@@ -7,3 +7,4 @@ type ProcessEventRepository interface {
 	GetByProcessId(processId string)map[string]interface{}
 	DequeueByProcessId(processId string)map[string]interface{}
 }
+
