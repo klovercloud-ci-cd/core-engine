@@ -28,7 +28,7 @@ func (e eventStoreEventService) Listen(subject v1.Subject) {
 	e.httpPublisher.Post(config.EventStoreUrl+"/logs",header,b)
 }
 
-func NewV1EventStoreLogEventService(httpPublisher service.HttpPublisher) service.EventStoreLogEvent {
+func NewV1EventStoreLogEventService(httpPublisher service.HttpPublisher) service.Observer {
 	return &eventStoreEventService{
 		httpPublisher: httpPublisher,
 	}

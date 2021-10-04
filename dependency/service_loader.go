@@ -12,8 +12,8 @@ import (
 func GetObserverServices()[]service.Observer {
 	var observers [] service.Observer
 	var processEventService service.ProcessEvent
-	var eventStoreLogEventService service.EventStoreLogEvent
-	var eventStoreProcessEvent service.EventStoreProcessEvent
+	var eventStoreLogEventService service.Observer
+	var eventStoreProcessEvent service.Observer
 	var processLifeCycleEvent service.ProcessLifeCycleEvent
 	if config.UseLocalEventStore{
 		if config.Database==enums.Mongo{
@@ -42,10 +42,10 @@ func GetPipelineService() service.Pipeline {
 	var tekton service.Tekton
 	var logEventService service.LogEvent
 	var processEventService service.ProcessEvent
-	var eventStoreLogEventService service.EventStoreLogEvent
-	var eventStoreProcessEvent service.EventStoreProcessEvent
+	var eventStoreLogEventService service.Observer
+	var eventStoreProcessEvent service.Observer
 	var processLifeCycleEvent service.ProcessLifeCycleEvent
-	var eventStoreProcessLifeCycleEvent service.EventStoreProcessLifeCycleEvent
+	var eventStoreProcessLifeCycleEvent service.Observer
 	var observers [] service.Observer
 	tektonClientSet,k8sClientSet:=config.GetClientSet()
 
