@@ -8,10 +8,10 @@ type Pipeline struct {
 	Name       string              `json:"name"  yaml:"name"`
 	ProcessId  string              `json:"process_id" yaml:"process_id"`
 	Label      map[string]string   `json:"label" yaml:"label"`
-	Steps []Step                   `json:"steps" yaml:"steps"`
+	Steps      []Step              `json:"steps" yaml:"steps"`
 }
 
-func(pipeline Pipeline)Validate()error{
+func (pipeline Pipeline) Validate() error {
 	if pipeline.ApiVersion == "" {
 		return errors.New("Api version is required!")
 	}
@@ -22,9 +22,9 @@ func(pipeline Pipeline)Validate()error{
 		return errors.New("Pipeline process id is required!")
 	}
 
-	for _,each:=range pipeline.Steps{
-		err:=each.Validate()
-		if err!=nil{
+	for _, each := range pipeline.Steps {
+		err := each.Validate()
+		if err != nil {
 			return err
 		}
 	}
