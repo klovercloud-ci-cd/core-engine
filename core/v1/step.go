@@ -55,6 +55,9 @@ func (step Step) Validate() error {
 			return errors.New("Params image is required!")
 		}
 	}
+	if step.Type == "" {
+		return errors.New("Step type is required!")
+	}
 	if step.Trigger == enums.AUTO || step.Trigger == enums.MANUAL {
 		return nil
 	} else {
