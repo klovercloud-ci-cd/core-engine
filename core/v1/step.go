@@ -21,9 +21,6 @@ func (step Step) Validate() error {
 	if step.Name == "" {
 		return errors.New("Step name required!")
 	}
-	if step.Trigger == "" {
-		return errors.New("Step triger required!")
-	}
 	if step.Type == enums.BUILD {
 		if step.Params[enums.REPOSITORY_TYPE] == "" {
 			return errors.New("Repository type is required!")
@@ -37,8 +34,7 @@ func (step Step) Validate() error {
 		if step.Params[enums.IMAGES] == "" {
 			return errors.New("Image is required!")
 		}
-	}
-	if step.Type == enums.DEPLOY {
+	} else if step.Type == enums.DEPLOY {
 		if step.Params[enums.AGENT] == "" {
 			return errors.New("Agent is required!")
 		}
@@ -54,12 +50,15 @@ func (step Step) Validate() error {
 		if step.Params[enums.IMAGES] == "" {
 			return errors.New("Params image is required!")
 		}
-	}
-	if step.Type == "" {
+	} else if step.Type == "" {
 		return errors.New("Step type is required!")
+	} else {
+		return errors.New("Invalid step type!")
 	}
 	if step.Trigger == enums.AUTO || step.Trigger == enums.MANUAL {
 		return nil
+	} else if step.Trigger == "" {
+		return errors.New("Step triger required!")
 	} else {
 		return errors.New("Invalid triger type!")
 	}

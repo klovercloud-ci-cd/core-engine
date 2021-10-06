@@ -2,6 +2,7 @@ package v1
 
 import (
 	"errors"
+	"fmt"
 	"github.com/klovercloud-ci/enums"
 	"github.com/stretchr/testify/assert"
 	"reflect"
@@ -26,7 +27,7 @@ func TestStep_Validate(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		var params = params1
-		if i%2 == 0 {
+		if i%2 != 0 {
 			params = params2
 		}
 		testcase := TestCase{
@@ -47,6 +48,7 @@ func TestStep_Validate(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		testCase[i].actual = testCase[i].step.Validate()
 		if !reflect.DeepEqual(testCase[i].expected, testCase[i].actual) {
+			fmt.Println(testCase[i].actual, i)
 			assert.ElementsMatch(t, testCase[i].expected, testCase[i].actual)
 		}
 	}
