@@ -1,4 +1,43 @@
 package logic
+
+import (
+	v1 "github.com/klovercloud-ci/core/v1"
+	"github.com/klovercloud-ci/enums"
+	"github.com/stretchr/testify/assert"
+	"reflect"
+	"testing"
+)
+
+func TestStepService_SetInput(t *testing.T) {
+	type TestCase struct {
+		data     v1.Step
+		expected map[enums.PARAMS]string
+		actual   map[enums.PARAMS]string
+	}
+
+	testCase := TestCase{
+		expected: map[enums.PARAMS]string{"repository_type": "git", "revision": "123456", "service_account": "test-sa", "images": "zeromsi2/test-dev:1.0.0,zeromsi2/test-pro:1.0.0", "url": "www.example.com"},
+	}
+	step := &v1.Step{
+		Name:        "build",
+		Type:        "BUILD",
+		Trigger:     "AUTO",
+		Params:      map[enums.PARAMS]string{"repository_type": "git", "revision": "121223234443434", "service_account": "test-sa", "images": "zeromsi2/test-dev:1.0.0,zeromsi2/test-pro:1.0.0"},
+		Next:        nil,
+		ArgData:     nil,
+		EnvData:     nil,
+		Descriptors: nil,
+	}
+	service := stepService{
+		step: *step,
+	}
+	service.SetInput("www.example.com", "123456")
+	testCase.actual = service.step.Params
+	if !reflect.DeepEqual(testCase.expected, testCase.actual) {
+		assert.ElementsMatch(t, testCase.expected, testCase.actual)
+	}
+}
+
 //
 //import (
 //	v1 "github.com/klovercloud-ci/core/v1"
