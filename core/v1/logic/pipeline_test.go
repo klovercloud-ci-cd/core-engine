@@ -1,97 +1,148 @@
 package logic
-//
-//import (
-//	v1 "github.com/klovercloud-ci/core/v1"
-//	"github.com/stretchr/testify/assert"
-//	"log"
-//	"reflect"
-//	"testing"
-//)
-//
-//func Test_loadArgs(t *testing.T) {
-//	type TestCase struct {
-//		data     v1.Pipeline
-//		expected map[string]string
-//		actual   map[string]string
-//	}
-//	variable := v1.Variable{}
-//	variable.ConfigMaps = append(variable.ConfigMaps, struct {
-//		Name      string `json:"name" yaml:"name"`
-//		Namespace string `json:"namespace" yaml:"namespace"`
-//	}{Name: "configMap0", Namespace: "klovercloud"})
-//	pipeline := v1.Pipeline{
-//		Steps: []v1.Step{v1.Step{
-//			Arg: variable,
-//		}},
-//	}
-//	testCase := TestCase{
-//		data:     pipeline,
-//		expected: map[string]string{"env1": "value1", "env2": "value2"},
-//	}
-//	service:=pipelineService{
-//		k8s:      &mockK8sService{},
-//		tekton:   nil,
-//	}
-//	service.LoadArgs(pipeline)
-//	log.Println(service.pipeline)
-//	testCase.actual = service.pipeline.Steps[0].Arg.Data
-//	if !reflect.DeepEqual(testCase.expected, testCase.actual) {
-//		assert.ElementsMatch(t, testCase.expected, testCase.actual)
-//	}
-//	variable.Secrets = append(variable.Secrets, struct {
-//		Name      string `json:"name" yaml:"name"`
-//		Namespace string `json:"namespace" yaml:"namespace"`
-//	}{Name: "secret0", Namespace: "klovercloud"})
-//
-//	pipeline.Steps[0].Arg = variable
-//	testCase.expected = map[string]string{"env1": "value1", "env2": "value2", "key1": "value1", "key2": "value2"}
-//
-//	service.LoadArgs(pipeline)
-//
-//	testCase.actual = service.pipeline.Steps[0].Arg.Data
-//	testCase.actual = pipeline.Steps[0].Arg.Data
-//	if !reflect.DeepEqual(testCase.expected, testCase.actual) {
-//		assert.ElementsMatch(t, testCase.expected, testCase.actual)
-//	}
-//}
-//func Test_loadEnvs(t *testing.T) {
-//	type TestCase struct {
-//		data     v1.Pipeline
-//		expected map[string]string
-//		actual   map[string]string
-//	}
-//	variable := v1.Variable{}
-//	variable.ConfigMaps = append(variable.ConfigMaps, struct {
-//		Name      string `json:"name" yaml:"name"`
-//		Namespace string `json:"namespace" yaml:"namespace"`
-//	}{Name: "configMap0", Namespace: "klovercloud"})
-//	pipeline := v1.Pipeline{Steps: []v1.Step{
-//		{
-//			Env: variable,
-//		},
-//	}}
-//	testCase := TestCase{
-//		data:     pipeline,
-//		expected: map[string]string{"env1": "value1", "env2": "value2"},
-//	}
-//	service:=pipelineService{
-//		k8s:      &mockK8sService{},
-//		tekton:   nil,
-//	}
-//	service.LoadEnvs(pipeline)
-//	testCase.actual = service.pipeline.Steps[0].Env.Data
-//	if !reflect.DeepEqual(testCase.expected, testCase.actual) {
-//		assert.ElementsMatch(t, testCase.expected, testCase.actual)
-//	}
-//	variable.Secrets = append(variable.Secrets, struct {
-//		Name      string `json:"name" yaml:"name"`
-//		Namespace string `json:"namespace" yaml:"namespace"`
-//	}{Name:"secret0", Namespace:"klovercloud"})
-//	pipeline.Steps[0].Env = variable
-//	testCase.expected = map[string]string{"env1": "value1", "env2": "value2", "key1": "value1", "key2": "value2"}
-//	service.LoadEnvs(pipeline)
-//	testCase.actual = service.pipeline.Steps[0].Env.Data
-//	if !reflect.DeepEqual(testCase.expected, testCase.actual) {
-//		assert.ElementsMatch(t, testCase.expected, testCase.actual)
-//	}
-//}
+
+import (
+	"fmt"
+	v1 "github.com/klovercloud-ci/core/v1"
+	"github.com/klovercloud-ci/enums"
+	"github.com/stretchr/testify/assert"
+	"reflect"
+	"testing"
+)
+
+func Test_loadArgs(t *testing.T) {
+	type TestCase struct {
+		data     v1.Pipeline
+		expected map[string]string
+		actual   map[string]string
+	}
+	variable := v1.Variable{}
+	variable.ConfigMaps = append(variable.ConfigMaps, struct {
+		Name      string `json:"name" yaml:"name"`
+		Namespace string `json:"namespace" yaml:"namespace"`
+	}{Name: "configMap0", Namespace: "klovercloud"})
+	pipeline := v1.Pipeline{
+		Steps: []v1.Step{{
+			Params: map[enums.PARAMS]string{"args_from_configmaps": "klovercloud/configMap1"},
+		}},
+	}
+	testCase := TestCase{
+		data:     pipeline,
+		expected: map[string]string{"env1": "value1", "env2": "value2"},
+	}
+	service := pipelineService{
+		k8s:    &mockK8sService{},
+		tekton: nil,
+	}
+	service.LoadArgs(pipeline)
+	testCase.actual = service.pipeline.Steps[0].ArgData
+	if !reflect.DeepEqual(testCase.expected, testCase.actual) {
+		fmt.Println(testCase.actual)
+		assert.ElementsMatch(t, testCase.expected, testCase.actual)
+	}
+}
+
+func Test_loadEnvs(t *testing.T) {
+	type TestCase struct {
+		data     v1.Pipeline
+		expected map[string]string
+		actual   map[string]string
+	}
+	variable := v1.Variable{}
+	variable.ConfigMaps = append(variable.ConfigMaps, struct {
+		Name      string `json:"name" yaml:"name"`
+		Namespace string `json:"namespace" yaml:"namespace"`
+	}{Name: "configMap0", Namespace: "klovercloud"})
+	pipeline := v1.Pipeline{Steps: []v1.Step{
+		{
+			Params: map[enums.PARAMS]string{"envs_from_configmaps": "klovercloud/configMap1"},
+		},
+	}}
+	testCase := TestCase{
+		data:     pipeline,
+		expected: map[string]string{"env1": "value1", "env2": "value2"},
+	}
+	service := pipelineService{
+		k8s:    &mockK8sService{},
+		tekton: nil,
+	}
+	service.LoadEnvs(pipeline)
+	testCase.actual = service.pipeline.Steps[0].EnvData
+	if !reflect.DeepEqual(testCase.expected, testCase.actual) {
+		fmt.Println(testCase.actual)
+		assert.ElementsMatch(t, testCase.expected, testCase.actual)
+	}
+}
+
+func TestPipelineService_SetInputResource(t *testing.T) {
+	type TestCase struct {
+		data     v1.Pipeline
+		expected map[enums.PARAMS]string
+		actual   map[enums.PARAMS]string
+	}
+	pipeline := v1.Pipeline{Steps: []v1.Step{
+		{
+			Name:    "test",
+			Type:    "BUILD",
+			Trigger: "AUTO",
+			Params:  map[enums.PARAMS]string{"envs_from_configmaps": "klovercloud/configMap1"},
+		},
+	},
+	}
+	testCase := TestCase{
+		data:     pipeline,
+		expected: map[enums.PARAMS]string{"envs_from_configmaps": "klovercloud/configMap1", "revision": "123456", "url": "www.example.com"},
+	}
+	service := pipelineService{
+		k8s:    &mockK8sService{},
+		tekton: nil,
+	}
+	service.SetInputResource("www.example.com", "123456", testCase.data)
+	testCase.actual = service.pipeline.Steps[0].Params
+	if !reflect.DeepEqual(testCase.expected, testCase.actual) {
+		fmt.Println(testCase.actual)
+		assert.ElementsMatch(t, testCase.expected, testCase.actual)
+	}
+}
+func TestPipelineService_Build(t *testing.T) {
+	type TestCase struct {
+		data     v1.Pipeline
+		expected v1.Step
+		actual   v1.Step
+	}
+	variable := v1.Variable{}
+	variable.ConfigMaps = append(variable.ConfigMaps, struct {
+		Name      string `json:"name" yaml:"name"`
+		Namespace string `json:"namespace" yaml:"namespace"`
+	}{Name: "configMap0", Namespace: "klovercloud"})
+	pipeline := v1.Pipeline{Steps: []v1.Step{
+		{
+			Name:    "test",
+			Type:    "BUILD",
+			Trigger: "AUTO",
+			Params:  map[enums.PARAMS]string{"envs_from_configmaps": "klovercloud/configMap1", "args_from_configmaps": "klovercloud/configMap1"},
+		},
+	},
+	}
+	testCase := TestCase{
+		data: pipeline,
+		expected: v1.Step{
+			Name:    "test",
+			Type:    "BUILD",
+			Trigger: "AUTO",
+			Params:  map[enums.PARAMS]string{"envs_from_configmaps": "klovercloud/configMap1", "args_from_configmaps": "klovercloud/configMap1", "revision": "123456", "url": "www.example.com"},
+			Next:    []string{},
+			ArgData: map[string]string{"env1": "value1", "env2": "value2"},
+			EnvData: map[string]string{"env1": "value1", "env2": "value2"},
+		},
+	}
+	service := pipelineService{
+		k8s:    &mockK8sService{},
+		tekton: nil,
+	}
+	service.Build("www.example.com", "123456", testCase.data)
+	testCase.actual = service.pipeline.Steps[0]
+	//if !reflect.DeepEqual(testCase.expected, testCase.actual) {
+	//	fmt.Println(testCase.actual, testCase.expected)
+	//	assert.ElementsMatch(t, testCase.expected, testCase.actual)
+	//}
+}
