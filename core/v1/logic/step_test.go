@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"fmt"
 	v1 "github.com/klovercloud-ci/core/v1"
 	"github.com/klovercloud-ci/enums"
 	"github.com/stretchr/testify/assert"
@@ -36,6 +37,10 @@ func TestStepService_SetInput(t *testing.T) {
 	if !reflect.DeepEqual(testCase.expected, testCase.actual) {
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
 	}
+
+	service.step.Params[enums.ARGS_FROM_CONFIGMAPS]="klovercloud/secret1"
+	service.SetArgs(NewMockK8sService(nil))
+	fmt.Println(service.step.ArgData)
 }
 
 //
