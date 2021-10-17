@@ -5,8 +5,7 @@ import (
 )
 
 type ProcessLifeCycleEvent interface {
-	Store( events []v1.ProcessLifeCycleEvent)
-	GetByProcessId(processId string)[]v1.ProcessLifeCycleEvent
+	PullBuildEvents()[]v1.ProcessLifeCycleEvent
 	Listen(subject v1.Subject)
 }
 

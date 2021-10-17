@@ -21,7 +21,8 @@ var KanikoImage string
 type DATABASE string
 var EventStoreUrl string
 var UseLocalEventStore bool
-
+var EventStoreToken string
+var PullSize string
 func InitEnvironmentVariables(){
 	err := godotenv.Load()
 	if err != nil {
@@ -51,5 +52,10 @@ func InitEnvironmentVariables(){
 	}
 	if Database==enums.Mongo{
 		DatabaseConnectionString = "mongodb://" + DbUsername + ":" + DbPassword + "@" + DbServer + ":" + DbPort
+	}
+	EventStoreToken=os.Getenv("EVENT_STORE_URL_TOKEN")
+	PullSize=os.Getenv("PULL_SIZE")
+	if PullSize==""{
+		PullSize="4"
 	}
 }

@@ -42,6 +42,7 @@ func (step Step) Validate() error {
 			return errors.New("Params name is required!")
 		}
 		if step.Params[enums.NAMESPACE] == "" {
+
 			return errors.New("Params namespace is required!")
 		}
 		if step.Params[enums.TYPE] == "" {
@@ -55,11 +56,8 @@ func (step Step) Validate() error {
 	} else {
 		return errors.New("Invalid step type!")
 	}
-	if step.Trigger == enums.AUTO || step.Trigger == enums.MANUAL {
-		return nil
-	} else if step.Trigger == "" {
-		return errors.New("Step triger required!")
-	} else {
+	if step.Trigger != enums.AUTO && step.Trigger != enums.MANUAL {
 		return errors.New("Invalid triger type!")
 	}
+	return nil
 }

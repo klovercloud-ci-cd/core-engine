@@ -108,7 +108,7 @@ func (p pipelineApi) Apply(context echo.Context) error {
 	if data.ProcessId==""{
 		data.ProcessId = guuid.New().String()
 	}
-	err = p.pipelineService.Apply(url,revision, data)
+	err = p.pipelineService.BuildProcessLifeCycleEvents(url,revision, data)
 
 	if err != nil{
 		log.Println("Input Error:", err.Error())

@@ -199,6 +199,9 @@ func initV1BuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
 }
 
 func (tekton *tektonService) InitTaskRun (step v1.Step,label map[string]string,processId string)(v1alpha1.TaskRun,error){
+	if label==nil{
+		label=make(map[string]string)
+	}
 	label["step"]=step.Name
 	var params []v1alpha1.Param
 	params = append(params, v1alpha1.Param{

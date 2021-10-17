@@ -88,6 +88,7 @@ const (
 type PROCESS_STATUS string
 
 const (
+	NON_INITIALIZED   = PROCESS_STATUS("non_initialized")
 	ACTIVE    = PROCESS_STATUS("active")
 	COMPLETED = PROCESS_STATUS("completed")
 	FAILED    = PROCESS_STATUS("failed")

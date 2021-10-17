@@ -45,7 +45,7 @@ func GetPipelineService() service.Pipeline {
 	var eventStoreLogEventService service.Observer
 	var eventStoreProcessEvent service.Observer
 	var processLifeCycleEvent service.ProcessLifeCycleEvent
-	var eventStoreProcessLifeCycleEvent service.Observer
+	var eventStoreProcessLifeCycleEvent service.ProcessLifeCycleEvent
 	var observers [] service.Observer
 	tektonClientSet,k8sClientSet:=config.GetClientSet()
 
@@ -83,5 +83,5 @@ func GetPipelineService() service.Pipeline {
 		k8s=logic.NewK8sService(k8sClientSet,tekton,observers)
 	}
 
-	return logic.NewPipelineService(k8s,tekton,logEventService,processEventService,observers)
+	return logic.NewPipelineService(k8s,tekton,logEventService,processEventService,observers,eventStoreProcessLifeCycleEvent)
 }

@@ -15,7 +15,20 @@ type pipelineService struct {
 	pipeline v1.Pipeline
 	logEventService service.LogEvent
 	processEventService service.ProcessEvent
+	processLifeCycleEvent service.ProcessLifeCycleEvent
 	observerList []service.Observer
+}
+
+func (p *pipelineService) ApplyBuildSteps() {
+events:=p.processLifeCycleEvent.PullBuildEvents()
+for _,each:=range events{
+	p.pipeline=*each.Pipeline
+	for i,step:=range each.Pipeline.Steps{
+		if each.Step==step.Name && each.StepType==step.Type{
+			p.applySteps(each.Pipeline.Steps[i])
+		}
+	}
+}
 }
 
 func (p *pipelineService) ReadEventByProcessId(c chan map[string]interface{},processId string)  {
@@ -92,6 +105,61 @@ func (p *pipelineService) Build( url, revision string,pipeline v1.Pipeline) {
 	p.SetInputResource(url,revision,pipeline)
 }
 
+func (p *pipelineService) BuildProcessLifeCycleEvents(url, revision string, pipeline v1.Pipeline) error {
+	p.Build(url,revision,pipeline)
+	if p.pipeline.Label==nil{
+		p.pipeline.Label=make(map[string]string)
+	}
+	p.pipeline.Label["processId"]=p.pipeline.ProcessId
+	p.pipeline.Label["pipeline"]=p.pipeline.Name
+	err:=p.pipeline.Validate()
+	if err!=nil{
+		return err
+	}
+	p.buildProcessLifeCycleEvents()
+	return nil
+}
+func (p *pipelineService) buildProcessLifeCycleEvents() {
+	if len(p.pipeline.Steps)>0{
+		initialStep:=p.pipeline.Steps[0]
+		processEventData :=make(map[string]interface{})
+		processEventData["step"]=initialStep.Name
+		listener:=v1.Subject{Pipeline: p.pipeline,Step: initialStep.Name}
+		if initialStep.Type==enums.BUILD{
+			processEventData["trigger"]=initialStep.Trigger
+			processEventData["agent"]=initialStep.Params[enums.AGENT]
+			processEventData["type"]=enums.BUILD
+			processEventData["status"]=enums.NON_INITIALIZED
+			processEventData["next"]=strings.Join(initialStep.Next,",")
+			listener.EventData=processEventData
+			go p.notifyAll(listener)
+		}
+	}
+}
+func (p *pipelineService) applySteps(step v1.Step) {
+
+		processEventData :=make(map[string]interface{})
+		processEventData["step"]=step.Name
+		listener:=v1.Subject{Pipeline: p.pipeline,Step: step.Name}
+		if step.Type==enums.BUILD{
+			err:=p.applyBuildStep(step)
+			processEventData["trigger"]=step.Params["trigger"]
+			processEventData["agent"]=step.Params[enums.AGENT]
+			processEventData["type"]=enums.BUILD
+			if err!=nil{
+				processEventData["status"]=enums.BUILD_FAILED
+				processEventData["log"]=err
+				listener.EventData=processEventData
+				go p.notifyAll(listener)
+				return
+			}
+
+			processEventData["status"]=enums.INITIALIZING
+			processEventData["next"]=strings.Join(step.Next,",")
+			listener.EventData=processEventData
+			go p.notifyAll(listener)
+	}
+}
 func (p *pipelineService) apply() {
 	if len(p.pipeline.Steps)>0{
 		initialStep:=p.pipeline.Steps[0]
@@ -164,27 +232,16 @@ func (p *pipelineService) applyBuildStep(step v1.Step) error{
 	go p.PostOperations(step.Name,step.Type,p.pipeline)
 	return nil
 }
-func (p *pipelineService) Apply(url,revision string,pipeline v1.Pipeline) error {
-	p.Build(url,revision,pipeline)
-	if p.pipeline.Label==nil{
-		p.pipeline.Label=make(map[string]string)
-	}
-	p.pipeline.Label["processId"]=p.pipeline.ProcessId
-	p.pipeline.Label["pipeline"]=p.pipeline.Name
-	err:=p.pipeline.Validate()
-	if err!=nil{
-		return err
-	}
-	p.apply()
-	return nil
-}
+
 func (k8s *pipelineService)notifyAll(listener v1.Subject){
 	for _, observer := range k8s.observerList {
 		go observer.Listen(listener)
 	}
 }
 
-func NewPipelineService(k8s service.K8s,tekton service.Tekton,logEventService service.LogEvent,	processEventService service.ProcessEvent,observerList []service.Observer) service.Pipeline {
+
+
+func NewPipelineService(k8s service.K8s,tekton service.Tekton,logEventService service.LogEvent,	processEventService service.ProcessEvent,observerList []service.Observer,processLifeCycleEvent service.ProcessLifeCycleEvent) service.Pipeline {
 	return &pipelineService{
 		k8s: k8s,
 		tekton: tekton,
@@ -192,5 +249,6 @@ func NewPipelineService(k8s service.K8s,tekton service.Tekton,logEventService se
 		logEventService: logEventService,
 		processEventService: processEventService,
 		observerList: observerList,
+		processLifeCycleEvent: processLifeCycleEvent,
 	}
 }
