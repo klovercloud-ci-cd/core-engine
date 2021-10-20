@@ -18,7 +18,7 @@ type eventStoreProcessLifeCycleService struct {
 }
 
 func (e eventStoreProcessLifeCycleService) PullBuildEvents() []v1.ProcessLifeCycleEvent {
-	url := config.EventStoreUrl + "/process_life_cycle_events?count=" + config.PullSize + "&step_type=" + string(enums.BUILD)
+	url := config.EventStoreUrl + "/process_life_cycle_events?count=" + config.AllowedConcurrentBuild + "&step_type=" + string(enums.BUILD)
 	header := make(map[string]string)
 	header["Authorization"] = "token " + config.EventStoreToken
 	header["Accept"] = "application/json"
