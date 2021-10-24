@@ -22,6 +22,7 @@ func (e eventStoreProcessLifeCycleService) PullBuildEvents() []v1.ProcessLifeCyc
 	header := make(map[string]string)
 	header["Authorization"] = "token " + config.EventStoreToken
 	header["Accept"] = "application/json"
+	header["token"]=config.Token
 	err, data := e.httpPublisher.Get(url, header)
 	if err != nil {
 		// send to observer

@@ -85,3 +85,7 @@ func GetPipelineService() service.Pipeline {
 
 	return logic.NewPipelineService(k8s,tekton,logEventService,processEventService,observers,eventStoreProcessLifeCycleEvent)
 }
+
+func GetJwtService()service.JwtService{
+	return logic.NewJwtService()
+}

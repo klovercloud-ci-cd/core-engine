@@ -5,6 +5,7 @@ import (
 	"github.com/klovercloud-ci/enums"
 	"log"
 	"os"
+	"strings"
 )
 
 var IsK8 string
@@ -23,6 +24,9 @@ var EventStoreUrl string
 var UseLocalEventStore bool
 var EventStoreToken string
 var AllowedConcurrentBuild string
+var Publickey string
+var EnableAuthentication bool
+var Token string
 func InitEnvironmentVariables(){
 	err := godotenv.Load()
 	if err != nil {
@@ -58,4 +62,17 @@ func InitEnvironmentVariables(){
 	if AllowedConcurrentBuild ==""{
 		AllowedConcurrentBuild ="4"
 	}
+
+	Publickey=os.Getenv("PUBLIC_KEY")
+
+	if os.Getenv("ENABLE_AUTHENTICATION")==""{
+		EnableAuthentication=false
+	}else{
+		if strings.ToLower(os.Getenv("ENABLE_AUTHENTICATION"))=="true"{
+			EnableAuthentication=true
+		}else{
+			EnableAuthentication=false
+		}
+	}
+	Token=os.Getenv("TOKEN")
 }
