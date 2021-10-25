@@ -7,59 +7,52 @@ Responsibility: Apply pipeline
 |Id |1                                             | 
 |API Version |  v1 | 
 |Url | [http://host:port/api/v1/pipelines?url=[repo]&revision=[commitId/branch]&purging=[ENABLE/DISABLE]]()       |
-|Request Type |  POST |                            
+|Request Type |  POST |    
+|Content Type |  JSON/XML |  
 |Tekton Version |  v1alpha1 |
 
 #### Payload
 
 ##### Basic build and push
 ```
-
 {
   "name": "test",
   "steps": [
     {
-      "name": "build",
+      "name": "name",
       "type": "BUILD",
-      "service_account": "sa_name",
-      "input": {
-        "type": "git"
+      "trigger": "AUTO",
+      "params": {
+        "repository_type": "git",
+        "revision": "revision",
+        "service_account": "service_account_name",
+        "images": "image_url"
       },
-      "outputs": [{
-        "type":"image",
-        "url":"image_url",
-        "revision":"revision"
-      }
-      ]
+      "next": []
     }
   ]
 }
+
 ```
 
 ##### Build passing arguments and push
 ```
-
 {
   "name": "test",
   "steps": [
     {
-      "name": "build",
+      "name": "name",
       "type": "BUILD",
-      "service_account": "sa_name",
-      "input": {
-        "type": "git"
+      "trigger": "AUTO",
+      "params": {
+        "repository_type": "git",
+        "revision": "revision",
+        "service_account": "service_account_name",
+        "images": "image_url1,image_url2",
+        "arg": "key1:value1,key2:value2"
       },
-      "outputs": [{
-        "type":"image",
-        "url":"image_url",
-        "revision":"revision"
-      }
-      ],
-      "arg":{
-        "data":{
-          "arg1":"value1"
-        }
-      }
+      "next": [
+      ]
     }
   ]
 }
@@ -71,32 +64,19 @@ Responsibility: Apply pipeline
   "name": "test",
   "steps": [
     {
-      "name": "build",
+      "name": "name",
       "type": "BUILD",
-      "service_account": "sa_name",
-      "input": {
-        "type": "git"
+      "trigger": "AUTO",
+      "params": {
+        "repository_type": "git",
+        "revision": "revision",
+        "service_account": "service_account_name",
+        "images": "image_url1,image_url2",
+        "args_from_configmaps": "namespace/config_map_name",
       },
-      "outputs": [{
-        "type":"image",
-        "url":"image_url1",
-        "revision":"revision"
-      },
-        {
-          "type":"image",
-          "url":"image_url2",
-          "revision":"revision"
-        }
-      ],
-      "arg":{
-
-        "configMaps":[
-          {
-            "name":"configmap_name",
-            "namespace":"namespace_name"
-          }
-        ]
-      }
+      "next": [
+        "deployDev"
+      ]
     }
   ]
 }
@@ -106,31 +86,26 @@ Responsibility: Apply pipeline
 ##### Build and push to multiple registry
 
 ````
-
 {
   "name": "test",
   "steps": [
     {
-      "name": "build",
+      "name": "name",
       "type": "BUILD",
-      "service_account": "sa_name",
-      "input": {
-        "type": "git"
+      "trigger": "AUTO",
+      "params": {
+        "repository_type": "git",
+        "revision": "revision",
+        "service_account": "service_account_name",
+        "images": "image_url1,image_url2"
       },
-      "outputs": [{
-        "type":"image",
-        "url":"image_url1",
-        "revision":"revision"
-      },
-        {
-          "type":"image",
-          "url":"image_url2",
-          "revision":"revision"
-        }
+      "next": [
+
       ]
     }
   ]
 }
+
 ````
 
 ##### Build and deploy 
@@ -140,52 +115,32 @@ Responsibility: Apply pipeline
   "name": "test",
   "steps": [
     {
-      "name": "build",
+      "name": "name",
       "type": "BUILD",
-      "service_account": "test-sa",
-      "input": {
-        "type": "git"
+      "trigger": "AUTO",
+      "params": {
+        "repository_type": "git",
+        "revision": "revision",
+        "service_account": "service_account_name",
+        "images": "image_url1"
       },
-      "outputs": [
-        {
-          "type": "image",
-          "url": "zeromsi2/spring-boot-image:1.0.0",
-          "revision": "1.0.0"
-        }
-      ],
-      "arg": {
-        "configMaps": [
-          {
-            "name": "cm-test",
-            "namespace": "tekton"
-          }
-        ]
-      }
+      "next": [
+        "deployDev"
+      ]
     },
     {
-      "name": "deploy",
+      "name": "deployDev",
       "type": "DEPLOY",
-      "outputs": [
-        {
-          "deployment_resource": {
-            "agent": "local_agent",
-            "name": "ubuntu",
-            "namespace": "default",
-            "type": "deployment",
-            "replica": 2,
-            "images": [
-              {
-                "image_index": 0,
-                "image": "zeromsi2/spring-boot-image:1.0.0"
-              },
-              {
-                "image_index": 1,
-                "image": "ubuntu"
-              }
-            ]
-          }
-        }
-      ]
+      "trigger": "AUTO",
+      "params": {
+        "agent": "agent_name",
+        "name": "name of resource",
+        "namespace": "k8s_resource_namespace",
+        "type": "k8s_resource_name",
+        "env": "env_name",
+        "images": "image_url"
+      },
+      "next": null
     }
   ]
 }
@@ -195,69 +150,8 @@ Responsibility: Apply pipeline
 
 ---
 **NOTE**
-In order to register any new agent add agent info for key ```AGENTS``` in environment like , 
-[name]&&[url]&&[token] separated by comma (,)
+- ``` trigger ``` can be ```AUTO``` / ```Manual```.
 ---
-
-##### Mount descriptors to apply prerequisites 
-
-```
-{
-  "name": "test",
-  "steps": [
-    {
-      "name": "build",
-      "type": "BUILD",
-      "service_account": "test-sa",
-      "input": {
-        "type": "git"
-      },
-      "outputs": [
-        {
-          "type": "image",
-          "url": "zeromsi2/spring-boot-image:1.0.0",
-          "revision": "1.0.0"
-        }
-      ],
-      "arg": {
-        "configMaps": [
-          {
-            "name": "cm-test",
-            "namespace": "tekton"
-          }
-        ]
-      }
-    },
-    {
-      "name": "deploy",
-      "type": "DEPLOY",
-      "outputs": [
-        {
-          "deployment_resource": {
-            "descriptors":[],
-            "agent": "local_agent",
-            "name": "ubuntu",
-            "namespace": "default",
-            "type": "deployment",
-            "replica": 2,
-            "images": [
-              {
-                "image_index": 0,
-                "image": "zeromsi2/spring-boot-image:1.0.0"
-              },
-              {
-                "image_index": 1,
-                "image": "ubuntu"
-              }
-            ]
-          }
-        }
-      ]
-    }
-  ]
-}
-
-```
 
 ## API 2
 

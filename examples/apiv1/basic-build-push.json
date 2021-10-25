@@ -1,20 +1,17 @@
-
 {
   "name": "test",
   "steps": [
     {
-      "name": "build",
+      "name": "name",
       "type": "BUILD",
-      "service_account": "sa_name",
-      "input": {
-        "type": "git"
+      "trigger": "AUTO",
+      "params": {
+        "repository_type": "git",
+        "revision": "revision",
+        "service_account": "service_account_name",
+        "images": "image_url"
       },
-      "outputs": [{
-        "type":"image",
-        "url":"image_url",
-        "revision":"revision"
-      }
-      ]
+      "next": []
     }
   ]
 }

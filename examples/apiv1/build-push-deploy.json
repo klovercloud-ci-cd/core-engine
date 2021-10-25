@@ -1,0 +1,33 @@
+{
+  "name": "test",
+  "steps": [
+    {
+      "name": "name",
+      "type": "BUILD",
+      "trigger": "AUTO",
+      "params": {
+        "repository_type": "git",
+        "revision": "revision",
+        "service_account": "service_account_name",
+        "images": "image_url1"
+      },
+      "next": [
+        "deployDev"
+      ]
+    },
+    {
+      "name": "deployDev",
+      "type": "DEPLOY",
+      "trigger": "AUTO",
+      "params": {
+        "agent": "agent_name",
+        "name": "name of resource",
+        "namespace": "k8s_resource_namespace",
+        "type": "k8s_resource_name",
+        "descriptors": [],
+        "images": "image_url"
+      },
+      "next": null
+    }
+  ]
+}
