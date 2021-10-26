@@ -109,7 +109,6 @@ func (p pipelineApi) Apply(context echo.Context) error {
 		data.ProcessId = guuid.New().String()
 	}
 	err = p.pipelineService.BuildProcessLifeCycleEvents(url,revision, data)
-
 	if err != nil{
 		log.Println("Input Error:", err.Error())
 		listener:=v1.Subject{Pipeline: data,Step: "n/a",Log: err.Error()}

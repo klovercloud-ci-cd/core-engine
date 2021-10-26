@@ -3,6 +3,7 @@ package v1
 import "errors"
 
 type Pipeline struct {
+	MetaData PipelineMetadata `json:"_metadata" yaml:"_metadata"`
 	Option     PipelineApplyOption `json:"option" yaml:"option"`
 	ApiVersion string              `json:"api_version" yaml:"api_version"`
 	Name       string              `json:"name"  yaml:"name"`
