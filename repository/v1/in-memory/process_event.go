@@ -14,7 +14,7 @@ type processEventRepository struct {
 
 }
 
-func (p processEventRepository) Store(data v1.PipelineProcessEvent) {
+func (p processEventRepository) Store(data v1.ProcessEvent) {
 	if ProcessEventStore ==nil{
 		ProcessEventStore = map[string]*list.List{}
 	}

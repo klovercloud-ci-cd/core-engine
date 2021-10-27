@@ -8,13 +8,13 @@ import (
 	"log"
 )
 
-type eventStoreProcessService struct {
+type eventStoreProcessEventService struct {
 	httpPublisher service.HttpPublisher
 }
 
-func (e eventStoreProcessService) Listen(subject v1.Subject) {
+func (e eventStoreProcessEventService) Listen(subject v1.Subject) {
 	if subject.EventData!=nil{
-		event:=v1.PipelineProcessEvent{
+		event:=v1.ProcessEvent{
 			ProcessId: subject.Pipeline.ProcessId,
 			Data:      subject.EventData,
 		}
@@ -31,7 +31,7 @@ func (e eventStoreProcessService) Listen(subject v1.Subject) {
 }
 
 func NewV1EventStoreProcessEventService(httpPublisher service.HttpPublisher) service.Observer {
-	return &eventStoreProcessService{
+	return &eventStoreProcessEventService{
 		httpPublisher: httpPublisher,
 	}
 }

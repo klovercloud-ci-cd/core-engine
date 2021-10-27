@@ -11,7 +11,7 @@ import (
 func TestProcessEventService_GetByProcessId(t *testing.T) {
 	type TestCase struct {
 		processId string
-		data      []v1.PipelineProcessEvent
+		data      []v1.ProcessEvent
 		expected  map[string]interface{}
 		actions   []string
 		actual    map[string]interface{}
@@ -19,7 +19,7 @@ func TestProcessEventService_GetByProcessId(t *testing.T) {
 	var testCases []TestCase
 	testCases = append(testCases, TestCase{
 		processId: "1",
-		data: []v1.PipelineProcessEvent{v1.PipelineProcessEvent{
+		data: []v1.ProcessEvent{v1.ProcessEvent{
 			ProcessId: "1",
 			Data:      map[string]interface{}{"step": "build", "status": "Processing"},
 		},
@@ -61,7 +61,7 @@ func TestProcessEventService_GetByProcessId(t *testing.T) {
 
 func TestProcessEventService_Store(t *testing.T) {
 	type TestCase struct {
-		data     v1.PipelineProcessEvent
+		data     v1.ProcessEvent
 		expected map[string]interface{}
 		actions  []string
 		actual   map[string]interface{}
@@ -70,7 +70,7 @@ func TestProcessEventService_Store(t *testing.T) {
 	var testCases []TestCase
 
 	testCases = append(testCases, TestCase{
-		data: v1.PipelineProcessEvent{
+		data: v1.ProcessEvent{
 			ProcessId: "1",
 			Data:      map[string]interface{}{"step": "build", "status": "Processing"},
 		},
@@ -80,7 +80,7 @@ func TestProcessEventService_Store(t *testing.T) {
 	})
 
 	testCases = append(testCases, TestCase{
-		data: v1.PipelineProcessEvent{
+		data: v1.ProcessEvent{
 			ProcessId: "2",
 			Data:      map[string]interface{}{"step": "build", "status": "Processing"},
 		},
@@ -90,7 +90,7 @@ func TestProcessEventService_Store(t *testing.T) {
 	})
 
 	testCases = append(testCases, TestCase{
-		data: v1.PipelineProcessEvent{
+		data: v1.ProcessEvent{
 			ProcessId: "1",
 			Data:      map[string]interface{}{"step": "build", "status": "Pod Initializing"},
 		},
@@ -100,7 +100,7 @@ func TestProcessEventService_Store(t *testing.T) {
 	})
 
 	testCases = append(testCases, TestCase{
-		data: v1.PipelineProcessEvent{
+		data: v1.ProcessEvent{
 			ProcessId: "1",
 			Data:      map[string]interface{}{"step": "build", "status": "Image pulling"},
 		},

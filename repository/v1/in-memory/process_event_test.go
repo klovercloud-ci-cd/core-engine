@@ -15,7 +15,7 @@ func TestProcessEventRepository_GetByProcessId(t *testing.T){
 	ProcessEventStore = map[string]*list.List{}
 	type TestCase struct {
 		processId string
-		data     []v1.PipelineProcessEvent
+		data     []v1.ProcessEvent
 		expected map[string]interface{}
 		actions  []string
 		actual   map[string]interface{}
@@ -23,11 +23,11 @@ func TestProcessEventRepository_GetByProcessId(t *testing.T){
 	testCases:=[]TestCase{}
 	testCases= append(testCases, TestCase{
 		processId: "1",
-		data: []v1.PipelineProcessEvent{v1.PipelineProcessEvent{
+		data: []v1.ProcessEvent{v1.ProcessEvent{
 			ProcessId: "1",
 			Data: map[string]interface{}{"step":"build","status":"Processing"},
 		},
-			v1.PipelineProcessEvent{
+			v1.ProcessEvent{
 				ProcessId: "1",
 				Data: map[string]interface{}{"step":"build","status":"Pod Initializing"},
 			}},
@@ -65,7 +65,7 @@ func TestProcessEventRepository_GetByProcessId(t *testing.T){
 func TestProcessEventRepository_store(t *testing.T) {
 	ProcessEventStore = map[string]*list.List{}
 	type TestCase struct {
-		data     v1.PipelineProcessEvent
+		data     v1.ProcessEvent
 		expected map[string]interface{}
 		actions  []string
 		actual   map[string]interface{}
@@ -74,7 +74,7 @@ func TestProcessEventRepository_store(t *testing.T) {
 	testCases:=[]TestCase{}
 	
 	testCases= append(testCases, TestCase{
-		data:     v1.PipelineProcessEvent{
+		data:     v1.ProcessEvent{
 			ProcessId: "1",
 			Data: map[string]interface{}{"step":"build","status":"Processing"},
 		},
@@ -84,7 +84,7 @@ func TestProcessEventRepository_store(t *testing.T) {
 	})
 
 	testCases= append(testCases, TestCase{
-		data:     v1.PipelineProcessEvent{
+		data:     v1.ProcessEvent{
 			ProcessId: "2",
 			Data: map[string]interface{}{"step":"build","status":"Processing"},
 		},
@@ -95,7 +95,7 @@ func TestProcessEventRepository_store(t *testing.T) {
 
 
 	testCases= append(testCases, TestCase{
-		data:     v1.PipelineProcessEvent{
+		data:     v1.ProcessEvent{
 			ProcessId: "1",
 			Data: map[string]interface{}{"step":"build","status":"Pod Initializing"},
 		},
@@ -105,7 +105,7 @@ func TestProcessEventRepository_store(t *testing.T) {
 	})
 
 	testCases= append(testCases, TestCase{
-		data:     v1.PipelineProcessEvent{
+		data:     v1.ProcessEvent{
 			ProcessId: "1",
 			Data: map[string]interface{}{"step":"build","status":"Image pulling"},
 		},
