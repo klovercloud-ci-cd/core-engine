@@ -53,6 +53,7 @@ func GetPipelineService() service.Pipeline {
 		if config.Database==enums.Mongo{
 			logEventService=logic.NewLogEventService(mongo.NewLogEventRepository(3000))
 			processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
+			processLifeCycleEvent=logic.NewProcessLifeCycleEventService(mongo.NewProcessLifeCycleRepository(3000))
 			observers= append(observers, logEventService)
 			observers= append(observers, processEventService)
 			observers= append(observers, processLifeCycleEvent)
@@ -65,10 +66,12 @@ func GetPipelineService() service.Pipeline {
 			processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
 			eventStoreLogEventService=logic.NewV1EventStoreLogEventService(logic.NewHttpPublisherService())
 			eventStoreProcessEvent=logic.NewV1EventStoreProcessEventService(logic.NewHttpPublisherService())
+			processLifeCycleEvent=logic.NewProcessLifeCycleEventService(in_memory.NewProcessLifeCycleRepository())
 			observers= append(observers, logEventService)
 			observers= append(observers, processEventService)
 			observers= append(observers, eventStoreLogEventService)
 			observers= append(observers, eventStoreProcessEvent)
+			observers= append(observers, processLifeCycleEvent)
 			tekton = logic.NewTektonService(tektonClientSet)
 			k8s=logic.NewK8sService(k8sClientSet,tekton,observers)
 		}

@@ -1,59 +1,25 @@
 package logic
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/klovercloud-ci/api/common"
 	"github.com/klovercloud-ci/config"
-	"github.com/klovercloud-ci/core/v1"
+	v1 "github.com/klovercloud-ci/core/v1"
+	"github.com/klovercloud-ci/core/v1/repository"
 	"github.com/klovercloud-ci/core/v1/service"
 	"github.com/klovercloud-ci/enums"
-	"log"
-	"strconv"
 	"strings"
 	"time"
 )
 
-type eventStoreProcessLifeCycleService struct {
-	httpPublisher service.HttpPublisher
+type processLifeCycleEventService struct {
+	repo repository.ProcessLifeCycleEventRepository
 }
 
-func (e eventStoreProcessLifeCycleService) PullBuildEvents() []v1.ProcessLifeCycleEvent {
-	url := config.EventStoreUrl + "/process_life_cycle_events?count=" + strconv.FormatInt(config.AllowedConcurrentBuild, 10) + "&step_type=" + string(enums.BUILD)
-	header := make(map[string]string)
-	header["Authorization"] = "token " + config.EventStoreToken
-	header["Accept"] = "application/json"
-	header["token"]=config.Token
-	err, data := e.httpPublisher.Get(url, header)
-	if err != nil {
-		// send to observer
-		log.Println(err.Error())
-		return nil
-	}
-	response := common.ResponseDTO{}
-	err = json.Unmarshal(data, &response)
-	if err != nil {
-		log.Println(err.Error())
-		// send to observer
-		return nil
-	}
-	b, err := json.Marshal(response.Data)
-	if err != nil {
-		log.Println(err.Error())
-		// send to observer
-		return nil
-	}
-	events := []v1.ProcessLifeCycleEvent{}
-	err = json.Unmarshal(b, &events)
-	if err != nil {
-		log.Println(err.Error())
-		// send to observer
-		return nil
-	}
-	return events
+func (p processLifeCycleEventService) PullBuildEvents() []v1.ProcessLifeCycleEvent {
+	return p.PullNonInitializedAndAutoTriggerEnabledEventsByStepType(config.AllowedConcurrentBuild , string(enums.BUILD))
 }
 
-func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
+func (p processLifeCycleEventService) Listen(subject v1.Subject) {
 	if subject.EventData["status"] == nil {
 		return
 	}
@@ -121,24 +87,45 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 			})
 		}
 	}
-	type ProcessLifeCycleEventList struct {
-		Events []v1.ProcessLifeCycleEvent `bson:"events" json :"events"`
-	}
-	if len(data) > 0 {
-		events := ProcessLifeCycleEventList{data}
-		header := make(map[string]string)
-		header["Content-Type"] = "application/json"
-		b, err := json.Marshal(events)
-		if err != nil {
-			log.Println(err.Error())
-			return
-		}
-		e.httpPublisher.Post(config.EventStoreUrl+"/process_life_cycle_events", header, b)
-	}
+	p.Store(data)
 }
 
-func NewEventStoreProcessLifeCycleService(httpPublisher service.HttpPublisher) service.ProcessLifeCycleEvent {
-	return &eventStoreProcessLifeCycleService{
-		httpPublisher: httpPublisher,
+func (p processLifeCycleEventService) PullNonInitializedAndAutoTriggerEnabledEventsByStepType(count int64, stepType string) []v1.ProcessLifeCycleEvent {
+	return p.repo.PullNonInitializedAndAutoTriggerEnabledEventsByStepType(count,stepType)
+}
+
+func (p processLifeCycleEventService) PullPausedAndAutoTriggerEnabledResourcesByAgentName(count int64, agent string) []v1.AgentDeployableResource {
+	resources:=[]v1.AgentDeployableResource{}
+	events:=p.repo.PullPausedAndAutoTriggerEnabledResourcesByAgentName(count,agent)
+	for _,event:=range events{
+
+		var step *v1.Step
+		for _,each:=range event.Pipeline.Steps{
+			if each.Name==event.Step{
+				step=&each
+				break
+			}
+		}
+		if step!=nil{
+			resources=append(resources,v1.AgentDeployableResource{
+				Step:        step.Name,
+				ProcessId:   event.ProcessId,
+				Descriptors: step.Descriptors,
+				Type:        enums.PIPELINE_RESOURCE_TYPE(step.Params["type"]),
+				Name:        step.Params["name"],
+				Namespace:   step.Params["namespace"],
+				Images:     strings.Split(fmt.Sprintf("%v", step.Params["images"]), ",") ,
+			} )
+		}
+	}
+	return resources
+}
+
+func (p processLifeCycleEventService) Store(events []v1.ProcessLifeCycleEvent) {
+	p.repo.Store(events)
+}
+func NewProcessLifeCycleEventService(repo repository.ProcessLifeCycleEventRepository) service.ProcessLifeCycleEvent {
+	return &processLifeCycleEventService{
+	repo: repo,
 	}
 }

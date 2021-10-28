@@ -5,6 +5,7 @@ import (
 	"github.com/klovercloud-ci/enums"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -23,7 +24,7 @@ type DATABASE string
 var EventStoreUrl string
 var UseLocalEventStore bool
 var EventStoreToken string
-var AllowedConcurrentBuild string
+var AllowedConcurrentBuild int64
 var Publickey string
 var EnableAuthentication bool
 var Token string
@@ -58,9 +59,10 @@ func InitEnvironmentVariables(){
 		DatabaseConnectionString = "mongodb://" + DbUsername + ":" + DbPassword + "@" + DbServer + ":" + DbPort
 	}
 	EventStoreToken=os.Getenv("EVENT_STORE_URL_TOKEN")
-	AllowedConcurrentBuild =os.Getenv("ALLOWED_CONCURRENT_BUILD")
-	if AllowedConcurrentBuild ==""{
-		AllowedConcurrentBuild ="4"
+
+	AllowedConcurrentBuild, err = strconv.ParseInt(os.Getenv("ALLOWED_CONCURRENT_BUILD"), 10, 64)
+	if err !=nil{
+		AllowedConcurrentBuild =4
 	}
 
 	Publickey=os.Getenv("PUBLIC_KEY")

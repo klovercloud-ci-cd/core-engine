@@ -27,6 +27,15 @@ type DeploymentResource struct {
 		Image      string `json:"image" yaml:"image"`
 	}`json:"images" yaml:"images"`
 }
+type AgentDeployableResource struct {
+	Step string `json:"step"`
+	ProcessId string `json:"process_id"`
+	Descriptors *[]unstructured.Unstructured  `json:"descriptors" yaml:"descriptors"`
+	Type     enums.PIPELINE_RESOURCE_TYPE `json:"type"`
+	Name string                  `json:"name"`
+	Namespace string             `json:"namespace"`
+	Images [] string`json:"images"`
+}
 
 type Variable struct {
 	Secrets []struct {
