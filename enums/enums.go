@@ -7,8 +7,8 @@ const (
 	DEPLOY = STEP_TYPE("DEPLOY")
 )
 const (
-	Mongo    = "MONGO"
-	Inmemory = "INMEMORY"
+	MONGO    = "MONGO"
+	INMEMORY = "INMEMORY"
 )
 
 type API_VERSION string

@@ -55,7 +55,7 @@ func InitEnvironmentVariables(){
 	if KanikoImage==""{
 		KanikoImage="klovercloud/kaniko:v0.14.0"
 	}
-	if Database==enums.Mongo{
+	if Database==enums.MONGO {
 		DatabaseConnectionString = "mongodb://" + DbUsername + ":" + DbPassword + "@" + DbServer + ":" + DbPort
 	}
 	EventStoreToken=os.Getenv("EVENT_STORE_URL_TOKEN")

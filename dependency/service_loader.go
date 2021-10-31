@@ -16,12 +16,12 @@ func GetObserverServices()[]service.Observer {
 	var eventStoreProcessEvent service.Observer
 	var processLifeCycleEvent service.ProcessLifeCycleEvent
 	if config.UseLocalEventStore{
-		if config.Database==enums.Mongo{
+		if config.Database==enums.MONGO {
 			processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
 			observers= append(observers, processEventService)
 			observers= append(observers, processLifeCycleEvent)
 		}
-		if config.Database == enums.Inmemory{
+		if config.Database == enums.INMEMORY {
 			processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
 			eventStoreLogEventService=logic.NewV1EventStoreLogEventService(logic.NewHttpPublisherService())
 			eventStoreProcessEvent=logic.NewV1EventStoreProcessEventService(logic.NewHttpPublisherService())
@@ -50,7 +50,7 @@ func GetPipelineService() service.Pipeline {
 	tektonClientSet,k8sClientSet:=config.GetClientSet()
 
 	if config.UseLocalEventStore{
-		if config.Database==enums.Mongo{
+		if config.Database==enums.MONGO {
 			logEventService=logic.NewLogEventService(mongo.NewLogEventRepository(3000))
 			processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
 			processLifeCycleEvent=logic.NewProcessLifeCycleEventService(mongo.NewProcessLifeCycleRepository(3000))
@@ -61,7 +61,7 @@ func GetPipelineService() service.Pipeline {
 			k8s=logic.NewK8sService(k8sClientSet,tekton,observers)
 
 		}
-		if config.Database == enums.Inmemory{
+		if config.Database == enums.INMEMORY {
 			logEventService=logic.NewLogEventService(in_memory.NewLogEventRepository())
 			processEventService=logic.NewProcessEventService(in_memory.NewProcessEventRepository())
 			eventStoreLogEventService=logic.NewV1EventStoreLogEventService(logic.NewHttpPublisherService())
