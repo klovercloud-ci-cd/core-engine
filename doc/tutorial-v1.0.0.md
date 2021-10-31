@@ -132,6 +132,7 @@ Responsibility: Apply pipeline
       "name": "deployDev",
       "type": "DEPLOY",
       "trigger": "AUTO",
+      "descriptors":[],
       "params": {
         "agent": "agent_name",
         "name": "name of resource",
@@ -150,7 +151,7 @@ Responsibility: Apply pipeline
 
 ---
 **NOTE**
-- ``` trigger ``` can be ```AUTO``` / ```Manual```.
+- ``` trigger ``` can be ```AUTO``` / ```Manual```. If there are any k8s resources to be applied, add those as json or yaml in ```descriptors``` 
 ---
 
 ## API 2
