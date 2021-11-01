@@ -129,14 +129,11 @@ func Test_Listen(t *testing.T) {
 		}
 		testCases = append(testCases, TestData{
 			data: v1.Subject{
-				Pipeline: v1.Pipeline(struct {
-					Option     v1.PipelineApplyOption
-					ApiVersion string
-					Name       string
-					ProcessId  string
-					Label      map[string]string
-					Steps      []v1.Step
-				}{ApiVersion: "123", Name: "test1", ProcessId: "1"}),
+				Pipeline: v1.Pipeline{
+					ApiVersion: "123",
+					Name:       "test1",
+					ProcessId:  "1",
+				},
 				Log:  log,
 				Step: "Build",
 			},

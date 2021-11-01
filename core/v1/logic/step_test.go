@@ -5,6 +5,7 @@ import (
 	v1 "github.com/klovercloud-ci/core/v1"
 	"github.com/klovercloud-ci/enums"
 	"github.com/stretchr/testify/assert"
+	"log"
 	"reflect"
 	"testing"
 )
@@ -51,7 +52,7 @@ func TestStepService_SetArgs(t *testing.T) {
 	step := &v1.Step{
 		Name:        "build",
 		Type:        "BUILD",
-		Trigger:     "AUTO",
+		Trigger:     enums.AUTO,
 		Params:      map[enums.PARAMS]string{"args_from_configmaps": "klovercloud/configMap1"},
 		Next:        nil,
 		ArgData:     nil,
@@ -64,7 +65,7 @@ func TestStepService_SetArgs(t *testing.T) {
 	service.SetArgs(NewMockK8sService(nil))
 	testCase.actual = service.step.ArgData
 	if !reflect.DeepEqual(testCase.expected, testCase.actual) {
-		fmt.Println(testCase.expected, testCase.actual)
+		log.Println(testCase.expected, testCase.actual)
 		assert.ElementsMatch(t, testCase.expected, testCase.actual)
 	}
 }
