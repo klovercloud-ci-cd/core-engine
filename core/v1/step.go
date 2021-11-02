@@ -56,7 +56,9 @@ func (step Step) Validate() error {
 	} else {
 		return errors.New("Invalid step type!")
 	}
-	if step.Trigger != enums.AUTO && step.Trigger != enums.MANUAL {
+	if step.Trigger == "" {
+		return errors.New("Step triger required!")
+	} else if step.Trigger != enums.AUTO && step.Trigger != enums.MANUAL {
 		return errors.New("Invalid trigger type!")
 	}
 	return nil
