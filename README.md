@@ -1,4 +1,8 @@
-## Klovercloud-ci-core
+# Klovercloud-ci-core
+
+Primary Responsibility of this project is building docker image and pushing to the registry. Run on any kubernetes.
+
+
 
 ## Tutorial
 
@@ -12,5 +16,6 @@
 
 - See [CONTRIBUTING.md](doc/CONTRIBUTING.md)
 - See [DEVELOPMENT.md](doc/DEVELOPMENT.md) to get start
+- See [architecture.md](doc/architecture.md) 
 - Look at our
   [our issues](https://github.com/klovercloud-ci-cd/klovercloud-ci-core/issues)

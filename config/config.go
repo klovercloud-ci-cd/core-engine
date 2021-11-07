@@ -34,6 +34,8 @@ func InitEnvironmentVariables(){
 		log.Println("ERROR:", err.Error())
 		return
 	}
+
+	IsK8 = os.Getenv("IS_K8")
 	ServerPort = os.Getenv("SERVER_PORT")
 	DbServer = os.Getenv("MONGO_SERVER")
 	DbPort = os.Getenv("MONGO_PORT")
