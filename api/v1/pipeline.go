@@ -25,6 +25,17 @@ type pipelineApi struct {
 var (
 	upgrader = websocket.Upgrader{}
 )
+
+// Get... Get logs [available if local storage is enabled]
+// @Summary Get Logs [available if local storage is enabled]
+// @Description Gets logs by pipeline processId [available if local storage is enabled]
+// @Tags Pipeline
+// @Produce json
+// @Param processId path string true "Pipeline ProcessId"
+// @Param page query int64 false "Page number"
+// @Param limit query int64 false "Record count"
+// @Success 200 {object} common.ResponseDTO
+// @Router /api/v1/pipelines/{processId} [GET]
 func (p pipelineApi) GetLogs(context echo.Context)error {
 	processId:=context.Param("processId")
 	option := getQueryOption(context)
@@ -40,19 +51,6 @@ func (p pipelineApi) GetLogs(context echo.Context)error {
 		metadata.Links = append(metadata.Links, map[string]string{"next": uri + "?order=" + context.QueryParam("order") + "&page=" + strconv.FormatInt(option.Pagination.Page+1, 10) + "&limit=" + strconv.FormatInt(option.Pagination.Limit, 10)})
 	}
 	return common.GenerateSuccessResponse(context,logs,&metadata,"")
-}
-func getQueryOption(context echo.Context) v1.LogEventQueryOption {
-	option := v1.LogEventQueryOption{}
-	page := context.QueryParam("page")
-	limit := context.QueryParam("limit")
-	if page == "" {
-		option.Pagination.Page = enums.DEFAULT_PAGE
-		option.Pagination.Limit = enums.DEFAULT_PAGE_LIMIT
-	} else {
-		option.Pagination.Page, _ = strconv.ParseInt(page ,10, 64)
-		option.Pagination.Limit, _ = strconv.ParseInt(limit ,10, 64)
-	}
-	return option
 }
 
 func (p pipelineApi) GetEvents(context echo.Context) error {
@@ -84,6 +82,16 @@ func (p pipelineApi) GetEvents(context echo.Context) error {
 	}
 }
 
+// Apply ... Apply Pipeline
+// @Summary Apply Pipeline
+// @Description Applies Pipeline
+// @Tags Pipeline
+// @Accept json
+// @Produce json
+// @Param data body v1.Pipeline true "Pipeline Data"
+// @Success 200 {object} common.ResponseDTO
+// @Failure 404 {object} common.ResponseDTO
+// @Router /api/v1/pipelines [POST]
 func (p pipelineApi) Apply(context echo.Context) error {
 	var data v1.Pipeline
 	body, err := ioutil.ReadAll(context.Request().Body)
@@ -117,11 +125,26 @@ func (p pipelineApi) Apply(context echo.Context) error {
 	}
 	return common.GenerateSuccessResponse(context,data.ProcessId,nil,"Pipeline successfully triggered!")
 }
+
 func (p pipelineApi)notifyAll(listener v1.Subject){
 	for _, observer := range p.observerList {
 		go observer.Listen(listener)
 	}
 }
+func getQueryOption(context echo.Context) v1.LogEventQueryOption {
+	option := v1.LogEventQueryOption{}
+	page := context.QueryParam("page")
+	limit := context.QueryParam("limit")
+	if page == "" {
+		option.Pagination.Page = enums.DEFAULT_PAGE
+		option.Pagination.Limit = enums.DEFAULT_PAGE_LIMIT
+	} else {
+		option.Pagination.Page, _ = strconv.ParseInt(page ,10, 64)
+		option.Pagination.Limit, _ = strconv.ParseInt(limit ,10, 64)
+	}
+	return option
+}
+
 func NewPipelineApi(pipelineService service.Pipeline,	observerList []service.Observer) api.Pipeline {
 	return &pipelineApi{
 		pipelineService: pipelineService,

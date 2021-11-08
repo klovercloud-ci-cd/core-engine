@@ -1,0 +1,170 @@
+definitions:
+  common.MetaData:
+    properties:
+      links:
+        items:
+          additionalProperties:
+            type: string
+          type: object
+        type: array
+      page:
+        type: integer
+      page_count:
+        type: integer
+      per_page:
+        type: integer
+      total_count:
+        type: integer
+    type: object
+  common.ResponseDTO:
+    properties:
+      _metadata:
+        $ref: '#/definitions/common.MetaData'
+      data: {}
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  unstructured.Unstructured:
+    properties:
+      object:
+        additionalProperties: true
+        description: |-
+          Object is a JSON compatible map with string, float, int, bool, []interface{}, or
+          map[string]interface{}
+          children.
+        type: object
+    type: object
+  v1.CompanyMetadata:
+    properties:
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      number_of_concurrent_process:
+        type: integer
+      total_process_per_day:
+        type: integer
+    type: object
+  v1.Pipeline:
+    properties:
+      _metadata:
+        $ref: '#/definitions/v1.PipelineMetadata'
+      api_version:
+        type: string
+      label:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      option:
+        $ref: '#/definitions/v1.PipelineApplyOption'
+      process_id:
+        type: string
+      steps:
+        items:
+          $ref: '#/definitions/v1.Step'
+        type: array
+    type: object
+  v1.PipelineApplyOption:
+    properties:
+      purging:
+        type: string
+    type: object
+  v1.PipelineMetadata:
+    properties:
+      company_id:
+        type: string
+      company_metadata:
+        $ref: '#/definitions/v1.CompanyMetadata'
+    type: object
+  v1.Step:
+    properties:
+      arg_data:
+        additionalProperties:
+          type: string
+        type: object
+      descriptors:
+        items:
+          $ref: '#/definitions/unstructured.Unstructured'
+        type: array
+      env_data:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      next:
+        items:
+          type: string
+        type: array
+      params:
+        additionalProperties:
+          type: string
+        type: object
+      trigger:
+        type: string
+      type:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Klovercloud-ci-core API
+  title: Klovercloud-ci-core API
+paths:
+  /api/v1/pipelines:
+    post:
+      consumes:
+      - application/json
+      description: Applies Pipeline
+      parameters:
+      - description: Pipeline Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/v1.Pipeline'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.ResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.ResponseDTO'
+      summary: Apply Pipeline
+      tags:
+      - Pipeline
+  /api/v1/pipelines/{processId}:
+    get:
+      description: Gets logs by pipeline processId
+      parameters:
+      - description: Pipeline ProcessId
+        in: path
+        name: processId
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Record count
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.ResponseDTO'
+      summary: Get Logs
+      tags:
+      - Pipeline
+swagger: "2.0"
