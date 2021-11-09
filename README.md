@@ -1,4 +1,4 @@
-[![Go Report Card](https://goreportcard.com/report/github.com/klovercloud-ci-cd/klovercloud-ci-core)](https://goreportcard.com/report/github.com/klovercloud-ci-cd/klovercloud-ci-core)
+[![Go Report Card](https://goreportcard.com/badge/github.com/klovercloud-ci-cd/klovercloud-ci-core)](https://goreportcard.com/report/github.com/klovercloud-ci-cd/klovercloud-ci-core)
 
 # Klovercloud-ci-core
 
