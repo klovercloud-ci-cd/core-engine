@@ -49,10 +49,13 @@ func (p processEventRepository) DequeueByProcessId(processId string) map[string]
 		if ProcessEventStore[processId].Front() != nil {
 			m := make(map[string]interface{})
 			t := e.Remove(e.Front())
-			jsonString, err := json.Marshal(&t)
-			err = json.Unmarshal(jsonString, &m)
-			if err != nil {
-				log.Println(err.Error())
+			jsonString, MarshalErr := json.Marshal(&t)
+			if MarshalErr != nil {
+				log.Println(MarshalErr.Error())
+			}
+			UnmarshalErr := json.Unmarshal(jsonString, &m)
+			if UnmarshalErr != nil {
+				log.Println(UnmarshalErr.Error())
 			}
 			return m
 		}

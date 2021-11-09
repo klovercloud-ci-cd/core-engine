@@ -35,7 +35,7 @@ func (k8s k8sService) GetContainerLog(namespace, podName, containerName string, 
 		tRun, tRunError := k8s.tekton.GetTaskRun(taskRunName, true)
 
 		if tRunError == nil && !tRun.IsCancelled() {
-			readCloser, err = k8s.GetContainerLog(namespace, podName, containerName, taskRunLabel)
+			return k8s.GetContainerLog(namespace, podName, containerName, taskRunLabel)
 		}
 		return nil, err
 	}
@@ -149,7 +149,9 @@ func (k8s *k8sService) GetPodListByProcessId(namespace, processId string, option
 	podList, err := k8s.Kcs.CoreV1().Pods(namespace).List(metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
-
+	if err != nil {
+		log.Println(err.Error())
+	}
 	count := 0
 	for len(podList.Items) == 0 && option.Wait {
 		data["status"] = enums.POD_INITIALIZING
@@ -194,7 +196,6 @@ func (k8s *k8sService) WaitAndGetInitializedPods(namespace, processId, step stri
 		data["status"] = enums.INITIALIZING
 		listener.EventData = data
 		go k8s.notifyAll(listener)
-		podStatus = podList.Items[0].Status.Phase
 	}
 	return podList
 }
