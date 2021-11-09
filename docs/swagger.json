@@ -1,256 +1,256 @@
 {
-    "swagger": "2.0",
-    "info": {
-        "description": "Klovercloud-ci-core API",
-        "title": "Klovercloud-ci-core API",
-        "contact": {}
-    },
-    "paths": {
-        "/api/v1/pipelines": {
-            "post": {
-                "description": "Applies Pipeline",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Pipeline"
-                ],
-                "summary": "Apply Pipeline",
-                "parameters": [
-                    {
-                        "description": "Pipeline Data",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/v1.Pipeline"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/common.ResponseDTO"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.ResponseDTO"
-                        }
-                    }
-                }
+  "swagger": "2.0",
+  "info": {
+    "description": "Klovercloud-ci-core API",
+    "title": "Klovercloud-ci-core API",
+    "contact": {}
+  },
+  "paths": {
+    "/api/v1/pipelines": {
+      "post": {
+        "description": "Applies Pipeline",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Pipeline"
+        ],
+        "summary": "Apply Pipeline",
+        "parameters": [
+          {
+            "description": "Pipeline Data",
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.Pipeline"
             }
-        },
-        "/api/v1/pipelines/{processId}": {
-            "get": {
-                "description": "Gets logs by pipeline processId",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Pipeline"
-                ],
-                "summary": "Get Logs",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Pipeline ProcessId",
-                        "name": "processId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Record count",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/common.ResponseDTO"
-                        }
-                    }
-                }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/common.ResponseDTO"
             }
+          },
+          "404": {
+            "description": "Not Found",
+            "schema": {
+              "$ref": "#/definitions/common.ResponseDTO"
+            }
+          }
         }
+      }
     },
-    "definitions": {
-        "common.MetaData": {
-            "type": "object",
-            "properties": {
-                "links": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "additionalProperties": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_count": {
-                    "type": "integer"
-                },
-                "per_page": {
-                    "type": "integer"
-                },
-                "total_count": {
-                    "type": "integer"
-                }
+    "/api/v1/pipelines/{processId}": {
+      "get": {
+        "description": "Gets logs by pipeline processId [available if local storage is enabled]",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Pipeline"
+        ],
+        "summary": "Get Logs [available if local storage is enabled]",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Pipeline ProcessId",
+            "name": "processId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "description": "Page number",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "description": "Record count",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/common.ResponseDTO"
             }
-        },
-        "common.ResponseDTO": {
-            "type": "object",
-            "properties": {
-                "_metadata": {
-                    "$ref": "#/definitions/common.MetaData"
-                },
-                "data": {},
-                "message": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "unstructured.Unstructured": {
-            "type": "object",
-            "properties": {
-                "object": {
-                    "description": "Object is a JSON compatible map with string, float, int, bool, []interface{}, or\nmap[string]interface{}\nchildren.",
-                    "type": "object",
-                    "additionalProperties": true
-                }
-            }
-        },
-        "v1.CompanyMetadata": {
-            "type": "object",
-            "properties": {
-                "labels": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "number_of_concurrent_process": {
-                    "type": "integer"
-                },
-                "total_process_per_day": {
-                    "type": "integer"
-                }
-            }
-        },
-        "v1.Pipeline": {
-            "type": "object",
-            "properties": {
-                "_metadata": {
-                    "$ref": "#/definitions/v1.PipelineMetadata"
-                },
-                "api_version": {
-                    "type": "string"
-                },
-                "label": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "option": {
-                    "$ref": "#/definitions/v1.PipelineApplyOption"
-                },
-                "process_id": {
-                    "type": "string"
-                },
-                "steps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1.Step"
-                    }
-                }
-            }
-        },
-        "v1.PipelineApplyOption": {
-            "type": "object",
-            "properties": {
-                "purging": {
-                    "type": "string"
-                }
-            }
-        },
-        "v1.PipelineMetadata": {
-            "type": "object",
-            "properties": {
-                "company_id": {
-                    "type": "string"
-                },
-                "company_metadata": {
-                    "$ref": "#/definitions/v1.CompanyMetadata"
-                }
-            }
-        },
-        "v1.Step": {
-            "type": "object",
-            "properties": {
-                "arg_data": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "descriptors": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/unstructured.Unstructured"
-                    }
-                },
-                "env_data": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "next": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "params": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "trigger": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                }
-            }
+          }
         }
+      }
     }
+  },
+  "definitions": {
+    "common.MetaData": {
+      "type": "object",
+      "properties": {
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "page": {
+          "type": "integer"
+        },
+        "page_count": {
+          "type": "integer"
+        },
+        "per_page": {
+          "type": "integer"
+        },
+        "total_count": {
+          "type": "integer"
+        }
+      }
+    },
+    "common.ResponseDTO": {
+      "type": "object",
+      "properties": {
+        "_metadata": {
+          "$ref": "#/definitions/common.MetaData"
+        },
+        "data": {},
+        "message": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "unstructured.Unstructured": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "description": "Object is a JSON compatible map with string, float, int, bool, []interface{}, or\nmap[string]interface{}\nchildren.",
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "v1.CompanyMetadata": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "number_of_concurrent_process": {
+          "type": "integer"
+        },
+        "total_process_per_day": {
+          "type": "integer"
+        }
+      }
+    },
+    "v1.Pipeline": {
+      "type": "object",
+      "properties": {
+        "_metadata": {
+          "$ref": "#/definitions/v1.PipelineMetadata"
+        },
+        "api_version": {
+          "type": "string"
+        },
+        "label": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "name": {
+          "type": "string"
+        },
+        "option": {
+          "$ref": "#/definitions/v1.PipelineApplyOption"
+        },
+        "process_id": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1.Step"
+          }
+        }
+      }
+    },
+    "v1.PipelineApplyOption": {
+      "type": "object",
+      "properties": {
+        "purging": {
+          "type": "string"
+        }
+      }
+    },
+    "v1.PipelineMetadata": {
+      "type": "object",
+      "properties": {
+        "company_id": {
+          "type": "string"
+        },
+        "company_metadata": {
+          "$ref": "#/definitions/v1.CompanyMetadata"
+        }
+      }
+    },
+    "v1.Step": {
+      "type": "object",
+      "properties": {
+        "arg_data": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "descriptors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/unstructured.Unstructured"
+          }
+        },
+        "env_data": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "name": {
+          "type": "string"
+        },
+        "next": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "trigger": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    }
+  }
 }

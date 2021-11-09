@@ -13,7 +13,7 @@ type stepService struct {
 
 func (service *stepService) SetInput(url, revision string) {
 	if service.step.Type == enums.BUILD {
-		service.step.Params[enums.URL] = url
+		service.step.Params[enums.IMAGE_URL] = url
 		service.step.Params[enums.REVISION] = revision
 	}
 }
@@ -129,6 +129,7 @@ func (service *stepService) SetEnvs(k8s service.K8s) {
 	}
 }
 
+// NewStepService returns step type service.
 func NewStepService(step v1.Step) service.Step {
 	return &stepService{
 		step: step,

@@ -1,14 +1,15 @@
-package logic
+package inmemory
 
 import (
+	"container/list"
 	v1 "github.com/klovercloud-ci/core/v1"
-	in_memory "github.com/klovercloud-ci/repository/v1/inmemory"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 )
 
-func TestProcessEventService_GetByProcessId(t *testing.T) {
+func TestProcessEventRepository_GetByProcessId(t *testing.T) {
+	ProcessEventStore = map[string]*list.List{}
 	type TestCase struct {
 		processId string
 		data      []v1.ProcessEvent
@@ -16,7 +17,7 @@ func TestProcessEventService_GetByProcessId(t *testing.T) {
 		actions   []string
 		actual    map[string]interface{}
 	}
-	var testCases []TestCase
+	testCases := []TestCase{}
 	testCases = append(testCases, TestCase{
 		processId: "1",
 		data: []v1.ProcessEvent{{
@@ -26,8 +27,7 @@ func TestProcessEventService_GetByProcessId(t *testing.T) {
 			{
 				ProcessId: "1",
 				Data:      map[string]interface{}{"step": "build", "status": "Pod Initializing"},
-			},
-		},
+			}},
 		actions:  []string{"getFront"},
 		expected: map[string]interface{}{"step": "build", "status": "Processing"},
 		actual:   map[string]interface{}{"step": "build", "status": "Processing"},
@@ -39,7 +39,7 @@ func TestProcessEventService_GetByProcessId(t *testing.T) {
 		expected:  map[string]interface{}{"step": "build", "status": "Pod Initializing"},
 		actual:    map[string]interface{}{"step": "build", "status": "Pod Initializing"},
 	})
-	repo := NewProcessEventService(in_memory.NewProcessEventRepository())
+	repo := NewProcessEventRepository()
 	for _, each := range testCases {
 		if len(each.data) > 0 {
 			for _, d := range each.data {
@@ -59,7 +59,8 @@ func TestProcessEventService_GetByProcessId(t *testing.T) {
 	}
 }
 
-func TestProcessEventService_Store(t *testing.T) {
+func TestProcessEventRepository_store(t *testing.T) {
+	ProcessEventStore = map[string]*list.List{}
 	type TestCase struct {
 		data     v1.ProcessEvent
 		expected map[string]interface{}
@@ -67,7 +68,7 @@ func TestProcessEventService_Store(t *testing.T) {
 		actual   map[string]interface{}
 	}
 
-	var testCases []TestCase
+	testCases := []TestCase{}
 
 	testCases = append(testCases, TestCase{
 		data: v1.ProcessEvent{
@@ -109,7 +110,7 @@ func TestProcessEventService_Store(t *testing.T) {
 		actual:   nil,
 	})
 
-	repo := NewProcessEventService(in_memory.NewProcessEventRepository())
+	repo := NewProcessEventRepository()
 	for _, each := range testCases {
 		repo.Store(each.data)
 		for _, action := range each.actions {

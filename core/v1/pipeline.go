@@ -2,8 +2,9 @@ package v1
 
 import "errors"
 
+// Pipeline Pipeline struct
 type Pipeline struct {
-	MetaData PipelineMetadata `json:"_metadata" yaml:"_metadata"`
+	MetaData   PipelineMetadata    `json:"_metadata" yaml:"_metadata"`
 	Option     PipelineApplyOption `json:"option" yaml:"option"`
 	ApiVersion string              `json:"api_version" yaml:"api_version"`
 	Name       string              `json:"name"  yaml:"name"`
@@ -12,6 +13,7 @@ type Pipeline struct {
 	Steps      []Step              `json:"steps" yaml:"steps"`
 }
 
+// Validate validates pipeline.
 func (pipeline Pipeline) Validate() error {
 	if pipeline.ApiVersion == "" {
 		return errors.New("Api version is required!")

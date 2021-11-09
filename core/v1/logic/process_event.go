@@ -11,7 +11,7 @@ type processEventService struct {
 }
 
 func (p processEventService) Listen(listener v1.Subject) {
-	if listener.EventData!=nil{
+	if listener.EventData != nil {
 		p.repo.Store(v1.ProcessEvent{
 			ProcessId: listener.Pipeline.ProcessId,
 			Data:      listener.EventData,
@@ -31,6 +31,7 @@ func (p processEventService) DequeueByProcessId(processId string) map[string]int
 	return p.repo.DequeueByProcessId(processId)
 }
 
+// NewProcessEventService returns ProcessEvent type service
 func NewProcessEventService(repo repository.ProcessEventRepository) service.ProcessEvent {
 	return &processEventService{
 		repo: repo,

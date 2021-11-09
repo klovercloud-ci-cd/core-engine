@@ -15,6 +15,7 @@ import (
 var config *rest.Config
 var once sync.Once
 
+// GetKubeConfig returns rest config for kubernetes.
 func GetKubeConfig() *rest.Config {
 	var config *rest.Config
 	var err error
@@ -36,6 +37,7 @@ func GetKubeConfig() *rest.Config {
 	return config
 }
 
+// GetClientSet returns k8s clientSets
 func GetClientSet() (*versioned.Clientset, *kubernetes.Clientset) {
 	once.Do(func() {
 		config = GetKubeConfig()

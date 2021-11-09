@@ -10,7 +10,7 @@
         "revision": "revision",
         "service_account": "service_account_name",
         "images": "image_url1,image_url2",
-        "args_from_configmaps": "namespace/config_map_name",
+        "args_from_configmaps": "namespace/config_map_name"
       },
       "next": [
         "deployDev"

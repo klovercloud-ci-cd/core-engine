@@ -15,11 +15,6 @@ func Test_loadArgs(t *testing.T) {
 		expected map[string]string
 		actual   map[string]string
 	}
-	variable := v1.Variable{}
-	variable.ConfigMaps = append(variable.ConfigMaps, struct {
-		Name      string `json:"name" yaml:"name"`
-		Namespace string `json:"namespace" yaml:"namespace"`
-	}{Name: "configMap0", Namespace: "klovercloud"})
 	pipeline := v1.Pipeline{
 		Steps: []v1.Step{{
 			Params: map[enums.PARAMS]string{"args_from_configmaps": "klovercloud/configMap1"},
@@ -47,11 +42,6 @@ func Test_loadEnvs(t *testing.T) {
 		expected map[string]string
 		actual   map[string]string
 	}
-	variable := v1.Variable{}
-	variable.ConfigMaps = append(variable.ConfigMaps, struct {
-		Name      string `json:"name" yaml:"name"`
-		Namespace string `json:"namespace" yaml:"namespace"`
-	}{Name: "configMap0", Namespace: "klovercloud"})
 	pipeline := v1.Pipeline{Steps: []v1.Step{
 		{
 			Params: map[enums.PARAMS]string{"envs_from_configmaps": "klovercloud/configMap1"},
@@ -109,11 +99,6 @@ func TestPipelineService_Build(t *testing.T) {
 		expected v1.Step
 		actual   v1.Step
 	}
-	variable := v1.Variable{}
-	variable.ConfigMaps = append(variable.ConfigMaps, struct {
-		Name      string `json:"name" yaml:"name"`
-		Namespace string `json:"namespace" yaml:"namespace"`
-	}{Name: "configMap0", Namespace: "klovercloud"})
 	pipeline := v1.Pipeline{Steps: []v1.Step{
 		{
 			Name:    "test",

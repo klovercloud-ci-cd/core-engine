@@ -11,31 +11,30 @@ import (
 	"time"
 )
 
+// ProcessLifeCycleCollection collection name
 var (
-	ProcessLifeCycleCollection="processLifeCycleEventCollection"
+	ProcessLifeCycleCollection = "processLifeCycleEventCollection"
 )
 
-
 type processLifeCycleRepository struct {
-	manager  *dmManager
-	timeout  time.Duration
+	manager *dmManager
+	timeout time.Duration
 }
 
 func (p processLifeCycleRepository) PullNonInitializedAndAutoTriggerEnabledEventsByStepType(count int64, stepType string) []v1.ProcessLifeCycleEvent {
 	var data []v1.ProcessLifeCycleEvent
-	query:=bson.M{
+	query := bson.M{
 		"$and": []bson.M{
-			{"status":enums.NON_INITIALIZED},
-			{"trigger":enums.AUTO},
-			{"step_type":stepType},
-
+			{"status": enums.NON_INITIALIZED},
+			{"trigger": enums.AUTO},
+			{"step_type": stepType},
 		},
 	}
 	coll := p.manager.Db.Collection(ProcessLifeCycleCollection)
-	result, err := coll.Find(p.manager.Ctx, query,&options.FindOptions{
+	result, err := coll.Find(p.manager.Ctx, query, &options.FindOptions{
 		Limit: &count,
 	})
-	if err!=nil{
+	if err != nil {
 		log.Println(err.Error())
 	}
 	for result.Next(context.TODO()) {
@@ -45,30 +44,29 @@ func (p processLifeCycleRepository) PullNonInitializedAndAutoTriggerEnabledEvent
 			log.Println("[ERROR]", err)
 			break
 		}
-		data= append(data, *elemValue)
+		data = append(data, *elemValue)
 	}
-	for _,each:=range data{
-		go p.updateStatus(each,string(enums.ACTIVE))
+	for _, each := range data {
+		go p.updateStatus(each, string(enums.ACTIVE))
 	}
 	return data
 }
 
-func (p processLifeCycleRepository) PullPausedAndAutoTriggerEnabledResourcesByAgentName(count int64,agent string) []v1.ProcessLifeCycleEvent {
+func (p processLifeCycleRepository) PullPausedAndAutoTriggerEnabledResourcesByAgentName(count int64, agent string) []v1.ProcessLifeCycleEvent {
 	var data []v1.ProcessLifeCycleEvent
-	query:=bson.M{
+	query := bson.M{
 		"$and": []bson.M{
-			{"agent":agent},
-			{"status":enums.PAUSED},
-			{"trigger":enums.AUTO},
-			{"step_type":enums.DEPLOY},
-
+			{"agent": agent},
+			{"status": enums.PAUSED},
+			{"trigger": enums.AUTO},
+			{"step_type": enums.DEPLOY},
 		},
 	}
 	coll := p.manager.Db.Collection(ProcessLifeCycleCollection)
-	result, err := coll.Find(p.manager.Ctx, query,&options.FindOptions{
+	result, err := coll.Find(p.manager.Ctx, query, &options.FindOptions{
 		Limit: &count,
 	})
-	if err!=nil{
+	if err != nil {
 		log.Println(err.Error())
 	}
 	for result.Next(context.TODO()) {
@@ -78,26 +76,24 @@ func (p processLifeCycleRepository) PullPausedAndAutoTriggerEnabledResourcesByAg
 			log.Println("[ERROR]", err)
 			break
 		}
-		data= append(data, *elemValue)
+		data = append(data, *elemValue)
 	}
-	for _,each:=range data{
-		go p.updateStatus(each,string(enums.ACTIVE))
+	for _, each := range data {
+		go p.updateStatus(each, string(enums.ACTIVE))
 	}
 	return data
 }
 
 func (p processLifeCycleRepository) Get(count int64) []v1.ProcessLifeCycleEvent {
 	var data []v1.ProcessLifeCycleEvent
-	query:=bson.M{
-		"$and": []bson.M{
-
-		},
+	query := bson.M{
+		"$and": []bson.M{},
 	}
 	coll := p.manager.Db.Collection(ProcessLifeCycleCollection)
-	result, err := coll.Find(p.manager.Ctx, query,&options.FindOptions{
+	result, err := coll.Find(p.manager.Ctx, query, &options.FindOptions{
 		Limit: &count,
 	})
-	if err!=nil{
+	if err != nil {
 		log.Println(err.Error())
 	}
 	for result.Next(context.TODO()) {
@@ -107,7 +103,7 @@ func (p processLifeCycleRepository) Get(count int64) []v1.ProcessLifeCycleEvent 
 			log.Println("[ERROR]", err)
 			break
 		}
-		data= append(data, *elemValue)
+		data = append(data, *elemValue)
 	}
 	return data
 }
@@ -115,37 +111,37 @@ func (p processLifeCycleRepository) Get(count int64) []v1.ProcessLifeCycleEvent 
 func (p processLifeCycleRepository) Store(events []v1.ProcessLifeCycleEvent) {
 	coll := p.manager.Db.Collection(ProcessLifeCycleCollection)
 	var pipeline *v1.Pipeline
-	if len(events)>0{
-		if events[0].StepType==enums.BUILD{
-			pipeline=events[0].Pipeline
+	if len(events) > 0 {
+		if events[0].StepType == enums.BUILD {
+			pipeline = events[0].Pipeline
 		}
 	}
-	for _,each:= range events{
-		existing:=p.GetByProcessIdAndStep(each.ProcessId,each.Step)
-		if existing==nil{
-			each.Pipeline=pipeline
-			_,err:=coll.InsertOne(p.manager.Ctx,each)
-			if err!=nil{
+	for _, each := range events {
+		existing := p.GetByProcessIdAndStep(each.ProcessId, each.Step)
+		if existing == nil {
+			each.Pipeline = pipeline
+			_, err := coll.InsertOne(p.manager.Ctx, each)
+			if err != nil {
 				log.Println(err.Error())
 			}
-		}else{
-			existing.Status=each.Status
-			err:=p.update(*existing)
-			if err!=nil{
+		} else {
+			existing.Status = each.Status
+			err := p.update(*existing)
+			if err != nil {
 				log.Println(err.Error())
 			}
 		}
 	}
 }
 
-func(p processLifeCycleRepository)  updateStatus(data v1.ProcessLifeCycleEvent,status string) error {
+func (p processLifeCycleRepository) updateStatus(data v1.ProcessLifeCycleEvent, status string) error {
 	filter := bson.M{
 		"$and": []bson.M{
 			{"process_id": data.ProcessId},
 			{"step": data.Step},
 		},
 	}
-	data.Status=enums.PROCESS_STATUS(status)
+	data.Status = enums.PROCESS_STATUS(status)
 	update := bson.M{
 		"$set": data,
 	}
@@ -164,7 +160,7 @@ func(p processLifeCycleRepository)  updateStatus(data v1.ProcessLifeCycleEvent,s
 
 	return nil
 }
-func(p processLifeCycleRepository)  update(data v1.ProcessLifeCycleEvent) error {
+func (p processLifeCycleRepository) update(data v1.ProcessLifeCycleEvent) error {
 	filter := bson.M{
 		"$and": []bson.M{
 			{"process_id": data.ProcessId},
@@ -189,8 +185,8 @@ func(p processLifeCycleRepository)  update(data v1.ProcessLifeCycleEvent) error 
 
 	return nil
 }
-func (p processLifeCycleRepository) GetByProcessIdAndStep(processId, step string) *v1.ProcessLifeCycleEvent{
-	query:=bson.M{
+func (p processLifeCycleRepository) GetByProcessIdAndStep(processId, step string) *v1.ProcessLifeCycleEvent {
+	query := bson.M{
 		"$and": []bson.M{
 			{"process_id": processId},
 			{"step": step},
@@ -204,7 +200,7 @@ func (p processLifeCycleRepository) GetByProcessIdAndStep(processId, step string
 	if err != nil {
 		log.Println("[ERROR]", err)
 	}
-	if temp.ProcessId==""{
+	if temp.ProcessId == "" {
 		return nil
 	}
 	return temp
@@ -212,7 +208,7 @@ func (p processLifeCycleRepository) GetByProcessIdAndStep(processId, step string
 }
 
 func (p processLifeCycleRepository) GetByProcessId(processId string) []v1.ProcessLifeCycleEvent {
-	query:=bson.M{
+	query := bson.M{
 		"$and": []bson.M{
 			{"process_id": processId},
 		},
@@ -220,7 +216,7 @@ func (p processLifeCycleRepository) GetByProcessId(processId string) []v1.Proces
 	coll := p.manager.Db.Collection(ProcessLifeCycleCollection)
 
 	curser, err := coll.Find(p.manager.Ctx, query)
-	if err!=nil{
+	if err != nil {
 		log.Println(err.Error())
 	}
 	var results []v1.ProcessLifeCycleEvent
@@ -231,11 +227,12 @@ func (p processLifeCycleRepository) GetByProcessId(processId string) []v1.Proces
 			log.Println("[ERROR]", err)
 			break
 		}
-		results= append(results, *elemValue)
+		results = append(results, *elemValue)
 	}
 	return results
 }
 
+// NewProcessLifeCycleRepository returns ProcessLifeCycleEventRepository type object
 func NewProcessLifeCycleRepository(timeout int) repository.ProcessLifeCycleEventRepository {
 	return &processLifeCycleRepository{
 		manager: GetDmManager(),

@@ -6,6 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// Step pipeline step.
 type Step struct {
 	Name        string                       `json:"name" yaml:"name"`
 	Type        enums.STEP_TYPE              `json:"type" yaml:"type"`
@@ -17,39 +18,20 @@ type Step struct {
 	Descriptors *[]unstructured.Unstructured `json:"descriptors" yaml:"descriptors"`
 }
 
+// Validate validates pipeline steps.
 func (step Step) Validate() error {
 	if step.Name == "" {
 		return errors.New("Step name required!")
 	}
 	if step.Type == enums.BUILD {
-		if step.Params[enums.REPOSITORY_TYPE] == "" {
-			return errors.New("Repository type is required!")
-		}
-		if step.Params[enums.REVISION] == "" {
-			return errors.New("Revision is required!")
-		}
-		if step.Params[enums.SERVICE_ACCOUNT] == "" {
-			return errors.New("Service account is required!")
-		}
-		if step.Params[enums.IMAGES] == "" {
-			return errors.New("Image is required!")
+		err := step.validateBuildStep()
+		if err != nil {
+			return err
 		}
 	} else if step.Type == enums.DEPLOY {
-		if step.Params[enums.AGENT] == "" {
-			return errors.New("Agent is required!")
-		}
-		if step.Params[enums.NAME] == "" {
-			return errors.New("Params name is required!")
-		}
-		if step.Params[enums.NAMESPACE] == "" {
-
-			return errors.New("Params namespace is required!")
-		}
-		if step.Params[enums.TYPE] == "" {
-			return errors.New("Params type is required!")
-		}
-		if step.Params[enums.IMAGES] == "" {
-			return errors.New("Params image is required!")
+		err := step.validateDeployStep()
+		if err != nil {
+			return err
 		}
 	} else if step.Type == "" {
 		return errors.New("Step type is required!")
@@ -60,6 +42,42 @@ func (step Step) Validate() error {
 		return errors.New("Step triger required!")
 	} else if step.Trigger != enums.AUTO && step.Trigger != enums.MANUAL {
 		return errors.New("Invalid trigger type!")
+	}
+	return nil
+}
+
+func (step Step) validateDeployStep() error {
+	if step.Params[enums.AGENT] == "" {
+		return errors.New("Agent is required!")
+	}
+	if step.Params[enums.RESOURCE_NAME] == "" {
+		return errors.New("Params name is required!")
+	}
+	if step.Params[enums.RESOURCE_NAMESPACE] == "" {
+
+		return errors.New("Params namespace is required!")
+	}
+	if step.Params[enums.TYPE] == "" {
+		return errors.New("Params type is required!")
+	}
+	if step.Params[enums.IMAGES] == "" {
+		return errors.New("Params image is required!")
+	}
+	return nil
+}
+
+func (step Step) validateBuildStep() error {
+	if step.Params[enums.REPOSITORY_TYPE] == "" {
+		return errors.New("Repository type is required!")
+	}
+	if step.Params[enums.REVISION] == "" {
+		return errors.New("Revision is required!")
+	}
+	if step.Params[enums.SERVICE_ACCOUNT] == "" {
+		return errors.New("Service account is required!")
+	}
+	if step.Params[enums.IMAGES] == "" {
+		return errors.New("Image is required!")
 	}
 	return nil
 }

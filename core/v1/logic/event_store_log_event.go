@@ -9,27 +9,28 @@ import (
 )
 
 type eventStoreEventService struct {
-	httpPublisher service.HttpPublisher
+	httpPublisher service.HttpClient
 }
 
 func (e eventStoreEventService) Listen(subject v1.Subject) {
-	data:=v1.LogEvent{
+	data := v1.LogEvent{
 		ProcessId: subject.Pipeline.ProcessId,
 		Log:       subject.Log,
 		Step:      subject.Step,
 	}
-	header:=make(map[string]string)
-	header["Content-Type"]="application/json"
-	header["token"]=config.Token
+	header := make(map[string]string)
+	header["Content-Type"] = "application/json"
+	header["token"] = config.Token
 	b, err := json.Marshal(data)
-	if err!=nil{
+	if err != nil {
 		log.Println(err.Error())
 		return
 	}
-	e.httpPublisher.Post(config.EventStoreUrl+"/logs",header,b)
+	e.httpPublisher.Post(config.EventStoreUrl+"/logs", header, b)
 }
 
-func NewV1EventStoreLogEventService(httpPublisher service.HttpPublisher) service.Observer {
+// NewEventStoreLogEventService returns Observer type service
+func NewEventStoreLogEventService(httpPublisher service.HttpClient) service.Observer {
 	return &eventStoreEventService{
 		httpPublisher: httpPublisher,
 	}

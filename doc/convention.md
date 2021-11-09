@@ -7,11 +7,14 @@
 - Add testcases considering corner cases.
 - Please follow interface first development.
 
-## Commit 
+## Commit
+
 - Please use proper commit message. Example:
-  - ```Add Github webhook integration``` or 
-  - ```Enable Github webhook integration``` 
-- In body, please explain , ```What is the problem it is going to solve!```. Try to add a view of the interface. Example: 
+    - ```Add Github webhook integration``` or
+    - ```Enable Github webhook integration```
+- In body, please explain , ```What is the problem it is going to solve!```. Try to add a view of the interface.
+  Example:
+
 ```
 Creates webhook to listen repository code change events.  
 

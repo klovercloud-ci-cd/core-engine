@@ -15,16 +15,16 @@ import (
 )
 
 type eventStoreProcessLifeCycleService struct {
-	httpPublisher service.HttpPublisher
+	httpPublisher service.HttpClient
 }
 
 func (e eventStoreProcessLifeCycleService) PullBuildEvents() []v1.ProcessLifeCycleEvent {
 	url := config.EventStoreUrl + "/process_life_cycle_events?count=" + strconv.FormatInt(config.AllowedConcurrentBuild, 10) + "&step_type=" + string(enums.BUILD)
 	header := make(map[string]string)
-	header["Authorization"] = "token " + config.EventStoreToken
+	header["Authorization"] = "token " + config.Token
 	header["Accept"] = "application/json"
-	header["token"]=config.Token
-	err, data := e.httpPublisher.Get(url, header)
+	header["token"] = config.Token
+	data, err := e.httpPublisher.Get(url, header)
 	if err != nil {
 		// send to observer
 		log.Println(err.Error())
@@ -137,7 +137,8 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 	}
 }
 
-func NewEventStoreProcessLifeCycleService(httpPublisher service.HttpPublisher) service.ProcessLifeCycleEvent {
+// NewEventStoreProcessLifeCycleService returns ProcessLifeCycleEvent type service
+func NewEventStoreProcessLifeCycleService(httpPublisher service.HttpClient) service.ProcessLifeCycleEvent {
 	return &eventStoreProcessLifeCycleService{
 		httpPublisher: httpPublisher,
 	}

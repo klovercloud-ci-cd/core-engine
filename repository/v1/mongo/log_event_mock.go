@@ -9,7 +9,8 @@ import (
 
 var data []v1.LogEvent
 
-func InitLogEventData() [] v1.LogEvent{
+// InitLogEventData Return mock Log event list
+func InitLogEventData() []v1.LogEvent {
 	data = []v1.LogEvent{
 		{
 			ProcessId: "1",
@@ -22,7 +23,6 @@ func InitLogEventData() [] v1.LogEvent{
 			Log:       "Pulling Image",
 			Step:      "buildImage",
 			CreatedAt: time.Time{},
-
 		},
 		{
 			ProcessId: "2",
@@ -32,24 +32,24 @@ func InitLogEventData() [] v1.LogEvent{
 		},
 		{
 			ProcessId: "2",
-			Log:        "Initializing pod",
+			Log:       "Initializing pod",
 			Step:      "deployImage",
 			CreatedAt: time.Time{},
-
 		},
 		{
 			ProcessId: "2",
-			Log:        "Pulling Image",
+			Log:       "Pulling Image",
 			Step:      "deployImage",
 			CreatedAt: time.Time{},
-
 		},
 	}
 
 	return data
 }
-func NewMockLogEventRepository() repository.LogEventRepository{
-	manager:=GetMockDmManager()
+
+// NewMockLogEventRepository returns LogEventRepository type object
+func NewMockLogEventRepository() repository.LogEventRepository {
+	manager := GetMockDmManager()
 	manager.Db.Drop(context.Background())
 	return &logEventRepository{
 		manager: GetMockDmManager(),

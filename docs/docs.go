@@ -65,14 +65,14 @@ var doc = `{
         },
         "/api/v1/pipelines/{processId}": {
             "get": {
-                "description": "Gets logs by pipeline processId",
+                "description": "Gets logs by pipeline processId [available if local storage is enabled]",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Pipeline"
                 ],
-                "summary": "Get Logs",
+                "summary": "Get Logs [available if local storage is enabled]",
                 "parameters": [
                     {
                         "type": "string",

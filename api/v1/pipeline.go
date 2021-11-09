@@ -20,8 +20,9 @@ import (
 
 type pipelineApi struct {
 	pipelineService service.Pipeline
-	observerList []service.Observer
+	observerList    []service.Observer
 }
+
 var (
 	upgrader = websocket.Upgrader{}
 )
@@ -36,25 +37,25 @@ var (
 // @Param limit query int64 false "Record count"
 // @Success 200 {object} common.ResponseDTO
 // @Router /api/v1/pipelines/{processId} [GET]
-func (p pipelineApi) GetLogs(context echo.Context)error {
-	processId:=context.Param("processId")
+func (p pipelineApi) GetLogs(context echo.Context) error {
+	processId := context.Param("processId")
 	option := getQueryOption(context)
-	logs,total:=p.pipelineService.GetLogsByProcessId(processId,option)
+	logs, total := p.pipelineService.GetLogsByProcessId(processId, option)
 	metadata := common.GetPaginationMetadata(option.Pagination.Page, option.Pagination.Limit, total, int64(len(logs)))
-	uri:=strings.Split(context.Request().RequestURI,"?")[0]
+	uri := strings.Split(context.Request().RequestURI, "?")[0]
 	if option.Pagination.Page > 0 {
 		metadata.Links = append(metadata.Links, map[string]string{"prev": uri + "?order=" + context.QueryParam("order") + "&page=" + strconv.FormatInt(option.Pagination.Page-1, 10) + "&limit=" + strconv.FormatInt(option.Pagination.Limit, 10)})
 	}
-	metadata.Links = append(metadata.Links, map[string]string{"self": uri+ "?order=" + context.QueryParam("order") + "&page=" + strconv.FormatInt(option.Pagination.Page, 10) + "&limit=" + strconv.FormatInt(option.Pagination.Limit, 10)})
+	metadata.Links = append(metadata.Links, map[string]string{"self": uri + "?order=" + context.QueryParam("order") + "&page=" + strconv.FormatInt(option.Pagination.Page, 10) + "&limit=" + strconv.FormatInt(option.Pagination.Limit, 10)})
 
 	if (option.Pagination.Page+1)*option.Pagination.Limit < metadata.TotalCount {
 		metadata.Links = append(metadata.Links, map[string]string{"next": uri + "?order=" + context.QueryParam("order") + "&page=" + strconv.FormatInt(option.Pagination.Page+1, 10) + "&limit=" + strconv.FormatInt(option.Pagination.Limit, 10)})
 	}
-	return common.GenerateSuccessResponse(context,logs,&metadata,"")
+	return common.GenerateSuccessResponse(context, logs, &metadata, "")
 }
 
 func (p pipelineApi) GetEvents(context echo.Context) error {
-	processId:=context.QueryParam("processId")
+	processId := context.QueryParam("processId")
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(context.Response(), context.Request(), nil)
 	if err != nil {
@@ -63,11 +64,11 @@ func (p pipelineApi) GetEvents(context echo.Context) error {
 	}
 	defer ws.Close()
 
-	status :=make(chan map[string]interface{})
+	status := make(chan map[string]interface{})
 	for {
-		go p.pipelineService.ReadEventByProcessId(status,processId)
+		go p.pipelineService.ReadEventByProcessId(status, processId)
 		jsonStr, err := json.Marshal(<-status)
-		if err!=nil{
+		if err != nil {
 			log.Println(err.Error())
 		}
 		err = ws.WriteMessage(websocket.TextMessage, []byte(jsonStr))
@@ -95,38 +96,38 @@ func (p pipelineApi) GetEvents(context echo.Context) error {
 func (p pipelineApi) Apply(context echo.Context) error {
 	var data v1.Pipeline
 	body, err := ioutil.ReadAll(context.Request().Body)
-	if  err != nil{
+	if err != nil {
 		log.Println("Input Error:", err.Error())
-		return common.GenerateErrorResponse(context,nil,err.Error())
+		return common.GenerateErrorResponse(context, nil, err.Error())
 	}
 	if err := json.Unmarshal(body, &data); err != nil {
 		if err := yaml.Unmarshal(body, &data); err != nil {
-			return common.GenerateErrorResponse(context,nil,err.Error())
+			return common.GenerateErrorResponse(context, nil, err.Error())
 		}
 	}
-	url:=context.QueryParam("url")
-	revision:=context.QueryParam("revision")
-	purgingOption:=context.QueryParam("purging")
-	if purgingOption==string(enums.PIPELINE_PURGING_ENABLE){
-		data.Option.Purging=enums.PIPELINE_PURGING_ENABLE
-	}else{
-		data.Option.Purging=enums.PIPELINE_PURGING_DISABLE
+	url := context.QueryParam("url")
+	revision := context.QueryParam("revision")
+	purgingOption := context.QueryParam("purging")
+	if purgingOption == string(enums.PIPELINE_PURGING_ENABLE) {
+		data.Option.Purging = enums.PIPELINE_PURGING_ENABLE
+	} else {
+		data.Option.Purging = enums.PIPELINE_PURGING_DISABLE
 	}
-	data.ApiVersion =string(enums.API_V1)
-	if data.ProcessId==""{
+	data.ApiVersion = string(enums.API_V1)
+	if data.ProcessId == "" {
 		data.ProcessId = guuid.New().String()
 	}
-	err = p.pipelineService.BuildProcessLifeCycleEvents(url,revision, data)
-	if err != nil{
+	err = p.pipelineService.BuildProcessLifeCycleEvents(url, revision, data)
+	if err != nil {
 		log.Println("Input Error:", err.Error())
-		listener:=v1.Subject{Pipeline: data,Step: "n/a",Log: err.Error()}
+		listener := v1.Subject{Pipeline: data, Step: "n/a", Log: err.Error()}
 		go p.notifyAll(listener)
-		return common.GenerateErrorResponse(context,err.Error(),"Failed to trigger pipeline!")
+		return common.GenerateErrorResponse(context, err.Error(), "Failed to trigger pipeline!")
 	}
-	return common.GenerateSuccessResponse(context,data.ProcessId,nil,"Pipeline successfully triggered!")
+	return common.GenerateSuccessResponse(context, data.ProcessId, nil, "Pipeline successfully triggered!")
 }
 
-func (p pipelineApi)notifyAll(listener v1.Subject){
+func (p pipelineApi) notifyAll(listener v1.Subject) {
 	for _, observer := range p.observerList {
 		go observer.Listen(listener)
 	}
@@ -139,15 +140,16 @@ func getQueryOption(context echo.Context) v1.LogEventQueryOption {
 		option.Pagination.Page = enums.DEFAULT_PAGE
 		option.Pagination.Limit = enums.DEFAULT_PAGE_LIMIT
 	} else {
-		option.Pagination.Page, _ = strconv.ParseInt(page ,10, 64)
-		option.Pagination.Limit, _ = strconv.ParseInt(limit ,10, 64)
+		option.Pagination.Page, _ = strconv.ParseInt(page, 10, 64)
+		option.Pagination.Limit, _ = strconv.ParseInt(limit, 10, 64)
 	}
 	return option
 }
 
-func NewPipelineApi(pipelineService service.Pipeline,	observerList []service.Observer) api.Pipeline {
+// NewPipelineApi returns Pipeline type api
+func NewPipelineApi(pipelineService service.Pipeline, observerList []service.Observer) api.Pipeline {
 	return &pipelineApi{
 		pipelineService: pipelineService,
-		observerList: observerList,
+		observerList:    observerList,
 	}
 }

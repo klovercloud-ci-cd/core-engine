@@ -10,13 +10,14 @@ import (
 	"time"
 )
 
+// LogEventCollection collection name
 var (
-	LogEventCollection="logEventCollection"
+	LogEventCollection = "logEventCollection"
 )
 
 type logEventRepository struct {
-	manager  *dmManager
-	timeout  time.Duration
+	manager *dmManager
+	timeout time.Duration
 }
 
 func (l logEventRepository) Store(event v1.LogEvent) {
@@ -27,25 +28,23 @@ func (l logEventRepository) Store(event v1.LogEvent) {
 	}
 }
 
-func (l logEventRepository) GetByProcessId(processId string, option v1.LogEventQueryOption) ([]string,int64) {
+func (l logEventRepository) GetByProcessId(processId string, option v1.LogEventQueryOption) ([]string, int64) {
 	var results []string
-	query:=bson.M{
-		"$and": []bson.M{
-
-		},
+	query := bson.M{
+		"$and": []bson.M{},
 	}
-	and:=[]bson.M{{"process_id": processId}}
+	and := []bson.M{{"process_id": processId}}
 	if option.Step != "" {
-		and= append(and, map[string]interface{}{"step": option.Step})
+		and = append(and, map[string]interface{}{"step": option.Step})
 	}
-	query["$and"]=and
+	query["$and"] = and
 	coll := l.manager.Db.Collection(LogEventCollection)
-	skip:=option.Pagination.Page*option.Pagination.Limit
-	result, err := coll.Find(l.manager.Ctx, query,&options.FindOptions{
+	skip := option.Pagination.Page * option.Pagination.Limit
+	result, err := coll.Find(l.manager.Ctx, query, &options.FindOptions{
 		Limit: &option.Pagination.Limit,
 		Skip:  &skip,
 	})
-	if err!=nil{
+	if err != nil {
 		log.Println(err.Error())
 	}
 	for result.Next(context.TODO()) {
@@ -55,15 +54,16 @@ func (l logEventRepository) GetByProcessId(processId string, option v1.LogEventQ
 			log.Println("[ERROR]", err)
 			break
 		}
-		results= append(results, elemValue.Log)
+		results = append(results, elemValue.Log)
 	}
 	count, err := coll.CountDocuments(l.manager.Ctx, query)
-	if err!=nil{
+	if err != nil {
 		log.Println(err.Error())
 	}
-	return results,count
+	return results, count
 }
 
+// NewLogEventRepository returns LogEventRepository type object
 func NewLogEventRepository(timeout int) repository.LogEventRepository {
 	return &logEventRepository{
 		manager: GetDmManager(),

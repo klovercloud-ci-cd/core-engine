@@ -1,5 +1,5 @@
-
 ## API 1
+
 Responsibility: Apply pipeline
 
 |Name | Details                                        |                  
@@ -14,6 +14,7 @@ Responsibility: Apply pipeline
 #### Payload
 
 ##### Basic build and push
+
 ```
 {
   "name": "test",
@@ -36,6 +37,7 @@ Responsibility: Apply pipeline
 ```
 
 ##### Build passing arguments and push
+
 ```
 {
   "name": "test",
@@ -57,6 +59,7 @@ Responsibility: Apply pipeline
   ]
 }
 ```
+
 ##### Build passing arguments using configmap and push
 
 ```
@@ -108,7 +111,7 @@ Responsibility: Apply pipeline
 
 ````
 
-##### Build and deploy 
+##### Build and deploy
 
 ```
 {
@@ -148,16 +151,18 @@ Responsibility: Apply pipeline
 
 ```
 
-
 ---
 **NOTE**
-- ``` trigger ``` can be ```AUTO``` / ```Manual```. If there are any k8s resources to be applied, add those as json or yaml in ```descriptors``` 
+
+- ``` trigger ``` can be ```AUTO``` / ```Manual```. If there are any k8s resources to be applied, add those as json or
+  yaml in ```descriptors```
+
 ---
 
 ## API 2
 
 Responsibility: Get pipeline logs
- 
+
 |Name | Details                                        |                  
 |---|-----------------------------------------------|
 |Id |2                                             | 
@@ -165,7 +170,6 @@ Responsibility: Get pipeline logs
 |Url | [http://host:port/api/v1/pipelines/[processId]?page=[page]&limit=[limit]]()       |
 |Request Type |  GET |                            
 |Tekton Version |  v1alpha1 |
-
 
 ## API 3
 

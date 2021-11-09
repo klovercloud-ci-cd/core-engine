@@ -5,14 +5,16 @@ import (
 	"net/http"
 )
 
+// MetaData Http response metadata
 type MetaData struct {
-	Page       int64                 `json:"page"`
-	PerPage    int64                 `json:"per_page"`
-	PageCount  int64                 `json:"page_count"`
-	TotalCount int64                 `json:"total_count"`
+	Page       int64               `json:"page"`
+	PerPage    int64               `json:"per_page"`
+	PageCount  int64               `json:"page_count"`
+	TotalCount int64               `json:"total_count"`
 	Links      []map[string]string `json:"links"`
 }
 
+// ResponseDTO Http response dto
 type ResponseDTO struct {
 	Metadata *MetaData   `json:"_metadata"`
 	Data     interface{} `json:"data" msgpack:"data" xml:"data"`
@@ -20,6 +22,7 @@ type ResponseDTO struct {
 	Message  string      `json:"message" msgpack:"message" xml:"message"`
 }
 
+// GenerateSuccessResponse Http success response
 func GenerateSuccessResponse(c echo.Context, data interface{}, metadata *MetaData, message string) error {
 	if metadata != nil {
 		return c.JSON(http.StatusOK, ResponseDTO{
@@ -36,6 +39,7 @@ func GenerateSuccessResponse(c echo.Context, data interface{}, metadata *MetaDat
 	})
 }
 
+// GenerateErrorResponse Http error response
 func GenerateErrorResponse(c echo.Context, data interface{}, message string) error {
 	return c.JSON(http.StatusBadRequest, ResponseDTO{
 		Status:  "error",
@@ -43,6 +47,8 @@ func GenerateErrorResponse(c echo.Context, data interface{}, message string) err
 		Data:    data,
 	})
 }
+
+// GetPaginationMetadata return pagination metadata
 func GetPaginationMetadata(page, limit, totalRecords, totalPaginatedRecords int64) MetaData {
 	metaData := MetaData{
 		Page:       page,

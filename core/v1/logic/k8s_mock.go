@@ -20,11 +20,11 @@ func (k8s mockK8sService) RequestContainerLog(namespace string, podName string, 
 	panic("implement me")
 }
 
-func (k8s mockK8sService) GetContainerLog(namespace, podName, containerName string,taskRunLabel map[string]string) (io.ReadCloser, error) {
+func (k8s mockK8sService) GetContainerLog(namespace, podName, containerName string, taskRunLabel map[string]string) (io.ReadCloser, error) {
 	panic("implement me")
-} 
+}
 
-func (k8s mockK8sService) FollowContainerLifeCycle(namespace, podName, containerName, step, processId string,stepType enums.STEP_TYPE ) {
+func (k8s mockK8sService) FollowContainerLifeCycle(namespace, podName, containerName, step, processId string, stepType enums.STEP_TYPE) {
 	panic("implement me")
 }
 
@@ -32,64 +32,70 @@ func (k8s mockK8sService) GetPodListByProcessId(namespace, processId string, opt
 	panic("implement me")
 }
 
-func (k8s mockK8sService) WaitAndGetInitializedPods(namespace, processId,step string) *corev1.PodList {
+func (k8s mockK8sService) WaitAndGetInitializedPods(namespace, processId, step string) *corev1.PodList {
 	panic("implement me")
 }
 
-func (k8s *mockK8sService) GetSecret(name,namespace string)(corev1.Secret,error){
-	secrets:=InitSecrets()
-	for _,each:=range secrets{
-		if each.Name==name && each.Namespace==namespace{
-			return each,nil
+// GetSecret Mock k8s Secret
+func (k8s *mockK8sService) GetSecret(name, namespace string) (corev1.Secret, error) {
+	secrets := InitSecrets()
+	for _, each := range secrets {
+		if each.Name == name && each.Namespace == namespace {
+			return each, nil
 		}
 	}
-return corev1.Secret{},errors.New("No record found")
+	return corev1.Secret{}, errors.New("No record found")
 }
 
-func (k8s *mockK8sService) GetConfigMap(name,namespace string)(corev1.ConfigMap,error){
-	configMaps:=InitConfigMaps()
-	for _,each:=range configMaps{
-		if each.Name==name && each.Namespace==namespace{
-			return each,nil
+// GetConfigMap Mock k8s ConfigMap
+func (k8s *mockK8sService) GetConfigMap(name, namespace string) (corev1.ConfigMap, error) {
+	configMaps := InitConfigMaps()
+	for _, each := range configMaps {
+		if each.Name == name && each.Namespace == namespace {
+			return each, nil
 		}
 	}
-	return corev1.ConfigMap{},errors.New("No record found")
+	return corev1.ConfigMap{}, errors.New("No record found")
 }
-func InitSecrets()[]corev1.Secret{
 
-	var data [] corev1.Secret
+// InitSecrets Mock k8s Secret list
+func InitSecrets() []corev1.Secret {
 
-	for i:=0;i<10;i++{
-		secret:= corev1.Secret{
-			TypeMeta:   metav1.TypeMeta{
+	var data []corev1.Secret
+
+	for i := 0; i < 10; i++ {
+		secret := corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
 				Kind:       "Secret",
 				APIVersion: "v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:                       "secret"+strconv.Itoa(i),
-				Namespace:                  "klovercloud",
+				Name:      "secret" + strconv.Itoa(i),
+				Namespace: "klovercloud",
 			},
 		}
 
-		if i%2==0{
-			secret.StringData=make(map[string]string)
-			secret.StringData["key1"]= "value1"
-			secret.StringData["key2"]= "value2"
-		}else{
-			secret.Data=make(map[string][]byte)
-			secret.Data["key1"]= []byte("value1")
-			secret.Data["key2"]= []byte("value2")
+		if i%2 == 0 {
+			secret.StringData = make(map[string]string)
+			secret.StringData["key1"] = "value1"
+			secret.StringData["key2"] = "value2"
+		} else {
+			secret.Data = make(map[string][]byte)
+			secret.Data["key1"] = []byte("value1")
+			secret.Data["key2"] = []byte("value2")
 		}
-		data= append(data,secret)
+		data = append(data, secret)
 	}
 	return data
 }
-func InitConfigMaps()[]corev1.ConfigMap{
 
-	var data [] corev1.ConfigMap
+// InitConfigMaps Mock k8s ConfigMap list
+func InitConfigMaps() []corev1.ConfigMap {
 
-	for i:=0;i<10;i++{
-		configMap:=corev1.ConfigMap{
+	var data []corev1.ConfigMap
+
+	for i := 0; i < 10; i++ {
+		configMap := corev1.ConfigMap{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ConfigMap",
 				APIVersion: "v1",
@@ -98,13 +104,14 @@ func InitConfigMaps()[]corev1.ConfigMap{
 				Name:      "configMap" + strconv.Itoa(i),
 				Namespace: "klovercloud",
 			},
-			Data: map[string]string{"env1":"value1","env2":"value2"},
+			Data: map[string]string{"env1": "value1", "env2": "value2"},
 		}
-		data= append(data, configMap)
+		data = append(data, configMap)
 	}
 	return data
 }
 
+// NewMockK8sService returns mock K8s type service
 func NewMockK8sService(service service.LogEvent) service.K8s {
 	return &mockK8sService{
 		service: service,
