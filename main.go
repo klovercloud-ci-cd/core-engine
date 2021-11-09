@@ -32,3 +32,4 @@ func ApplyBuildSteps() {
 }
 
 //swag init --parseDependency --parseInternal
+//goreportcard-cli -v
