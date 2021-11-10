@@ -2,7 +2,7 @@ package v1
 
 import (
 	"errors"
-	"github.com/klovercloud-ci/enums"
+	"github.com/klovercloud-ci-cd/klovercloud-ci-core/enums"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 

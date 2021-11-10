@@ -1,6 +1,6 @@
 package service
 
-import "github.com/klovercloud-ci/core/v1"
+import "github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1"
 
 // Observer Observer operations.
 type Observer interface {

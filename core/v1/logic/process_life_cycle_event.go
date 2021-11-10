@@ -2,11 +2,11 @@ package logic
 
 import (
 	"fmt"
-	"github.com/klovercloud-ci/config"
-	v1 "github.com/klovercloud-ci/core/v1"
-	"github.com/klovercloud-ci/core/v1/repository"
-	"github.com/klovercloud-ci/core/v1/service"
-	"github.com/klovercloud-ci/enums"
+	"github.com/klovercloud-ci-cd/klovercloud-ci-core/config"
+	v1 "github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1"
+	"github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1/repository"
+	"github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1/service"
+	"github.com/klovercloud-ci-cd/klovercloud-ci-core/enums"
 	"strings"
 	"time"
 )

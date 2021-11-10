@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"github.com/klovercloud-ci/core/v1/service"
+	"github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1/service"
 )
 
 type httpClientMockService struct {

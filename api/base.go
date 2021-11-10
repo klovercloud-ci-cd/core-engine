@@ -1,7 +1,7 @@
 package api
 
 import (
-	v1 "github.com/klovercloud-ci/api/v1"
+	v1 "github.com/klovercloud-ci-cd/klovercloud-ci-core/api/v1"
 	"github.com/labstack/echo/v4"
 	"github.com/swaggo/echo-swagger"
 	"net/http"

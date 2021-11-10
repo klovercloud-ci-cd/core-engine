@@ -1,7 +1,7 @@
 package inmemory
 
 import (
-	v1 "github.com/klovercloud-ci/core/v1"
+	v1 "github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"strconv"

@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/klovercloud-ci/core/v1"
+	"github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 )
 

@@ -1,8 +1,8 @@
 package service
 
 import (
-	v1 "github.com/klovercloud-ci/core/v1"
-	"github.com/klovercloud-ci/enums"
+	v1 "github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1"
+	"github.com/klovercloud-ci-cd/klovercloud-ci-core/enums"
 	"io"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"

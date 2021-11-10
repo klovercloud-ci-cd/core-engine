@@ -1,9 +1,9 @@
 package logic
 
 import (
-	v1 "github.com/klovercloud-ci/core/v1"
-	"github.com/klovercloud-ci/core/v1/service"
-	"github.com/klovercloud-ci/enums"
+	v1 "github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1"
+	"github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1/service"
+	"github.com/klovercloud-ci-cd/klovercloud-ci-core/enums"
 	"strings"
 )
 

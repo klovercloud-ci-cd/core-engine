@@ -2,7 +2,7 @@ package inmemory
 
 import (
 	"container/list"
-	v1 "github.com/klovercloud-ci/core/v1"
+	v1 "github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1"
 )
 
 // IndexedLogEvents log events store

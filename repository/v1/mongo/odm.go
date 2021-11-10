@@ -2,7 +2,7 @@ package mongo
 
 import (
 	"context"
-	"github.com/klovercloud-ci/config"
+	"github.com/klovercloud-ci-cd/klovercloud-ci-core/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"

@@ -1,9 +1,9 @@
 package logic
 
 import (
-	v1 "github.com/klovercloud-ci/core/v1"
-	"github.com/klovercloud-ci/core/v1/repository"
-	"github.com/klovercloud-ci/core/v1/service"
+	v1 "github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1"
+	"github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1/repository"
+	"github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1/service"
 )
 
 type processEventService struct {
