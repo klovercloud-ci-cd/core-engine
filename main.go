@@ -33,3 +33,6 @@ func ApplyBuildSteps() {
 
 //swag init --parseDependency --parseInternal
 //goreportcard-cli -v
+// go get golang.org/x/tools/cmd/godoc
+// godoc -http=127.0.0.1:6060
+// wget -r -np -N -E -p -k http://localhost:6060/pkg/github.com/klovercloud-ci/
