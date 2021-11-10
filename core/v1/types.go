@@ -5,7 +5,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-// AgentDeployableResource klovercloud-ci-agent applicable workload info.
+// AgentDeployableResource agent applicable workload info.
 type AgentDeployableResource struct {
 	Step        string                       `json:"step"`
 	ProcessId   string                       `json:"process_id"`
@@ -16,7 +16,7 @@ type AgentDeployableResource struct {
 	Images      []string                     `json:"images"`
 }
 
-// Agent klovercloud-ci-agent info
+// Agent agent info
 type Agent struct {
 	Url, Token string
 }

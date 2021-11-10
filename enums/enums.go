@@ -122,7 +122,7 @@ const (
 	ARGS = PARAMS("arg")
 	// ENVS key for env as pipeline step param
 	ENVS = PARAMS("envs")
-	// AGENT key for klovercloud-ci-agent name as pipeline step param
+	// AGENT key for agent name as pipeline step param
 	AGENT = PARAMS("agent")
 	// RESOURCE_NAME key for k8s resource name as pipeline step param
 	RESOURCE_NAME = PARAMS("name")
