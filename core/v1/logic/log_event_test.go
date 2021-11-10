@@ -1,8 +1,8 @@
 package logic
 
 import (
-	v1 "github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1"
-	in_memory "github.com/klovercloud-ci-cd/klovercloud-ci-core/repository/v1/inmemory"
+	v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
+	in_memory "github.com/klovercloud-ci-cd/core-engine/repository/v1/inmemory"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"strconv"

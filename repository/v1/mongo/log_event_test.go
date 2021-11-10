@@ -2,7 +2,7 @@ package mongo
 
 import (
 	"github.com/joho/godotenv"
-	v1 "github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1"
+	v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"os"

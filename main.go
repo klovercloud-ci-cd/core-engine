@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/klovercloud-ci-cd/klovercloud-ci-core/api"
-	"github.com/klovercloud-ci-cd/klovercloud-ci-core/config"
-	"github.com/klovercloud-ci-cd/klovercloud-ci-core/dependency"
-	_ "github.com/klovercloud-ci-cd/klovercloud-ci-core/docs"
+	"github.com/klovercloud-ci-cd/core-engine/api"
+	"github.com/klovercloud-ci-cd/core-engine/config"
+	"github.com/klovercloud-ci-cd/core-engine/dependency"
+	_ "github.com/klovercloud-ci-cd/core-engine/docs"
 	"github.com/labstack/echo/v4/middleware"
 	"net/http"
 	"time"

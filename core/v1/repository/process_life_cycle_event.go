@@ -1,6 +1,6 @@
 package repository
 
-import v1 "github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1"
+import v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
 
 // ProcessLifeCycleEventRepository Process LifeCycle Event Repository operations.
 type ProcessLifeCycleEventRepository interface {

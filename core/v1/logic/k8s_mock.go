@@ -2,9 +2,9 @@ package logic
 
 import (
 	"errors"
-	v1 "github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1"
-	"github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1/service"
-	"github.com/klovercloud-ci-cd/klovercloud-ci-core/enums"
+	v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
+	"github.com/klovercloud-ci-cd/core-engine/core/v1/service"
+	"github.com/klovercloud-ci-cd/core-engine/enums"
 	"io"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -1,4 +1,4 @@
-module github.com/klovercloud-ci-cd/klovercloud-ci-core
+module github.com/klovercloud-ci-cd/core-engine
 
 go 1.15
 

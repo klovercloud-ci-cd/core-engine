@@ -2,8 +2,8 @@ package mongo
 
 import (
 	"context"
-	v1 "github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1"
-	"github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1/repository"
+	v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
+	"github.com/klovercloud-ci-cd/core-engine/core/v1/repository"
 	"time"
 )
 

@@ -1,8 +1,8 @@
 package service
 
 import (
-	v1 "github.com/klovercloud-ci-cd/klovercloud-ci-core/core/v1"
-	"github.com/klovercloud-ci-cd/klovercloud-ci-core/enums"
+	v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
+	"github.com/klovercloud-ci-cd/core-engine/enums"
 )
 
 // Pipeline Pipeline operations.
