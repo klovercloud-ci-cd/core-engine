@@ -1,4 +1,5 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/klovercloud-ci-cd/core-engine)](https://goreportcard.com/report/github.com/klovercloud-ci-cd/core-engine)
+[![DUMELS Diagram](https://www.dumels.com/api/v1/badge/bda92eee-de40-4853-a544-48c548481f51)](https://www.dumels.com/diagram/bda92eee-de40-4853-a544-48c548481f51)
 
 ```
    ____    ___    ____    _____           _____   _   _    ____   ___   _   _   _____ 
