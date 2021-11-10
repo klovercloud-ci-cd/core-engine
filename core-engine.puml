@@ -1,0 +1,529 @@
+@startuml
+namespace api {
+    interface Pipeline  {
+        + Apply(context echo.Context) error
+        + GetLogs(context echo.Context) error
+        + GetEvents(context echo.Context) error
+
+    }
+}
+
+
+namespace common {
+    class MetaData << (S,Aquamarine) >> {
+        + Page int64
+        + PerPage int64
+        + PageCount int64
+        + TotalCount int64
+        + Links []<font color=blue>map</font>[string]string
+
+    }
+    class ResponseDTO << (S,Aquamarine) >> {
+        + Metadata *MetaData
+        + Data <font color=blue>interface</font>{}
+        + Status string
+        + Message string
+
+    }
+}
+
+
+namespace docs {
+    class s << (S,Aquamarine) >> {
+        + ReadDoc() string
+
+    }
+    class swaggerInfo << (S,Aquamarine) >> {
+        + Version string
+        + Host string
+        + BasePath string
+        + Schemes []string
+        + Title string
+        + Description string
+
+    }
+}
+
+
+namespace enums {
+    class enums.API_VERSION << (T, #FF7700) >>  {
+    }
+    class enums.PARAMS << (T, #FF7700) >>  {
+    }
+    class enums.PIPELINE_PURGING << (T, #FF7700) >>  {
+    }
+    class enums.PIPELINE_RESOURCE_TYPE << (T, #FF7700) >>  {
+    }
+    class enums.PIPELINE_STATUS << (T, #FF7700) >>  {
+    }
+    class enums.POD_STATUS << (T, #FF7700) >>  {
+    }
+    class enums.PROCESS_STATUS << (T, #FF7700) >>  {
+    }
+    class enums.STEP_TYPE << (T, #FF7700) >>  {
+    }
+    class enums.TRIGGER << (T, #FF7700) >>  {
+    }
+}
+
+
+namespace inmemory {
+    class logEventRepository << (S,Aquamarine) >> {
+        + Store(log v1.LogEvent) 
+        + GetByProcessId(processId string, option v1.LogEventQueryOption) ([]string, int64)
+
+    }
+    class processEventRepository << (S,Aquamarine) >> {
+        + Store(data v1.ProcessEvent) 
+        + GetByProcessId(processId string) <font color=blue>map</font>[string]<font color=blue>interface</font>{}
+        + DequeueByProcessId(processId string) <font color=blue>map</font>[string]<font color=blue>interface</font>{}
+
+    }
+    class processLifeCycleRepository << (S,Aquamarine) >> {
+        - updateStatus(data v1.ProcessLifeCycleEvent, status string) error
+        - update(data v1.ProcessLifeCycleEvent) error
+
+        + PullNonInitializedAndAutoTriggerEnabledEventsByStepType(count int64, stepType string) []v1.ProcessLifeCycleEvent
+        + PullPausedAndAutoTriggerEnabledResourcesByAgentName(count int64, agent string) []v1.ProcessLifeCycleEvent
+        + Get(count int64) []v1.ProcessLifeCycleEvent
+        + Store(events []v1.ProcessLifeCycleEvent) 
+        + GetByProcessIdAndStep(processId string, step string) *v1.ProcessLifeCycleEvent
+        + GetByProcessId(processId string) []v1.ProcessLifeCycleEvent
+
+    }
+}
+
+"repository.LogEventRepository" <|-- "inmemory.logEventRepository"
+"repository.ProcessEventRepository" <|-- "inmemory.processEventRepository"
+"repository.ProcessLifeCycleEventRepository" <|-- "inmemory.processLifeCycleRepository"
+
+namespace logic {
+    class eventStoreEventService << (S,Aquamarine) >> {
+        - httpPublisher service.HttpClient
+
+        + Listen(subject v1.Subject) 
+
+    }
+    class eventStoreProcessEventService << (S,Aquamarine) >> {
+        - httpPublisher service.HttpClient
+
+        + Listen(subject v1.Subject) 
+
+    }
+    class eventStoreProcessLifeCycleService << (S,Aquamarine) >> {
+        - httpPublisher service.HttpClient
+
+        + PullBuildEvents() []v1.ProcessLifeCycleEvent
+        + Listen(subject v1.Subject) 
+
+    }
+    class httpClientMockService << (S,Aquamarine) >> {
+        + Post(url string, header <font color=blue>map</font>[string]string, body []byte) error
+        + Get(url string, header <font color=blue>map</font>[string]string) ([]byte, error)
+
+    }
+    class httpClientService << (S,Aquamarine) >> {
+        + Get(url string, header <font color=blue>map</font>[string]string) ([]byte, error)
+        + Post(url string, header <font color=blue>map</font>[string]string, body []byte) error
+
+    }
+    class jwtService << (S,Aquamarine) >> {
+        - jwt v1.Jwt
+
+        + ValidateToken(tokenString string) (bool, *jwt.Token)
+
+    }
+    class k8sService << (S,Aquamarine) >> {
+        - tekton service.Tekton
+        - observerList []service.Observer
+
+        + Kcs *kubernetes.Clientset
+
+        - notifyAll(listener v1.Subject) 
+
+        + GetContainerLog(namespace string, podName string, containerName string, taskRunLabel <font color=blue>map</font>[string]string) (io.ReadCloser, error)
+        + FollowContainerLifeCycle(namespace string, podName string, containerName string, step string, processId string, stepType enums.STEP_TYPE) 
+        + RequestContainerLog(namespace string, podName string, containerName string) *rest.Request
+        + GetSecret(name string, namespace string) (v1.Secret, error)
+        + GetConfigMap(name string, namespace string) (v1.ConfigMap, error)
+        + GetPodListByProcessId(namespace string, processId string, option v1.PodListGetOption) *v1.PodList
+        + WaitAndGetInitializedPods(namespace string, processId string, step string) *v1.PodList
+
+    }
+    class logEventService << (S,Aquamarine) >> {
+        - repo repository.LogEventRepository
+
+        + Listen(listener v1.Subject) 
+        + Store(log v1.LogEvent) 
+        + GetByProcessId(processId string, option v1.LogEventQueryOption) ([]string, int64)
+
+    }
+    class mockK8sService << (S,Aquamarine) >> {
+        - service service.LogEvent
+
+        + RequestContainerLog(namespace string, podName string, containerName string) *rest.Request
+        + GetContainerLog(namespace string, podName string, containerName string, taskRunLabel <font color=blue>map</font>[string]string) (io.ReadCloser, error)
+        + FollowContainerLifeCycle(namespace string, podName string, containerName string, step string, processId string, stepType enums.STEP_TYPE) 
+        + GetPodListByProcessId(namespace string, processId string, option v1.PodListGetOption) *v1.PodList
+        + WaitAndGetInitializedPods(namespace string, processId string, step string) *v1.PodList
+        + GetSecret(name string, namespace string) (v1.Secret, error)
+        + GetConfigMap(name string, namespace string) (v1.ConfigMap, error)
+
+    }
+    class pipelineService << (S,Aquamarine) >> {
+        - k8s service.K8s
+        - tekton service.Tekton
+        - pipeline v1.Pipeline
+        - logEventService service.LogEvent
+        - processEventService service.ProcessEvent
+        - processLifeCycleEvent service.ProcessLifeCycleEvent
+        - observerList []service.Observer
+
+        - buildProcessLifeCycleEvents() 
+        - applySteps(step v1.Step) 
+        - apply() 
+        - applyBuildStep(step v1.Step) error
+        - notifyAll(listener v1.Subject) 
+
+        + ApplyBuildSteps() 
+        + ReadEventByProcessId(c <font color=blue>chan</font> <font color=blue>map</font>[string]<font color=blue>interface</font>{}, processId string) 
+        + GetLogsByProcessId(processId string, option v1.LogEventQueryOption) ([]string, int64)
+        + PostOperations(step string, stepType enums.STEP_TYPE, pipeline v1.Pipeline) 
+        + LoadArgs(pipeline v1.Pipeline) 
+        + LoadEnvs(pipeline v1.Pipeline) 
+        + SetInputResource(url string, revision string, pipeline v1.Pipeline) 
+        + Build(url string, revision string, pipeline v1.Pipeline) 
+        + BuildProcessLifeCycleEvents(url string, revision string, pipeline v1.Pipeline) error
+
+    }
+    class processEventService << (S,Aquamarine) >> {
+        - repo repository.ProcessEventRepository
+
+        + Listen(listener v1.Subject) 
+        + Store(data v1.ProcessEvent) 
+        + GetByProcessId(processId string) <font color=blue>map</font>[string]<font color=blue>interface</font>{}
+        + DequeueByProcessId(processId string) <font color=blue>map</font>[string]<font color=blue>interface</font>{}
+
+    }
+    class processLifeCycleEventService << (S,Aquamarine) >> {
+        - repo repository.ProcessLifeCycleEventRepository
+
+        + PullBuildEvents() []v1.ProcessLifeCycleEvent
+        + Listen(subject v1.Subject) 
+        + PullNonInitializedAndAutoTriggerEnabledEventsByStepType(count int64, stepType string) []v1.ProcessLifeCycleEvent
+        + PullPausedAndAutoTriggerEnabledResourcesByAgentName(count int64, agent string) []v1.AgentDeployableResource
+        + Store(events []v1.ProcessLifeCycleEvent) 
+
+    }
+    class stepService << (S,Aquamarine) >> {
+        - step v1.Step
+
+        + SetInput(url string, revision string) 
+        + SetArgs(k8s service.K8s) 
+        + SetEnvs(k8s service.K8s) 
+
+    }
+    class tektonService << (S,Aquamarine) >> {
+        + Tcs *versioned.Clientset
+
+        + GetTaskRun(name string, waitUntilTaskRunIsCompleted bool) (*v1alpha1.TaskRun, error)
+        + InitPipelineResources(step v1.Step, label <font color=blue>map</font>[string]string, processId string) (v1alpha1.PipelineResource, []v1alpha1.PipelineResource, error)
+        + InitTask(step v1.Step, label <font color=blue>map</font>[string]string, processId string) (v1alpha1.Task, error)
+        + InitTaskRun(step v1.Step, label <font color=blue>map</font>[string]string, processId string) (v1alpha1.TaskRun, error)
+        + CreatePipelineResource(resource v1alpha1.PipelineResource) error
+        + CreateTask(resource v1alpha1.Task) error
+        + CreateTaskRun(resource v1alpha1.TaskRun) error
+        + DeletePipelineResourceByProcessId(processId string) error
+        + DeleteTaskByProcessId(processId string) error
+        + DeleteTaskRunByProcessId(processId string) error
+        + PurgeByProcessId(processId string) 
+
+    }
+}
+
+"service.Observer" <|-- "logic.eventStoreEventService"
+"service.Observer" <|-- "logic.eventStoreProcessEventService"
+"service.Observer" <|-- "logic.eventStoreProcessLifeCycleService"
+"service.ProcessLifeCycleEvent" <|-- "logic.eventStoreProcessLifeCycleService"
+"service.HttpClient" <|-- "logic.httpClientMockService"
+"service.HttpClient" <|-- "logic.httpClientService"
+"service.Jwt" <|-- "logic.jwtService"
+"service.K8s" <|-- "logic.k8sService"
+"repository.LogEventRepository" <|-- "logic.logEventService"
+"service.LogEvent" <|-- "logic.logEventService"
+"service.Observer" <|-- "logic.logEventService"
+"service.K8s" <|-- "logic.mockK8sService"
+"service.Pipeline" <|-- "logic.pipelineService"
+"repository.ProcessEventRepository" <|-- "logic.processEventService"
+"service.Observer" <|-- "logic.processEventService"
+"service.ProcessEvent" <|-- "logic.processEventService"
+"service.Observer" <|-- "logic.processLifeCycleEventService"
+"service.ProcessLifeCycleEvent" <|-- "logic.processLifeCycleEventService"
+"service.Step" <|-- "logic.stepService"
+"service.Tekton" <|-- "logic.tektonService"
+
+namespace mongo {
+    class dmManager << (S,Aquamarine) >> {
+        + Ctx context.Context
+        + Db *mongo.Database
+
+        - initConnection() 
+        - initMockMongoConnection() 
+
+    }
+    class logEventRepository << (S,Aquamarine) >> {
+        - manager *dmManager
+        - timeout time.Duration
+
+        + Store(event v1.LogEvent) 
+        + GetByProcessId(processId string, option v1.LogEventQueryOption) ([]string, int64)
+
+    }
+    class processLifeCycleRepository << (S,Aquamarine) >> {
+        - manager *dmManager
+        - timeout time.Duration
+
+        - updateStatus(data v1.ProcessLifeCycleEvent, status string) error
+        - update(data v1.ProcessLifeCycleEvent) error
+
+        + PullNonInitializedAndAutoTriggerEnabledEventsByStepType(count int64, stepType string) []v1.ProcessLifeCycleEvent
+        + PullPausedAndAutoTriggerEnabledResourcesByAgentName(count int64, agent string) []v1.ProcessLifeCycleEvent
+        + Get(count int64) []v1.ProcessLifeCycleEvent
+        + Store(events []v1.ProcessLifeCycleEvent) 
+        + GetByProcessIdAndStep(processId string, step string) *v1.ProcessLifeCycleEvent
+        + GetByProcessId(processId string) []v1.ProcessLifeCycleEvent
+
+    }
+}
+
+"repository.LogEventRepository" <|-- "mongo.logEventRepository"
+"repository.ProcessLifeCycleEventRepository" <|-- "mongo.processLifeCycleRepository"
+
+namespace repository {
+    interface LogEventRepository  {
+        + Store(log v1.LogEvent) 
+        + GetByProcessId(processId string, option v1.LogEventQueryOption) ([]string, int64)
+
+    }
+    interface ProcessEventRepository  {
+        + Store(data v1.ProcessEvent) 
+        + GetByProcessId(processId string) <font color=blue>map</font>[string]<font color=blue>interface</font>{}
+        + DequeueByProcessId(processId string) <font color=blue>map</font>[string]<font color=blue>interface</font>{}
+
+    }
+    interface ProcessLifeCycleEventRepository  {
+        + Store(data []v1.ProcessLifeCycleEvent) 
+        + Get(count int64) []v1.ProcessLifeCycleEvent
+        + PullPausedAndAutoTriggerEnabledResourcesByAgentName(count int64, agent string) []v1.ProcessLifeCycleEvent
+        + PullNonInitializedAndAutoTriggerEnabledEventsByStepType(count int64, stepType string) []v1.ProcessLifeCycleEvent
+
+    }
+}
+
+
+namespace service {
+    interface HttpClient  {
+        + Post(url string, header <font color=blue>map</font>[string]string, body []byte) error
+        + Get(url string, header <font color=blue>map</font>[string]string) ([]byte, error)
+
+    }
+    interface Jwt  {
+        + ValidateToken(tokenString string) (bool, *jwt.Token)
+
+    }
+    interface K8s  {
+        + GetSecret(name string, namespace string) (v1.Secret, error)
+        + GetConfigMap(name string, namespace string) (v1.ConfigMap, error)
+        + GetPodListByProcessId(namespace string, processId string, option v1.PodListGetOption) *v1.PodList
+        + WaitAndGetInitializedPods(namespace string, processId string, step string) *v1.PodList
+        + FollowContainerLifeCycle(namespace string, podName string, containerName string, step string, processId string, stepType enums.STEP_TYPE) 
+        + GetContainerLog(namespace string, podName string, containerName string, taskRunLabel <font color=blue>map</font>[string]string) (io.ReadCloser, error)
+        + RequestContainerLog(namespace string, podName string, containerName string) *rest.Request
+
+    }
+    interface LogEvent  {
+        + Store(log v1.LogEvent) 
+        + GetByProcessId(processId string, option v1.LogEventQueryOption) ([]string, int64)
+        + Listen(subject v1.Subject) 
+
+    }
+    interface Observer  {
+        + Listen(subject v1.Subject) 
+
+    }
+    interface Pipeline  {
+        + BuildProcessLifeCycleEvents(url string, revision string, pipeline v1.Pipeline) error
+        + LoadArgs(pipeline v1.Pipeline) 
+        + LoadEnvs(pipeline v1.Pipeline) 
+        + SetInputResource(url string, revision string, pipeline v1.Pipeline) 
+        + Build(url string, revision string, pipeline v1.Pipeline) 
+        + PostOperations(step string, stepType enums.STEP_TYPE, pipeline v1.Pipeline) 
+        + GetLogsByProcessId(processId string, option v1.LogEventQueryOption) ([]string, int64)
+        + ReadEventByProcessId(c <font color=blue>chan</font> <font color=blue>map</font>[string]<font color=blue>interface</font>{}, processId string) 
+        + ApplyBuildSteps() 
+
+    }
+    interface ProcessEvent  {
+        + Store(data v1.ProcessEvent) 
+        + GetByProcessId(processId string) <font color=blue>map</font>[string]<font color=blue>interface</font>{}
+        + DequeueByProcessId(processId string) <font color=blue>map</font>[string]<font color=blue>interface</font>{}
+        + Listen(subject v1.Subject) 
+
+    }
+    interface ProcessLifeCycleEvent  {
+        + PullBuildEvents() []v1.ProcessLifeCycleEvent
+        + Listen(subject v1.Subject) 
+
+    }
+    interface Step  {
+        + SetInput(url string, revision string) 
+        + SetArgs(k8s K8s) 
+        + SetEnvs(k8s K8s) 
+
+    }
+    interface Tekton  {
+        + InitPipelineResources(step v1.Step, label <font color=blue>map</font>[string]string, processId string) (v1alpha1.PipelineResource, []v1alpha1.PipelineResource, error)
+        + InitTask(step v1.Step, label <font color=blue>map</font>[string]string, processId string) (v1alpha1.Task, error)
+        + InitTaskRun(step v1.Step, label <font color=blue>map</font>[string]string, processId string) (v1alpha1.TaskRun, error)
+        + CreatePipelineResource( v1alpha1.PipelineResource) error
+        + CreateTask( v1alpha1.Task) error
+        + CreateTaskRun( v1alpha1.TaskRun) error
+        + DeletePipelineResourceByProcessId(processId string) error
+        + DeleteTaskByProcessId(processId string) error
+        + DeleteTaskRunByProcessId(processId string) error
+        + PurgeByProcessId(processId string) 
+        + GetTaskRun(name string, waitUntilTaskRunIsCompleted bool) (*v1alpha1.TaskRun, error)
+
+    }
+}
+
+
+namespace v1 {
+    class Agent << (S,Aquamarine) >> {
+        + Url string
+
+    }
+    class AgentDeployableResource << (S,Aquamarine) >> {
+        + Step string
+        + ProcessId string
+        + Descriptors *[]unstructured.Unstructured
+        + Type enums.PIPELINE_RESOURCE_TYPE
+        + Name string
+        + Namespace string
+        + Images []string
+
+    }
+    class CompanyMetadata << (S,Aquamarine) >> {
+        + Labels <font color=blue>map</font>[string]string
+        + NumberOfConcurrentProcess int64
+        + TotalProcessPerDay int64
+
+    }
+    class Jwt << (S,Aquamarine) >> {
+        + PublicKey *rsa.PublicKey
+
+    }
+    class LogEvent << (S,Aquamarine) >> {
+        + ProcessId string
+        + Log string
+        + Step string
+        + CreatedAt time.Time
+
+    }
+    class LogEventQueryOption << (S,Aquamarine) >> {
+        + Pagination <font color=blue>struct</font>{int64, int64}
+        + Step string
+
+    }
+    class Pipeline << (S,Aquamarine) >> {
+        + MetaData PipelineMetadata
+        + Option PipelineApplyOption
+        + ApiVersion string
+        + Name string
+        + ProcessId string
+        + Label <font color=blue>map</font>[string]string
+        + Steps []Step
+
+        + Validate() error
+
+    }
+    class PipelineApplyOption << (S,Aquamarine) >> {
+        + Purging enums.PIPELINE_PURGING
+
+    }
+    class PipelineMetadata << (S,Aquamarine) >> {
+        + CompanyId string
+        + CompanyMetadata CompanyMetadata
+
+    }
+    class PodListGetOption << (S,Aquamarine) >> {
+        + Wait bool
+        + Duration int
+
+    }
+    class ProcessEvent << (S,Aquamarine) >> {
+        + ProcessId string
+        + Data <font color=blue>map</font>[string]<font color=blue>interface</font>{}
+
+    }
+    class ProcessLifeCycleEvent << (S,Aquamarine) >> {
+        + ProcessId string
+        + Step string
+        + StepType enums.STEP_TYPE
+        + Status enums.PROCESS_STATUS
+        + Next []string
+        + Agent string
+        + Pipeline *Pipeline
+        + CreatedAt time.Time
+        + Trigger enums.TRIGGER
+
+    }
+    class Step << (S,Aquamarine) >> {
+        + Name string
+        + Type enums.STEP_TYPE
+        + Trigger enums.TRIGGER
+        + Params <font color=blue>map</font>[enums.PARAMS]string
+        + Next []string
+        + ArgData <font color=blue>map</font>[string]string
+        + EnvData <font color=blue>map</font>[string]string
+        + Descriptors *[]unstructured.Unstructured
+
+        - validateDeployStep() error
+        - validateBuildStep() error
+
+        + Validate() error
+
+    }
+    class Subject << (S,Aquamarine) >> {
+        + Step string
+        + StepType enums.STEP_TYPE
+        + EventData <font color=blue>map</font>[string]<font color=blue>interface</font>{}
+        + ProcessLabel <font color=blue>map</font>[string]string
+        + Pipeline Pipeline
+
+    }
+    class pipelineApi << (S,Aquamarine) >> {
+        - pipelineService service.Pipeline
+        - observerList []service.Observer
+
+        - notifyAll(listener v1.Subject) 
+
+        + GetLogs(context echo.Context) error
+        + GetEvents(context echo.Context) error
+        + Apply(context echo.Context) error
+
+    }
+}
+
+"api.Pipeline" <|-- "v1.pipelineApi"
+
+"__builtin__.string" #.. "enums.API_VERSION"
+"__builtin__.string" #.. "enums.PARAMS"
+"__builtin__.string" #.. "enums.PIPELINE_PURGING"
+"__builtin__.string" #.. "enums.PIPELINE_RESOURCE_TYPE"
+"__builtin__.string" #.. "enums.PIPELINE_STATUS"
+"__builtin__.string" #.. "enums.POD_STATUS"
+"__builtin__.string" #.. "enums.PROCESS_STATUS"
+"__builtin__.string" #.. "enums.STEP_TYPE"
+"__builtin__.string" #.. "enums.TRIGGER"
+@enduml
