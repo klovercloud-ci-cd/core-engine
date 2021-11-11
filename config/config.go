@@ -51,8 +51,8 @@ var UseLocalEventStore bool
 // AllowedConcurrentBuild refers to allowed number of concurrent build.
 var AllowedConcurrentBuild int64
 
-// Publickey refers to publickey of EventStoreToken.
-var Publickey string
+// PublicKey refers to publickey of EventStoreToken.
+var PublicKey string
 
 // EnableAuthentication refers if service to service authentication is enabled.
 var EnableAuthentication bool
@@ -99,7 +99,7 @@ func InitEnvironmentVariables() {
 		AllowedConcurrentBuild = 4
 	}
 
-	Publickey = os.Getenv("PUBLIC_KEY")
+	PublicKey = os.Getenv("PUBLIC_KEY")
 
 	if os.Getenv("ENABLE_AUTHENTICATION") == "" {
 		EnableAuthentication = false

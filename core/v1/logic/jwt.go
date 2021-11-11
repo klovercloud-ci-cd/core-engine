@@ -29,7 +29,7 @@ func (j jwtService) ValidateToken(tokenString string) (bool, *jwt.Token) {
 }
 
 func getPublicKey() *rsa.PublicKey {
-	block, _ := pem.Decode([]byte(config.Publickey))
+	block, _ := pem.Decode([]byte(config.PublicKey))
 	publicKeyImported, err := x509.ParsePKCS1PublicKey(block.Bytes)
 
 	if err != nil {
