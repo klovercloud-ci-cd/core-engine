@@ -21,6 +21,34 @@ type processLifeCycleRepository struct {
 	timeout time.Duration
 }
 
+func (p processLifeCycleRepository) PullCancellingStepsByProcessStatusAndStepType( stepType string) []v1.ProcessLifeCycleEvent {
+	var data []v1.ProcessLifeCycleEvent
+	query := bson.M{
+		"$and": []bson.M{
+			{"status": enums.REQUESTED_TO_CANCEL},
+			{"step_type": stepType},
+		},
+	}
+	coll := p.manager.Db.Collection(ProcessLifeCycleCollection)
+	result, err := coll.Find(p.manager.Ctx, query)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	for result.Next(context.TODO()) {
+		elemValue := new(v1.ProcessLifeCycleEvent)
+		err := result.Decode(elemValue)
+		if err != nil {
+			log.Println("[ERROR]", err)
+			break
+		}
+		data = append(data, *elemValue)
+	}
+	for _, each := range data {
+		go p.updateStatus(each, string(enums.CANCELLATION_INITIATED))
+	}
+	return data
+}
+
 func (p processLifeCycleRepository) PullNonInitializedAndAutoTriggerEnabledEventsByStepType(count int64, stepType string) []v1.ProcessLifeCycleEvent {
 	var data []v1.ProcessLifeCycleEvent
 	query := bson.M{

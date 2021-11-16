@@ -18,6 +18,41 @@ type eventStoreProcessLifeCycleService struct {
 	httpPublisher service.HttpClient
 }
 
+func (e eventStoreProcessLifeCycleService) PullBuildCancellingEvents() []v1.ProcessLifeCycleEvent {
+	url := config.EventStoreUrl + "/process_life_cycle_events?count=step_type=" + string(enums.BUILD)+"&status="+string(enums.REQUESTED_TO_CANCEL)
+	header := make(map[string]string)
+	header["Authorization"] = "token " + config.Token
+	header["Accept"] = "application/json"
+	header["token"] = config.Token
+	data, err := e.httpPublisher.Get(url, header)
+	if err != nil {
+		// send to observer
+		log.Println(err.Error())
+		return nil
+	}
+	response := common.ResponseDTO{}
+	err = json.Unmarshal(data, &response)
+	if err != nil {
+		log.Println(err.Error())
+		// send to observer
+		return nil
+	}
+	b, err := json.Marshal(response.Data)
+	if err != nil {
+		log.Println(err.Error())
+		// send to observer
+		return nil
+	}
+	events := []v1.ProcessLifeCycleEvent{}
+	err = json.Unmarshal(b, &events)
+	if err != nil {
+		log.Println(err.Error())
+		// send to observer
+		return nil
+	}
+	return events
+}
+
 func (e eventStoreProcessLifeCycleService) PullBuildEvents() []v1.ProcessLifeCycleEvent {
 	url := config.EventStoreUrl + "/process_life_cycle_events?count=" + strconv.FormatInt(config.AllowedConcurrentBuild, 10) + "&step_type=" + string(enums.BUILD)
 	header := make(map[string]string)

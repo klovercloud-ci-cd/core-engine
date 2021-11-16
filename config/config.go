@@ -51,7 +51,7 @@ var UseLocalEventStore bool
 // AllowedConcurrentBuild refers to allowed number of concurrent build.
 var AllowedConcurrentBuild int64
 
-// PublicKey refers to publickey of EventStoreToken.
+// PublicKey refers to public key of EventStoreToken.
 var PublicKey string
 
 // EnableAuthentication refers if service to service authentication is enabled.

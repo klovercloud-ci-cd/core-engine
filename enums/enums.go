@@ -148,6 +148,14 @@ const (
 	FAILED = PROCESS_STATUS("failed")
 	// PAUSED pipeline steps status paused
 	PAUSED = PROCESS_STATUS("paused")
+	// REQUESTED_TO_CANCEL pipeline steps status requested_to_cancel
+	REQUESTED_TO_CANCEL = PROCESS_STATUS("requested_to_cancel")
+	// CANCELLATION_INITIATED pipeline steps status non_initialized
+	CANCELLATION_INITIATED = PROCESS_STATUS("cancellation_initiated")
+	// CANCEL pipeline steps status cancelled
+	PROCESS_CANCELLED = PROCESS_STATUS("cancelled")
+	// CANCELLATION_FAILED pipeline steps status cancellation_failed
+	CANCELLATION_FAILED = PROCESS_STATUS("cancellation_failed")
 )
 
 const (

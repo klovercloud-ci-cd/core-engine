@@ -31,6 +31,14 @@ func ApplyBuildSteps() {
 	ApplyBuildSteps()
 }
 
+// ApplyBuildSteps routine that pulls build steps in every interval.
+func ApplyBuildCancellationSteps() {
+	pipelineServie := dependency.GetV1PipelineService()
+	pipelineServie.ApplyBuildSteps()
+	time.Sleep(time.Second * 5)
+	ApplyBuildSteps()
+}
+
 //swag init --parseDependency --parseInternal
 //goreportcard-cli -v
 // go get golang.org/x/tools/cmd/godoc

@@ -8,6 +8,10 @@ import (
 type processLifeCycleRepository struct {
 }
 
+func (p processLifeCycleRepository) PullCancellingStepsByProcessStatusAndStepType(stepType string) []v1.ProcessLifeCycleEvent {
+	return nil
+}
+
 func (p processLifeCycleRepository) PullNonInitializedAndAutoTriggerEnabledEventsByStepType(count int64, stepType string) []v1.ProcessLifeCycleEvent {
 	return nil
 }

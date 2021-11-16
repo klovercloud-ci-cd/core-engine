@@ -19,6 +19,22 @@ type pipelineService struct {
 	observerList          []service.Observer
 }
 
+func (p *pipelineService) ApplyBuildCancellationSteps() {
+	steps:=p.processLifeCycleEvent.PullBuildCancellingEvents()
+	for _,each:=range steps{
+		 p.tekton.PurgeByProcessId(each.ProcessId)
+		processEventData := make(map[string]interface{})
+		processEventData["step"] = each.Step
+		if each.Pipeline==nil{
+			each.Pipeline=&v1.Pipeline{
+				ProcessId: each.ProcessId,
+			}
+		}
+		subject := v1.Subject{Pipeline: *each.Pipeline, Step: each.Step,Log: "Cancelled Successfully",StepType: enums.BUILD}
+		go p.notifyAll(subject)
+	}
+}
+
 func (p *pipelineService) ApplyBuildSteps() {
 	events := p.processLifeCycleEvent.PullBuildEvents()
 	for _, each := range events {
