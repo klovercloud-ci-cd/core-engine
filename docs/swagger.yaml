@@ -132,7 +132,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/common.ResponseDTO'
+            allOf:
+            - $ref: '#/definitions/common.ResponseDTO'
+            - properties:
+                data:
+                  type: string
+              type: object
         "404":
           description: Not Found
           schema:
@@ -164,7 +169,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/common.ResponseDTO'
+            allOf:
+            - $ref: '#/definitions/common.ResponseDTO'
+            - properties:
+                data:
+                  items:
+                    type: string
+                  type: array
+              type: object
       summary: Get Logs [available if local storage is enabled]
       tags:
       - Pipeline

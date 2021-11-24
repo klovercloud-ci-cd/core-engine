@@ -31,7 +31,7 @@ func ApplyBuildSteps() {
 	ApplyBuildSteps()
 }
 
-// ApplyBuildSteps routine that pulls build steps in every interval.
+// ApplyBuildCancellationSteps routine that pulls build steps in every interval.
 func ApplyBuildCancellationSteps() {
 	pipelineServie := dependency.GetV1PipelineService()
 	pipelineServie.ApplyBuildSteps()

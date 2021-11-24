@@ -42,7 +42,7 @@ var Database string
 // KanikoImage refers to kaniko image url.
 var KanikoImage string
 
-// EventStoreUrl refers to event-store url.
+// EventStoreUrl refers to event-bank url.
 var EventStoreUrl string
 
 // UseLocalEventStore refers if local db will be used.

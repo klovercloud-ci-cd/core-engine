@@ -35,7 +35,7 @@ var (
 // @Param processId path string true "Pipeline ProcessId"
 // @Param page query int64 false "Page number"
 // @Param limit query int64 false "Record count"
-// @Success 200 {object} common.ResponseDTO
+// @Success 200 {object} common.ResponseDTO{data=[]string}
 // @Router /api/v1/pipelines/{processId} [GET]
 func (p pipelineApi) GetLogs(context echo.Context) error {
 	processId := context.Param("processId")
@@ -90,7 +90,7 @@ func (p pipelineApi) GetEvents(context echo.Context) error {
 // @Accept json
 // @Produce json
 // @Param data body v1.Pipeline true "Pipeline Data"
-// @Success 200 {object} common.ResponseDTO
+// @Success 200 {object} common.ResponseDTO{data=string}
 // @Failure 404 {object} common.ResponseDTO
 // @Router /api/v1/pipelines [POST]
 func (p pipelineApi) Apply(context echo.Context) error {
