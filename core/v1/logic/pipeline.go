@@ -6,6 +6,7 @@ import (
 	v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1/service"
 	"github.com/klovercloud-ci-cd/core-engine/enums"
+	"log"
 	"strings"
 )
 
@@ -34,6 +35,19 @@ func (p *pipelineService) ApplyBuildCancellationSteps() {
 		go p.notifyAll(subject)
 	}
 }
+
+func (p *pipelineService) ApplyIntermediarySteps() {
+	events := p.processLifeCycleEvent.PullIntermediaryStepsEvents()
+	for _, each := range events {
+		p.pipeline = *each.Pipeline
+		for i, step := range each.Pipeline.Steps {
+			if each.Step == step.Name && each.StepType == step.Type {
+				p.applySteps(each.Pipeline.Steps[i])
+			}
+		}
+	}
+}
+
 
 func (p *pipelineService) ApplyBuildSteps() {
 	events := p.processLifeCycleEvent.PullBuildEvents()
@@ -143,9 +157,15 @@ func (p *pipelineService) buildProcessLifeCycleEvents() {
 		listener := v1.Subject{Pipeline: p.pipeline, Step: initialStep.Name}
 		if initialStep.Type == enums.BUILD {
 			processEventData["trigger"] = initialStep.Trigger
-			processEventData["agent"] = initialStep.Params[enums.AGENT]
 			processEventData["type"] = enums.BUILD
 			processEventData["status"] = enums.NON_INITIALIZED
+			processEventData["next"] = strings.Join(initialStep.Next, ",")
+			listener.EventData = processEventData
+			go p.notifyAll(listener)
+		}else if initialStep.Type == enums.INTERMEDIARY {
+			processEventData["trigger"] = initialStep.Trigger
+			processEventData["type"] = enums.INTERMEDIARY
+			processEventData["status"] = enums.NON_PULLABLE
 			processEventData["next"] = strings.Join(initialStep.Next, ",")
 			listener.EventData = processEventData
 			go p.notifyAll(listener)
@@ -153,59 +173,71 @@ func (p *pipelineService) buildProcessLifeCycleEvents() {
 	}
 }
 func (p *pipelineService) applySteps(step v1.Step) {
-
 	processEventData := make(map[string]interface{})
 	processEventData["step"] = step.Name
 	listener := v1.Subject{Pipeline: p.pipeline, Step: step.Name}
+	processEventData["trigger"] = step.Params["trigger"]
 	if step.Type == enums.BUILD {
 		err := p.applyBuildStep(step)
-		processEventData["trigger"] = step.Params["trigger"]
-		processEventData["agent"] = step.Params[enums.AGENT]
 		processEventData["type"] = enums.BUILD
 		if err != nil {
+			log.Println(err.Error())
 			processEventData["status"] = enums.BUILD_FAILED
 			processEventData["log"] = err
 			listener.EventData = processEventData
 			go p.notifyAll(listener)
 			return
 		}
-
-		processEventData["status"] = enums.INITIALIZING
-		processEventData["next"] = strings.Join(step.Next, ",")
-		listener.EventData = processEventData
-		go p.notifyAll(listener)
-	}
-}
-func (p *pipelineService) apply() {
-	if len(p.pipeline.Steps) > 0 {
-		initialStep := p.pipeline.Steps[0]
-		processEventData := make(map[string]interface{})
-		processEventData["step"] = initialStep.Name
-		listener := v1.Subject{Pipeline: p.pipeline, Step: initialStep.Name}
-		if initialStep.Type == enums.BUILD {
-			err := p.applyBuildStep(initialStep)
-			processEventData["trigger"] = initialStep.Params["trigger"]
-			processEventData["agent"] = initialStep.Params[enums.AGENT]
-			processEventData["type"] = enums.BUILD
-			if err != nil {
-				processEventData["status"] = enums.BUILD_FAILED
-				processEventData["log"] = err
-				listener.EventData = processEventData
-				go p.notifyAll(listener)
-				return
-			}
-
-			processEventData["status"] = enums.INITIALIZING
-			processEventData["next"] = strings.Join(initialStep.Next, ",")
+	}else if step.Type==enums.INTERMEDIARY{
+		err:=p.applyIntermediaryStep(step)
+		if err != nil {
+			log.Println(err.Error())
+			processEventData["status"] = enums.BUILD_FAILED
+			processEventData["log"] = err
 			listener.EventData = processEventData
 			go p.notifyAll(listener)
+			return
 		}
+	}else {
+		return
 	}
+	processEventData["status"] = enums.INITIALIZING
+	processEventData["next"] = strings.Join(step.Next, ",")
+	listener.EventData = processEventData
+	go p.notifyAll(listener)
 }
 
+func (p *pipelineService) applyIntermediaryStep(step v1.Step) error {
+	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
+	step.Name = trimmedStepName
+	task, err := p.tekton.InitTask(step, p.pipeline.Label, p.pipeline.ProcessId)
+	if err != nil {
+		return errors.New("Failed to initialize task" + err.Error())
+	}
+	taskrun, err := p.tekton.InitTaskRun(step, p.pipeline.Label, p.pipeline.ProcessId)
+	if err != nil {
+		return errors.New("Failed to initialize pipeline job" + err.Error())
+	}
+	_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
+	if err != nil {
+		return errors.New("Failed to apply input resource" + err.Error())
+	}
+	err = p.tekton.CreateTask(task)
+	if err != nil {
+		_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
+		return errors.New("Failed to apply task" + err.Error())
+	}
+	err = p.tekton.CreateTaskRun(taskrun)
+	if err != nil {
+		_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
+		return errors.New("Failed to apply taskrun" + err.Error())
+	}
+	go p.PostOperations(step.Name, step.Type, p.pipeline)
+	return nil
+}
 func (p *pipelineService) applyBuildStep(step v1.Step) error {
-	nss := strings.ReplaceAll(step.Name, " ", "")
-	step.Name = nss
+	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
+	step.Name = trimmedStepName
 	input, outputs, err := p.tekton.InitPipelineResources(step, p.pipeline.Label, p.pipeline.ProcessId)
 	if err != nil {
 		return errors.New("Failed to initialize input/output resource" + err.Error())

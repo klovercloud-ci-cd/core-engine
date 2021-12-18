@@ -19,6 +19,10 @@ func (p processLifeCycleEventService) PullBuildCancellingEvents() []v1.ProcessLi
 	return p.repo.PullCancellingStepsByProcessStatusAndStepType(string(enums.BUILD))
 }
 
+func (p processLifeCycleEventService) PullIntermediaryStepsEvents() []v1.ProcessLifeCycleEvent {
+	return p.PullNonInitializedAndAutoTriggerEnabledEventsByStepType(config.AllowedConcurrentBuild, string(enums.INTERMEDIARY))
+}
+
 func (p processLifeCycleEventService) PullBuildEvents() []v1.ProcessLifeCycleEvent {
 	return p.PullNonInitializedAndAutoTriggerEnabledEventsByStepType(config.AllowedConcurrentBuild, string(enums.BUILD))
 }
@@ -60,7 +64,6 @@ func (p processLifeCycleEventService) Listen(subject v1.Subject) {
 		}
 
 	} else {
-
 		processLifeCycleEvent := v1.ProcessLifeCycleEvent{
 			ProcessId: subject.Pipeline.ProcessId,
 			Status:    enums.NON_INITIALIZED,

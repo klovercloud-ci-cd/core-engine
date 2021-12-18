@@ -16,5 +16,6 @@ type Pipeline interface {
 	GetLogsByProcessId(processId string, option v1.LogEventQueryOption) ([]string, int64)
 	ReadEventByProcessId(c chan map[string]interface{}, processId string)
 	ApplyBuildSteps()
+	ApplyIntermediarySteps()
 	ApplyBuildCancellationSteps()
 }

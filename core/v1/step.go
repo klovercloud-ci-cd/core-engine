@@ -33,10 +33,15 @@ func (step Step) Validate() error {
 		if err != nil {
 			return err
 		}
+	} else if step.Type == enums.INTERMEDIARY {
+		err := step.validateIntermediaryStep()
+		if err != nil {
+			return err
+		}
 	} else if step.Type == "" {
 		return errors.New("Step type is required!")
 	} else {
-		return errors.New("Invalid step type!")
+		return errors.New("Invalid step type!"+string(step.Type))
 	}
 	if step.Trigger == "" {
 		return errors.New("Step triger required!")
@@ -73,6 +78,16 @@ func (step Step) validateBuildStep() error {
 	if step.Params[enums.REVISION] == "" {
 		return errors.New("Revision is required!")
 	}
+	if step.Params[enums.SERVICE_ACCOUNT] == "" {
+		return errors.New("Service account is required!")
+	}
+	if step.Params[enums.IMAGES] == "" {
+		return errors.New("Image is required!")
+	}
+	return nil
+}
+
+func (step Step) validateIntermediaryStep() error {
 	if step.Params[enums.SERVICE_ACCOUNT] == "" {
 		return errors.New("Service account is required!")
 	}

@@ -121,8 +121,10 @@ func (tekton *tektonService) InitTask(step v1.Step, label map[string]string, pro
 	}
 
 	if step.Type == enums.BUILD {
-		initV1BuildTaskSpec(step, task)
-	} else {
+		initBuildTaskSpec(step, task)
+	}else if step.Type == enums.INTERMEDIARY {
+		initIntermediaryTaskSpec(step,task)
+	}else {
 		log.Print("Please provide a valid step type!")
 	}
 	err := task.Validate(context.Background())
@@ -132,7 +134,29 @@ func (tekton *tektonService) InitTask(step v1.Step, label map[string]string, pro
 	return *task, nil
 
 }
-func initV1BuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
+func initIntermediaryTaskSpec(step v1.Step, task *v1alpha1.Task) {
+	var steps []v1alpha1.Step
+	var env []corev1.EnvVar
+	for key, value := range step.EnvData {
+		env = append(env, corev1.EnvVar{
+			Name:  key,
+			Value: value,
+		})
+	}
+	for i,image := range strings.Split(step.Params[enums.IMAGES], ",") {
+		steps = append(steps, v1alpha1.Step{
+			Container: corev1.Container{
+				Name:            enums.CUSTOM_STAGE + strconv.Itoa(i),
+				Image:           image,
+				Command:         strings.Split(step.Params[enums.COMMAND], ","),
+				Args:            strings.Split(step.Params[enums.COMMAND_ARGS], ","),
+				Env:             env,
+				ImagePullPolicy: "Always",
+			}})
+		}
+	task.Spec.Steps = steps
+}
+func initBuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
 	params := []v1alpha1.ParamSpec{}
 	params = append(params, v1alpha1.ParamSpec{
 		Name:        "pathToDockerFile",
@@ -204,22 +228,6 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 		label = make(map[string]string)
 	}
 	label["step"] = step.Name
-	var params []v1alpha1.Param
-	params = append(params, v1alpha1.Param{
-		Name: "pathToDockerFile",
-		Value: v1alpha1.ArrayOrString{
-			Type:      v1alpha1.ParamTypeString,
-			StringVal: "Dockerfile",
-		},
-	})
-	params = append(params, v1alpha1.Param{
-		Name: "pathToContext",
-		Value: v1alpha1.ArrayOrString{
-			Type:      v1alpha1.ParamTypeString,
-			StringVal: "/workspace/docker-source",
-		},
-	})
-
 	taskrun := v1alpha1.TaskRun{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       "TaskRun",
@@ -231,8 +239,29 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 			Labels:    label,
 		},
 	}
+	taskrun.Spec = v1alpha1.TaskRunSpec{
+		ServiceAccountName: step.Params[enums.SERVICE_ACCOUNT],
+		TaskRef: &v1alpha1.TaskRef{
+			Name: step.Name + "-" + processId,
+		},
+	}
 
 	if step.Type == enums.BUILD {
+		var params []v1alpha1.Param
+		params = append(params, v1alpha1.Param{
+			Name: "pathToDockerFile",
+			Value: v1alpha1.ArrayOrString{
+				Type:      v1alpha1.ParamTypeString,
+				StringVal: "Dockerfile",
+			},
+		})
+		params = append(params, v1alpha1.Param{
+			Name: "pathToContext",
+			Value: v1alpha1.ArrayOrString{
+				Type:      v1alpha1.ParamTypeString,
+				StringVal: "/workspace/docker-source",
+			},
+		})
 		if step.ArgData != nil {
 			for k, v := range step.ArgData {
 				params = append(params, v1alpha1.Param{
@@ -245,13 +274,6 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 			}
 
 		}
-		taskrun.Spec = v1alpha1.TaskRunSpec{
-			ServiceAccountName: step.Params[enums.SERVICE_ACCOUNT],
-			TaskRef: &v1alpha1.TaskRef{
-				Name: step.Name + "-" + processId,
-			},
-		}
-
 		taskrun.Spec.Inputs = v1alpha1.TaskRunInputs{
 			Resources: []v1alpha1.TaskResourceBinding{{
 				PipelineResourceBinding: v1alpha1.PipelineResourceBinding{

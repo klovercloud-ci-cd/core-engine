@@ -4,10 +4,12 @@ package enums
 type STEP_TYPE string
 
 const (
-	// BUILD build step
+	// BUILD step that builds image from source code
 	BUILD = STEP_TYPE("BUILD")
-	// DEPLOY deploy step
+	// DEPLOY step that deploys workloads and others to cluster
 	DEPLOY = STEP_TYPE("DEPLOY")
+	// INTERMEDIARY step that runs custom jobs
+	INTERMEDIARY=STEP_TYPE("INTERMEDIARY")
 )
 const (
 	// MONGO mongo as db
@@ -119,7 +121,7 @@ const (
 	// ENVS_FROM_SECRETS key for env via secrets as pipeline step param
 	ENVS_FROM_SECRETS = PARAMS("envs_from_secrets")
 	// ARGS key for build and other arguments as pipeline step param
-	ARGS = PARAMS("arg")
+	ARGS = PARAMS("args")
 	// ENVS key for env as pipeline step param
 	ENVS = PARAMS("envs")
 	// AGENT key for agent name as pipeline step param
@@ -132,6 +134,11 @@ const (
 	IMAGE_URL = PARAMS("url")
 	// TYPE key for resource type as pipeline step param
 	TYPE = PARAMS("type")
+	// COMMAND key for command array of intermediary step
+	COMMAND=PARAMS("command")
+	// COMMAND_ARGS key for command args array of intermediary step
+	COMMAND_ARGS=PARAMS("command_args")
+
 )
 
 // PROCESS_STATUS pipeline steps status
@@ -140,6 +147,8 @@ type PROCESS_STATUS string
 const (
 	// NON_INITIALIZED pipeline steps status non_initialized
 	NON_INITIALIZED = PROCESS_STATUS("non_initialized")
+	// NON_PULLABLE pipeline steps status non_pullable
+	NON_PULLABLE = PROCESS_STATUS("non_pullable")
 	// ACTIVE pipeline steps status active
 	ACTIVE = PROCESS_STATUS("active")
 	// COMPLETED pipeline steps status completed
@@ -169,3 +178,6 @@ const (
 	// DEFAULT_PAGE default page for rest api
 	DEFAULT_PAGE = 0
 )
+
+// CUSTOM_STAGE container name of custom stage
+const 	CUSTOM_STAGE    = "custom-stage"

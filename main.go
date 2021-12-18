@@ -19,6 +19,7 @@ func main() {
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 	go ApplyBuildSteps()
+	go ApplyIntermediarySteps()
 	api.Routes(e)
 	e.Logger.Fatal(e.Start(":" + config.ServerPort))
 }
@@ -30,6 +31,15 @@ func ApplyBuildSteps() {
 	time.Sleep(time.Second * 5)
 	ApplyBuildSteps()
 }
+
+// ApplyIntermediarySteps routine that pulls intermediary steps in every interval.
+func ApplyIntermediarySteps() {
+	pipelineServie := dependency.GetV1PipelineService()
+	pipelineServie.ApplyIntermediarySteps()
+	time.Sleep(time.Second * 5)
+	ApplyIntermediarySteps()
+}
+
 
 // ApplyBuildCancellationSteps routine that pulls build steps in every interval.
 func ApplyBuildCancellationSteps() {
