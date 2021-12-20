@@ -122,9 +122,9 @@ func (tekton *tektonService) InitTask(step v1.Step, label map[string]string, pro
 
 	if step.Type == enums.BUILD {
 		initBuildTaskSpec(step, task)
-	}else if step.Type == enums.INTERMEDIARY {
-		initIntermediaryTaskSpec(step,task)
-	}else {
+	} else if step.Type == enums.INTERMEDIARY {
+		initIntermediaryTaskSpec(step, task)
+	} else {
 		log.Print("Please provide a valid step type!")
 	}
 	err := task.Validate(context.Background())
@@ -143,7 +143,7 @@ func initIntermediaryTaskSpec(step v1.Step, task *v1alpha1.Task) {
 			Value: value,
 		})
 	}
-	for i,image := range strings.Split(step.Params[enums.IMAGES], ",") {
+	for i, image := range strings.Split(step.Params[enums.IMAGES], ",") {
 		steps = append(steps, v1alpha1.Step{
 			Container: corev1.Container{
 				Name:            enums.CUSTOM_STAGE + strconv.Itoa(i),
@@ -153,7 +153,7 @@ func initIntermediaryTaskSpec(step v1.Step, task *v1alpha1.Task) {
 				Env:             env,
 				ImagePullPolicy: "Always",
 			}})
-		}
+	}
 	task.Spec.Steps = steps
 }
 func initBuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
@@ -239,13 +239,20 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 			Labels:    label,
 		},
 	}
-	taskrun.Spec = v1alpha1.TaskRunSpec{
-		ServiceAccountName: step.Params[enums.SERVICE_ACCOUNT],
-		TaskRef: &v1alpha1.TaskRef{
-			Name: step.Name + "-" + processId,
-		},
+	if step.Type == enums.BUILD || step.Type == enums.INTERMEDIARY {
+		taskrun.Spec = v1alpha1.TaskRunSpec{
+			ServiceAccountName: step.Params[enums.SERVICE_ACCOUNT],
+			TaskRef: &v1alpha1.TaskRef{
+				Name: step.Name + "-" + processId,
+			},
+		}
+	} else if step.Type == enums.JENKINS_JOB {
+		taskrun.Spec = v1alpha1.TaskRunSpec{
+			TaskRef: &v1alpha1.TaskRef{
+				Name: enums.JENKINS_TASK_NAME,
+			},
+		}
 	}
-
 	if step.Type == enums.BUILD {
 		var params []v1alpha1.Param
 		params = append(params, v1alpha1.Param{
@@ -300,6 +307,47 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 			Resources: resourceBindings,
 		}
 		taskrun.Spec.Outputs = taskRunOutputs
+	} else if step.Type == enums.JENKINS_JOB {
+		var params []v1alpha1.Param
+		params = append(params, v1alpha1.Param{
+			Name: "JENKINS_HOST_URL",
+			Value: v1alpha1.ArrayOrString{
+				Type:      v1alpha1.ParamTypeString,
+				StringVal: step.Params[enums.JENKINS_URL],
+			},
+		})
+		params = append(params, v1alpha1.Param{
+			Name: "JOB_NAME",
+			Value: v1alpha1.ArrayOrString{
+				Type:      v1alpha1.ParamTypeString,
+				StringVal: step.Params[enums.JENKINS_JOB_NAME],
+			},
+		})
+
+		if step.Params[enums.JENKINS_SECRET] != "" {
+			params = append(params, v1alpha1.Param{
+				Name: "JENKINS_SECRETS",
+				Value: v1alpha1.ArrayOrString{
+					Type:      v1alpha1.ParamTypeString,
+					StringVal: step.Params[enums.JENKINS_SECRET],
+				},
+			})
+		}
+
+		if step.Params[enums.JENKINS_PARAMS] != "" {
+			paramsData := []string{}
+			for _, each := range strings.Split(step.Params[enums.JENKINS_PARAMS], ",") {
+				keyAndValue := strings.Split(each, ":")
+				paramsData = append(paramsData, keyAndValue[0]+"="+keyAndValue[1])
+			}
+			params = append(params, v1alpha1.Param{
+				Name: "JOB_PARAMS",
+				Value: v1alpha1.ArrayOrString{
+					Type:     v1alpha1.ParamTypeArray,
+					ArrayVal: paramsData,
+				},
+			})
+		}
 	}
 	err := taskrun.Validate(context.Background())
 	if err != nil {

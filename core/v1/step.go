@@ -38,6 +38,11 @@ func (step Step) Validate() error {
 		if err != nil {
 			return err
 		}
+	}else if step.Type==enums.JENKINS_JOB{
+		err := step.validateJenkinsJobStep()
+		if err != nil {
+			return err
+		}
 	} else if step.Type == "" {
 		return errors.New("Step type is required!")
 	} else {
@@ -93,6 +98,16 @@ func (step Step) validateIntermediaryStep() error {
 	}
 	if step.Params[enums.IMAGES] == "" {
 		return errors.New("Image is required!")
+	}
+	return nil
+}
+
+
+func (step Step) validateJenkinsJobStep() error {
+	if step.Params[enums.JENKINS_URL] == "" {
+		return errors.New("Jenkins url is required!")
+	}else if step.Params[enums.JENKINS_JOB_NAME] == "" {
+		return errors.New("Jenkins job name is required!")
 	}
 	return nil
 }

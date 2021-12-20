@@ -10,6 +10,8 @@ const (
 	DEPLOY = STEP_TYPE("DEPLOY")
 	// INTERMEDIARY step that runs custom jobs
 	INTERMEDIARY=STEP_TYPE("INTERMEDIARY")
+	// JENKINS_JOB step that triggers jenkins job
+	JENKINS_JOB=STEP_TYPE("JENKINS_JOB")
 )
 const (
 	// MONGO mongo as db
@@ -50,8 +52,8 @@ const (
 type PIPELINE_STATUS string
 
 const (
-	// BUILD_FAILED step build has been FAILED
-	BUILD_FAILED = PIPELINE_STATUS("FAILED")
+	// STEP_FAILED step has been FAILED
+	STEP_FAILED = PIPELINE_STATUS("FAILED")
 	// BUILD_PROCESSING step build is PROCESSING
 	BUILD_PROCESSING = PIPELINE_STATUS("PROCESSING")
 	// BUILD_TERMINATED step build has been TERMINATED
@@ -138,7 +140,14 @@ const (
 	COMMAND=PARAMS("command")
 	// COMMAND_ARGS key for command args array of intermediary step
 	COMMAND_ARGS=PARAMS("command_args")
-
+	// JENKINS_URL key for jenkins url
+	JENKINS_URL=PARAMS("url")
+	// JENKINS_JOB_NAME key for jenkins job name
+	JENKINS_JOB_NAME=PARAMS("job")
+	// JENKINS_SECRET key for jenkins secret
+	JENKINS_SECRET=PARAMS("secret")
+	// JENKINS_PARAMS key for jenkins params
+	JENKINS_PARAMS=PARAMS("params")
 )
 
 // PROCESS_STATUS pipeline steps status
@@ -147,8 +156,6 @@ type PROCESS_STATUS string
 const (
 	// NON_INITIALIZED pipeline steps status non_initialized
 	NON_INITIALIZED = PROCESS_STATUS("non_initialized")
-	// NON_PULLABLE pipeline steps status non_pullable
-	NON_PULLABLE = PROCESS_STATUS("non_pullable")
 	// ACTIVE pipeline steps status active
 	ACTIVE = PROCESS_STATUS("active")
 	// COMPLETED pipeline steps status completed
@@ -181,3 +188,6 @@ const (
 
 // CUSTOM_STAGE container name of custom stage
 const 	CUSTOM_STAGE    = "custom-stage"
+
+// JENKINS_TASK_NAME tekton task name for jenkins job
+const JENKINS_TASK_NAME = "trigger-jenkins-job"

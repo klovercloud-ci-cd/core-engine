@@ -52,10 +52,10 @@ func (p processLifeCycleRepository) PullCancellingStepsByProcessStatusAndStepTyp
 func (p processLifeCycleRepository) PullNonInitializedAndAutoTriggerEnabledEventsByStepType(count int64, stepType string) []v1.ProcessLifeCycleEvent {
 	var data []v1.ProcessLifeCycleEvent
 	var query bson.M
-	if stepType==string(enums.INTERMEDIARY){
+	if stepType==string(enums.BUILD){
 		query = bson.M{
 			"$and": []bson.M{
-				{"status": enums.PAUSED},
+				{"status": enums.NON_INITIALIZED},
 				{"trigger": enums.AUTO},
 				{"step_type": stepType},
 			},
@@ -63,7 +63,7 @@ func (p processLifeCycleRepository) PullNonInitializedAndAutoTriggerEnabledEvent
 	}else{
 		query = bson.M{
 			"$and": []bson.M{
-				{"status": enums.NON_INITIALIZED},
+				{"status": enums.PAUSED},
 				{"trigger": enums.AUTO},
 				{"step_type": stepType},
 			},

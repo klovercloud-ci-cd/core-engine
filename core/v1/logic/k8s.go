@@ -52,7 +52,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 		listener := v1.Subject{Pipeline: v1.Pipeline{ProcessId: processId}, Log: err.Error(), Step: step}
 		if strings.Contains(err.Error(), "image can't be pulled") || strings.Contains(err.Error(), "pods \""+podName+"\" not found") || strings.Contains(err.Error(), "pod \""+podName+"\" is terminated") {
 			if stepType == enums.BUILD {
-				processEventData["status"] = enums.BUILD_FAILED
+				processEventData["status"] = enums.STEP_FAILED
 				processEventData["reason"] = err.Error()
 				listener.EventData = processEventData
 				go k8s.notifyAll(listener)

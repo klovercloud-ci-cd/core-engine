@@ -17,5 +17,6 @@ type Pipeline interface {
 	ReadEventByProcessId(c chan map[string]interface{}, processId string)
 	ApplyBuildSteps()
 	ApplyIntermediarySteps()
+	ApplyJenkinsJobSteps()
 	ApplyBuildCancellationSteps()
 }

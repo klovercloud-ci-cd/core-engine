@@ -15,8 +15,14 @@ type processLifeCycleEventService struct {
 	repo repository.ProcessLifeCycleEventRepository
 }
 
+
+
 func (p processLifeCycleEventService) PullBuildCancellingEvents() []v1.ProcessLifeCycleEvent {
 	return p.repo.PullCancellingStepsByProcessStatusAndStepType(string(enums.BUILD))
+}
+
+func (p processLifeCycleEventService) PullJenkinsJobStepsEvents() []v1.ProcessLifeCycleEvent {
+	return p.PullNonInitializedAndAutoTriggerEnabledEventsByStepType(config.AllowedConcurrentBuild, string(enums.JENKINS_JOB))
 }
 
 func (p processLifeCycleEventService) PullIntermediaryStepsEvents() []v1.ProcessLifeCycleEvent {
@@ -47,7 +53,7 @@ func (p processLifeCycleEventService) Listen(subject v1.Subject) {
 
 			}
 		}
-		if subject.EventData["status"] == string(enums.BUILD_FAILED) || subject.EventData["status"] == string(enums.ERROR) || subject.EventData["status"] == string(enums.TERMINATING) {
+		if subject.EventData["status"] == string(enums.STEP_FAILED) || subject.EventData["status"] == string(enums.ERROR) || subject.EventData["status"] == string(enums.TERMINATING) {
 			processLifeCycleEvent.Status = enums.FAILED
 			data = append(data, processLifeCycleEvent)
 		} else if subject.EventData["status"] == string(enums.SUCCESSFUL) {

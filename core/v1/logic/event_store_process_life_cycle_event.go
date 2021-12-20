@@ -18,6 +18,41 @@ type eventStoreProcessLifeCycleService struct {
 	httpPublisher service.HttpClient
 }
 
+func (e eventStoreProcessLifeCycleService) PullJenkinsJobStepsEvents() []v1.ProcessLifeCycleEvent {
+	url := config.EventStoreUrl + "/process_life_cycle_events?count=" + strconv.FormatInt(config.AllowedConcurrentBuild, 10) + "&step_type=" + string(enums.JENKINS_JOB)
+	header := make(map[string]string)
+	header["Authorization"] = "token " + config.Token
+	header["Accept"] = "application/json"
+	header["token"] = config.Token
+	data, err := e.httpPublisher.Get(url, header)
+	if err != nil {
+		// send to observer
+		log.Println(err.Error())
+		return nil
+	}
+	response := common.ResponseDTO{}
+	err = json.Unmarshal(data, &response)
+	if err != nil {
+		log.Println(err.Error())
+		// send to observer
+		return nil
+	}
+	b, err := json.Marshal(response.Data)
+	if err != nil {
+		log.Println(err.Error())
+		// send to observer
+		return nil
+	}
+	events := []v1.ProcessLifeCycleEvent{}
+	err = json.Unmarshal(b, &events)
+	if err != nil {
+		log.Println(err.Error())
+		// send to observer
+		return nil
+	}
+	return events
+}
+
 func (e eventStoreProcessLifeCycleService) PullIntermediaryStepsEvents() []v1.ProcessLifeCycleEvent {
 	url := config.EventStoreUrl + "/process_life_cycle_events?count=" + strconv.FormatInt(config.AllowedConcurrentBuild, 10) + "&step_type=" + string(enums.INTERMEDIARY)
 	header := make(map[string]string)
@@ -143,7 +178,7 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 
 			}
 		}
-		if subject.EventData["status"] == string(enums.BUILD_FAILED) || subject.EventData["status"] == string(enums.ERROR) || subject.EventData["status"] == string(enums.TERMINATING) {
+		if subject.EventData["status"] == string(enums.STEP_FAILED) || subject.EventData["status"] == string(enums.ERROR) || subject.EventData["status"] == string(enums.TERMINATING) {
 			processLifeCycleEvent.Status = enums.FAILED
 			data = append(data, processLifeCycleEvent)
 		} else if subject.EventData["status"] == string(enums.SUCCESSFUL) {

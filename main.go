@@ -20,6 +20,7 @@ func main() {
 	}))
 	go ApplyBuildSteps()
 	go ApplyIntermediarySteps()
+	go ApplyJenkinsJobSteps()
 	api.Routes(e)
 	e.Logger.Fatal(e.Start(":" + config.ServerPort))
 }
@@ -40,6 +41,14 @@ func ApplyIntermediarySteps() {
 	ApplyIntermediarySteps()
 }
 
+
+// ApplyIntermediarySteps routine that pulls intermediary steps in every interval.
+func ApplyJenkinsJobSteps() {
+	pipelineServie := dependency.GetV1PipelineService()
+	pipelineServie.ApplyJenkinsJobSteps()
+	time.Sleep(time.Second * 5)
+	ApplyJenkinsJobSteps()
+}
 
 // ApplyBuildCancellationSteps routine that pulls build steps in every interval.
 func ApplyBuildCancellationSteps() {
