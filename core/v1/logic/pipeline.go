@@ -114,7 +114,7 @@ func (p *pipelineService) PostOperations(step string, stepType enums.STEP_TYPE, 
 		go p.tekton.PurgeByProcessId(p.pipeline.ProcessId)
 	}
 }
-
+//LoadArgs reads data from arg, serializes string into map and set into argData of step
 func (p *pipelineService) LoadArgs(pipeline v1.Pipeline) {
 	p.pipeline = pipeline
 	for i := range p.pipeline.Steps {
@@ -123,7 +123,7 @@ func (p *pipelineService) LoadArgs(pipeline v1.Pipeline) {
 		p.pipeline.Steps[i] = s.step
 	}
 }
-
+// LoadEnvs reads data from env, serializes string into map and set into envData of step
 func (p *pipelineService) LoadEnvs(pipeline v1.Pipeline) {
 	p.pipeline = pipeline
 	for i := range p.pipeline.Steps {
@@ -132,7 +132,7 @@ func (p *pipelineService) LoadEnvs(pipeline v1.Pipeline) {
 		p.pipeline.Steps[i] = s.step
 	}
 }
-
+// SetInputResource sets input resources for build step
 func (p *pipelineService) SetInputResource(url, revision string, pipeline v1.Pipeline) {
 	p.pipeline = pipeline
 	for i := range p.pipeline.Steps {
@@ -141,13 +141,13 @@ func (p *pipelineService) SetInputResource(url, revision string, pipeline v1.Pip
 		p.pipeline.Steps[i] = s.step
 	}
 }
-
+// Build reads data from arg, serializes string into map and set into argData of step, reads data from env, serializes string into map and set into envData of step, sets input resources for build step
 func (p *pipelineService) Build(url, revision string, pipeline v1.Pipeline) {
 	p.LoadArgs(pipeline)
 	p.LoadEnvs(pipeline)
 	p.SetInputResource(url, revision, pipeline)
 }
-
+//BuildProcessLifeCycleEvents Builds pipeline By triggering Build method, then validates pipeline, and then notifies the observers.
 func (p *pipelineService) BuildProcessLifeCycleEvents(url, revision string, pipeline v1.Pipeline) error {
 	p.Build(url, revision, pipeline)
 	if p.pipeline.Label == nil {
@@ -162,7 +162,7 @@ func (p *pipelineService) BuildProcessLifeCycleEvents(url, revision string, pipe
 	p.buildProcessLifeCycleEvents()
 	return nil
 }
-
+// buildProcessLifeCycleEvents initializes build events subject and then notifies observers.
 func (p *pipelineService) buildProcessLifeCycleEvents() {
 	if len(p.pipeline.Steps) > 0 {
 		initialStep := p.pipeline.Steps[0]
@@ -179,7 +179,7 @@ func (p *pipelineService) buildProcessLifeCycleEvents() {
 		}
 	}
 }
-
+// applySteps applies steps and then notifies observers.
 func (p *pipelineService) applySteps(step v1.Step) {
 	listener := v1.Subject{Pipeline: p.pipeline, Step: step.Name}
 	processEventData := make(map[string]interface{})
@@ -210,8 +210,8 @@ func (p *pipelineService) applySteps(step v1.Step) {
 	go p.notifyAll(listener)
 }
 
+//applyJenkinsJobStep applies jenkins step, follows pod lifecycle and the notifies observers
 func (p *pipelineService) applyJenkinsJobStep(step v1.Step) error {
-
 	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
 	step.Name = trimmedStepName
 	taskrun, err := p.tekton.InitTaskRun(step, p.pipeline.Label, p.pipeline.ProcessId)
@@ -226,7 +226,7 @@ func (p *pipelineService) applyJenkinsJobStep(step v1.Step) error {
 	go p.PostOperations(step.Name, step.Type, p.pipeline)
 	return nil
 }
-
+//applyIntermediaryStep applies intermediary step, follows pod lifecycle and the notifies observers
 func (p *pipelineService) applyIntermediaryStep(step v1.Step) error {
 	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
 	step.Name = trimmedStepName
@@ -255,7 +255,7 @@ func (p *pipelineService) applyIntermediaryStep(step v1.Step) error {
 	go p.PostOperations(step.Name, step.Type, p.pipeline)
 	return nil
 }
-
+//applyBuildStep applies build step, follows pod lifecycle and the notifies observers
 func (p *pipelineService) applyBuildStep(step v1.Step) error {
 	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
 	step.Name = trimmedStepName
@@ -301,7 +301,7 @@ func (p *pipelineService) applyBuildStep(step v1.Step) error {
 	go p.PostOperations(step.Name, step.Type, p.pipeline)
 	return nil
 }
-
+// notifyAll notifies all the observers
 func (p *pipelineService) notifyAll(listener v1.Subject) {
 	for _, observer := range p.observerList {
 		go observer.Listen(listener)
