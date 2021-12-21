@@ -151,6 +151,112 @@ Responsibility: Apply pipeline
 
 ```
 
+##### Run intermediary step
+
+```
+{
+  "name": "test",
+  "steps": [
+    {
+      "name": "name",
+      "type": "BUILD",
+      "trigger": "AUTO",
+      "params": {
+        "repository_type": "git",
+        "revision": "revision",
+        "service_account": "service_account_name",
+        "images": "image_url1"
+      },
+      "next": [
+        "interstep"
+      ]
+    },
+    {
+      "name": "interstep",
+      "type": "INTERMEDIARY",
+      "trigger": "AUTO",
+      "params": {
+        "revision": "latest",
+        "service_account": "service_account_name",
+        "images": "image_name",
+        "envs_from_configmaps": "namespace/config_map_name",
+        "envs_from_secrets": "namespace/secret_map_name",
+        "envs": "key1:value1,key2:value2",
+        "command": "echo",
+        "command_args": "Hello World"
+      },
+      "next": [
+        
+      ]
+    }
+  ]
+}
+
+```
+User can pass ```command``` and ```command_args``` as comma (,) separated array.  
+
+##### Trigger Jenkins Job
+
+```
+{
+  "name": "test",
+  "steps": [
+    {
+      "name": "name",
+      "type": "BUILD",
+      "trigger": "AUTO",
+      "params": {
+        "repository_type": "git",
+        "revision": "revision",
+        "service_account": "service_account_name",
+        "images": "image_url1"
+      },
+      "next": [
+        "jenkinsjob"
+      ]
+    },
+    {
+      "name": "name",
+      "type": "JENKINS_JOB",
+      "trigger": "AUTO",
+      "params": {
+        "url": "jenkins url",
+        "job": "job_name",
+        "secret": "jenkins_secret_name",
+        "params": "key1:value1,key2:value2"
+      },
+      "next": [
+        
+      ]
+    }
+  ]
+}
+
+```
+
+Jenkins secret holds 3 information, username,apitoken, and crumb. create secret like following,
+
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jenkins-credentials-name
+  namespace: ci-namespace
+type: Opaque
+stringData:
+  username: username
+  apitoken: apitoken
+  crumb: Jenkins-Crumb
+```
+
+To create get crumb run the following command,
+```
+$ wget -q --auth-no-challenge --user username --password password --output-document - 'http://${Jenkins_URL}/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)'
+```
+It will return a value like, ```Jenkins-Crumb:24343r4343544f454fdft454```. Use this as crumb.
+
+
+
 ---
 **NOTE**
 
@@ -158,6 +264,7 @@ Responsibility: Apply pipeline
   yaml in ```descriptors```
 
 ---
+
 
 ## API 2
 

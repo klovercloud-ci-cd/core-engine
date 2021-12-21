@@ -1,0 +1,37 @@
+{
+  "name": "test",
+  "steps": [
+    {
+      "name": "name",
+      "type": "BUILD",
+      "trigger": "AUTO",
+      "params": {
+        "repository_type": "git",
+        "revision": "revision",
+        "service_account": "service_account_name",
+        "images": "image_url1"
+      },
+      "next": [
+        "interstep"
+      ]
+    },
+    {
+      "name": "interstep",
+      "type": "INTERMEDIARY",
+      "trigger": "AUTO",
+      "params": {
+        "revision": "latest",
+        "service_account": "service_account_name",
+        "images": "image_name",
+        "envs_from_configmaps": "namespace/config_map_name",
+        "envs_from_secrets": "namespace/secret_map_name",
+        "envs": "key1:value1,key2:value2",
+        "command": "echo",
+        "command_args": "Hello World"
+      },
+      "next": [
+
+      ]
+    }
+  ]
+}

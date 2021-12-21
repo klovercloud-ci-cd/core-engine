@@ -20,6 +20,7 @@ type pipelineService struct {
 	observerList          []service.Observer
 }
 
+//ApplyBuildCancellationSteps pulls cancellation events for build job and the process the cancellation.
 func (p *pipelineService) ApplyBuildCancellationSteps() {
 	steps:=p.processLifeCycleEvent.PullBuildCancellingEvents()
 	for _,each:=range steps{
@@ -35,7 +36,7 @@ func (p *pipelineService) ApplyBuildCancellationSteps() {
 		go p.notifyAll(subject)
 	}
 }
-
+//ApplyJenkinsJobSteps pulls jenkins steps and then applies.
 func (p *pipelineService) ApplyJenkinsJobSteps() {
 	events := p.processLifeCycleEvent.PullJenkinsJobStepsEvents()
 	for _, each := range events {
@@ -47,7 +48,7 @@ func (p *pipelineService) ApplyJenkinsJobSteps() {
 		}
 	}
 }
-
+//ApplyIntermediarySteps pulls intermediary steps and then applies.
 func (p *pipelineService) ApplyIntermediarySteps() {
 	events := p.processLifeCycleEvent.PullIntermediaryStepsEvents()
 	for _, each := range events {
@@ -59,8 +60,7 @@ func (p *pipelineService) ApplyIntermediarySteps() {
 		}
 	}
 }
-
-
+//ApplyBuildSteps pulls build steps and then applies.
 func (p *pipelineService) ApplyBuildSteps() {
 	events := p.processLifeCycleEvent.PullBuildEvents()
 	for _, each := range events {
@@ -73,14 +73,15 @@ func (p *pipelineService) ApplyBuildSteps() {
 	}
 }
 
+//ReadEventByProcessId reads live events from queue and then dequeues read messages. This is used optionally, only when local event store is used.
 func (p *pipelineService) ReadEventByProcessId(c chan map[string]interface{}, processId string) {
 	c <- p.processEventService.DequeueByProcessId(processId)
 }
-
+//GetLogsByProcessId get Logs by process id and log event options. This is used optionally, only when local event store is used.
 func (p *pipelineService) GetLogsByProcessId(processId string, option v1.LogEventQueryOption) ([]string, int64) {
 	return p.logEventService.GetByProcessId(processId, option)
 }
-
+// PostOperations Wait until pod is created, watches pod lifecycle, sends events to all the observers. Purges resources if purging is enabled.
 func (p *pipelineService) PostOperations(step string, stepType enums.STEP_TYPE, pipeline v1.Pipeline) {
 	podList := p.k8s.WaitAndGetInitializedPods(config.CiNamespace, pipeline.ProcessId, step)
 	if len(podList.Items) > 0 {
@@ -161,6 +162,7 @@ func (p *pipelineService) BuildProcessLifeCycleEvents(url, revision string, pipe
 	p.buildProcessLifeCycleEvents()
 	return nil
 }
+
 func (p *pipelineService) buildProcessLifeCycleEvents() {
 	if len(p.pipeline.Steps) > 0 {
 		initialStep := p.pipeline.Steps[0]
@@ -177,6 +179,7 @@ func (p *pipelineService) buildProcessLifeCycleEvents() {
 		}
 	}
 }
+
 func (p *pipelineService) applySteps(step v1.Step) {
 	listener := v1.Subject{Pipeline: p.pipeline, Step: step.Name}
 	processEventData := make(map[string]interface{})
@@ -206,6 +209,7 @@ func (p *pipelineService) applySteps(step v1.Step) {
 	listener.EventData = processEventData
 	go p.notifyAll(listener)
 }
+
 func (p *pipelineService) applyJenkinsJobStep(step v1.Step) error {
 
 	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
@@ -222,6 +226,7 @@ func (p *pipelineService) applyJenkinsJobStep(step v1.Step) error {
 	go p.PostOperations(step.Name, step.Type, p.pipeline)
 	return nil
 }
+
 func (p *pipelineService) applyIntermediaryStep(step v1.Step) error {
 	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
 	step.Name = trimmedStepName
