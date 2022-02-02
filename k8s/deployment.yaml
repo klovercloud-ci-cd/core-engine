@@ -23,7 +23,7 @@ spec:
         containers:
           - name: app
           imagepullpolicy: Always
-          image: klovercloud/ci-core:v0.1.0
+          image: quay.io/klovercloud/ci-core:v1.0.0
           resources:
             requests:
               cpu: 100m
