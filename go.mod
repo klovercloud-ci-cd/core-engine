@@ -18,13 +18,13 @@ require (
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/joho/godotenv v1.3.0
-	github.com/json-iterator/go v1.1.9 // indirect
+	github.com/labstack/echo-contrib v0.11.0
 	github.com/labstack/echo/v4 v4.6.1
 	github.com/labstack/gommon v0.3.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/openzipkin/zipkin-go v0.2.2 // indirect
+	github.com/opentracing/opentracing-go v1.2.0
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0

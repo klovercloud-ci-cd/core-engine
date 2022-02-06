@@ -5,6 +5,7 @@ import (
 	"github.com/klovercloud-ci-cd/core-engine/config"
 	"github.com/klovercloud-ci-cd/core-engine/dependency"
 	_ "github.com/klovercloud-ci-cd/core-engine/docs"
+	"github.com/labstack/echo-contrib/jaegertracing"
 	"github.com/labstack/echo/v4/middleware"
 	"net/http"
 	"time"
@@ -21,6 +22,10 @@ func main() {
 	go ApplyBuildSteps()
 	go ApplyIntermediarySteps()
 	go ApplyJenkinsJobSteps()
+	if config.EnableOpenTracing {
+		c := jaegertracing.New(e, nil)
+		defer c.Close()
+	}
 	api.Routes(e)
 	e.Logger.Fatal(e.Start(":" + config.ServerPort))
 }
