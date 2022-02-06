@@ -60,13 +60,25 @@ var EnableAuthentication bool
 // Token refers to jwt token for service to service communication.
 var Token string
 
+// RunMode refers to run mode.
+var RunMode string
+
 // InitEnvironmentVariables initializes environment variables
 func InitEnvironmentVariables() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("ERROR:", err.Error())
-		return
+	RunMode = os.Getenv("RUN_MODE")
+	if RunMode == "" {
+		RunMode = string(enums.DEVELOP)
 	}
+
+	if RunMode != string(enums.PRODUCTION) {
+		//Load .env file
+		err := godotenv.Load()
+		if err != nil {
+			log.Println("ERROR:", err.Error())
+			return
+		}
+	}
+	log.Println("RUN MODE:", RunMode)
 
 	IsK8 = os.Getenv("IS_K8")
 	ServerPort = os.Getenv("SERVER_PORT")
@@ -93,7 +105,7 @@ func InitEnvironmentVariables() {
 	if Database == enums.MONGO {
 		DatabaseConnectionString = "mongodb://" + DbUsername + ":" + DbPassword + "@" + DbServer + ":" + DbPort
 	}
-
+	err := error(nil)
 	AllowedConcurrentBuild, err = strconv.ParseInt(os.Getenv("ALLOWED_CONCURRENT_BUILD"), 10, 64)
 	if err != nil {
 		AllowedConcurrentBuild = 4

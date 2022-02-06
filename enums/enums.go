@@ -9,9 +9,9 @@ const (
 	// DEPLOY step that deploys workloads and others to cluster
 	DEPLOY = STEP_TYPE("DEPLOY")
 	// INTERMEDIARY step that runs custom jobs
-	INTERMEDIARY=STEP_TYPE("INTERMEDIARY")
+	INTERMEDIARY = STEP_TYPE("INTERMEDIARY")
 	// JENKINS_JOB step that triggers jenkins job
-	JENKINS_JOB=STEP_TYPE("JENKINS_JOB")
+	JENKINS_JOB = STEP_TYPE("JENKINS_JOB")
 )
 const (
 	// MONGO mongo as db
@@ -137,17 +137,17 @@ const (
 	// TYPE key for resource type as pipeline step param
 	TYPE = PARAMS("type")
 	// COMMAND key for command array of intermediary step
-	COMMAND=PARAMS("command")
+	COMMAND = PARAMS("command")
 	// COMMAND_ARGS key for command args array of intermediary step
-	COMMAND_ARGS=PARAMS("command_args")
+	COMMAND_ARGS = PARAMS("command_args")
 	// JENKINS_URL key for jenkins url
-	JENKINS_URL=PARAMS("url")
+	JENKINS_URL = PARAMS("url")
 	// JENKINS_JOB_NAME key for jenkins job name
-	JENKINS_JOB_NAME=PARAMS("job")
+	JENKINS_JOB_NAME = PARAMS("job")
 	// JENKINS_SECRET key for jenkins secret
-	JENKINS_SECRET=PARAMS("secret")
+	JENKINS_SECRET = PARAMS("secret")
 	// JENKINS_PARAMS key for jenkins params
-	JENKINS_PARAMS=PARAMS("params")
+	JENKINS_PARAMS = PARAMS("params")
 )
 
 // PROCESS_STATUS pipeline steps status
@@ -187,7 +187,19 @@ const (
 )
 
 // CUSTOM_STAGE container name of custom stage
-const 	CUSTOM_STAGE    = "custom-stage"
+const CUSTOM_STAGE = "custom-stage"
 
 // JENKINS_TASK_NAME tekton task name for jenkins job
 const JENKINS_TASK_NAME = "trigger-jenkins-job"
+
+// ENVIRONMENT run environment
+type ENVIRONMENT string
+
+const (
+	// PRODUCTION production environment
+	PRODUCTION = ENVIRONMENT("PRODUCTION")
+	// DEVELOP development environment
+	DEVELOP = ENVIRONMENT("DEVELOP")
+	// TEST test environment
+	TEST = ENVIRONMENT("TEST")
+)
