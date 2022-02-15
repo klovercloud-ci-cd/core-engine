@@ -27,7 +27,7 @@ func (e eventStoreProcessLifeCycleService) PullJenkinsJobStepsEvents() []v1.Proc
 	data, err := e.httpPublisher.Get(url, header)
 	if err != nil {
 		// send to observer
-		log.Println(err.Error())
+		log.Println("[ERROR] Failed to connect event bank.", err.Error())
 		return nil
 	}
 	response := common.ResponseDTO{}
@@ -62,7 +62,7 @@ func (e eventStoreProcessLifeCycleService) PullIntermediaryStepsEvents() []v1.Pr
 	data, err := e.httpPublisher.Get(url, header)
 	if err != nil {
 		// send to observer
-		log.Println(err.Error())
+		log.Println("[ERROR] Failed to connect event bank.", err.Error())
 		return nil
 	}
 	response := common.ResponseDTO{}
@@ -89,7 +89,7 @@ func (e eventStoreProcessLifeCycleService) PullIntermediaryStepsEvents() []v1.Pr
 }
 
 func (e eventStoreProcessLifeCycleService) PullBuildCancellingEvents() []v1.ProcessLifeCycleEvent {
-	url := config.EventStoreUrl + "/process_life_cycle_events?count=step_type=" + string(enums.BUILD)+"&status="+string(enums.REQUESTED_TO_CANCEL)
+	url := config.EventStoreUrl + "/process_life_cycle_events?count=step_type=" + string(enums.BUILD) + "&status=" + string(enums.REQUESTED_TO_CANCEL)
 	header := make(map[string]string)
 	header["Authorization"] = "token " + config.Token
 	header["Accept"] = "application/json"
@@ -132,7 +132,7 @@ func (e eventStoreProcessLifeCycleService) PullBuildEvents() []v1.ProcessLifeCyc
 	data, err := e.httpPublisher.Get(url, header)
 	if err != nil {
 		// send to observer
-		log.Println(err.Error())
+		log.Println("[ERROR] Failed to connect event bank.", err.Error())
 		return nil
 	}
 	response := common.ResponseDTO{}
