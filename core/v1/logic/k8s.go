@@ -2,6 +2,7 @@ package logic
 
 import (
 	"bufio"
+	"context"
 	v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1/service"
 	"github.com/klovercloud-ci-cd/core-engine/enums"
@@ -23,7 +24,7 @@ type k8sService struct {
 
 func (k8s k8sService) GetContainerLog(namespace, podName, containerName string, taskRunLabel map[string]string) (io.ReadCloser, error) {
 	req := k8s.RequestContainerLog(namespace, podName, containerName)
-	readCloser, err := req.Stream()
+	readCloser, err := req.Stream(context.Background())
 	if err != nil {
 		log.Println(err.Error())
 
@@ -47,7 +48,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 	processEventData := make(map[string]interface{})
 	processEventData["step"] = step
 	req := k8s.RequestContainerLog(namespace, podName, containerName)
-	readCloser, err := req.Stream()
+	readCloser, err := req.Stream(context.Background())
 	for err != nil {
 		listener := v1.Subject{Pipeline: v1.Pipeline{ProcessId: processId}, Log: err.Error(), Step: step}
 		if strings.Contains(err.Error(), "image can't be pulled") || strings.Contains(err.Error(), "pods \""+podName+"\" not found") || strings.Contains(err.Error(), "pod \""+podName+"\" is terminated") {
@@ -59,7 +60,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 			}
 			return
 		}
-		readCloser, err = req.Stream()
+		readCloser, err = req.Stream(context.Background())
 	}
 	reader := bufio.NewReaderSize(readCloser, 64)
 	lastLine := ""
@@ -124,7 +125,7 @@ func (k8s k8sService) RequestContainerLog(namespace string, podName string, cont
 func (k8s *k8sService) GetSecret(name, namespace string) (corev1.Secret, error) {
 	sec, err := k8s.Kcs.CoreV1().
 		Secrets(namespace).
-		Get(name, metav1.GetOptions{})
+		Get(context.Background(),name, metav1.GetOptions{})
 	if err != nil {
 		return corev1.Secret{}, err
 	}
@@ -134,7 +135,7 @@ func (k8s *k8sService) GetSecret(name, namespace string) (corev1.Secret, error) 
 func (k8s *k8sService) GetConfigMap(name, namespace string) (corev1.ConfigMap, error) {
 	sec, err := k8s.Kcs.CoreV1().
 		ConfigMaps(namespace).
-		Get(name, metav1.GetOptions{})
+		Get(context.Background(),name, metav1.GetOptions{})
 	if err != nil {
 		return corev1.ConfigMap{}, err
 	}
@@ -146,7 +147,7 @@ func (k8s *k8sService) GetPodListByProcessId(namespace, processId string, option
 	data := make(map[string]interface{})
 	listener.Pipeline.ProcessId = processId
 	labelSelector := "processId=" + processId
-	podList, err := k8s.Kcs.CoreV1().Pods(namespace).List(metav1.ListOptions{
+	podList, err := k8s.Kcs.CoreV1().Pods(namespace).List(context.Background(),metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -158,7 +159,7 @@ func (k8s *k8sService) GetPodListByProcessId(namespace, processId string, option
 		listener.EventData = data
 		go k8s.notifyAll(listener)
 		count++
-		podList, err = k8s.Kcs.CoreV1().Pods(namespace).List(metav1.ListOptions{
+		podList, err = k8s.Kcs.CoreV1().Pods(namespace).List(context.Background(),metav1.ListOptions{
 			LabelSelector: labelSelector,
 		})
 		if err == nil && len(podList.Items) == 0 && count > option.Duration {

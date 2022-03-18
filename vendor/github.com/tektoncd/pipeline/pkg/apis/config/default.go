@@ -18,39 +18,82 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
+	"github.com/ghodss/yaml"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
 	corev1 "k8s.io/api/core/v1"
 )
 
 const (
-	// ConfigName is the name of the configmap
-	DefaultsConfigName       = "config-defaults"
-	DefaultTimeoutMinutes    = 60
-	NoTimeoutDuration        = 0 * time.Minute
-	defaultTimeoutMinutesKey = "default-timeout-minutes"
-	defaultServiceAccountKey = "default-service-account"
+	// DefaultTimeoutMinutes is used when no timeout is specified.
+	DefaultTimeoutMinutes = 60
+	// NoTimeoutDuration is used when a pipeline or task should never time out.
+	NoTimeoutDuration = 0 * time.Minute
+	// DefaultServiceAccountValue is the SA used when one is not specified.
+	DefaultServiceAccountValue = "default"
+	// DefaultManagedByLabelValue is the value for the managed-by label that is used by default.
+	DefaultManagedByLabelValue = "tekton-pipelines"
+	// DefaultCloudEventSinkValue is the default value for cloud event sinks.
+	DefaultCloudEventSinkValue = ""
+
+	defaultTimeoutMinutesKey       = "default-timeout-minutes"
+	defaultServiceAccountKey       = "default-service-account"
+	defaultManagedByLabelValueKey  = "default-managed-by-label-value"
+	defaultPodTemplateKey          = "default-pod-template"
+	defaultCloudEventsSinkKey      = "default-cloud-events-sink"
+	defaultTaskRunWorkspaceBinding = "default-task-run-workspace-binding"
 )
 
 // Defaults holds the default configurations
 // +k8s:deepcopy-gen=true
 type Defaults struct {
-	DefaultTimeoutMinutes int
-	DefaultServiceAccount string
+	DefaultTimeoutMinutes          int
+	DefaultServiceAccount          string
+	DefaultManagedByLabelValue     string
+	DefaultPodTemplate             *pod.Template
+	DefaultCloudEventsSink         string
+	DefaultTaskRunWorkspaceBinding string
+}
+
+// GetDefaultsConfigName returns the name of the configmap containing all
+// defined defaults.
+func GetDefaultsConfigName() string {
+	if e := os.Getenv("CONFIG_DEFAULTS_NAME"); e != "" {
+		return e
+	}
+	return "config-defaults"
 }
 
 // Equals returns true if two Configs are identical
 func (cfg *Defaults) Equals(other *Defaults) bool {
+	if cfg == nil && other == nil {
+		return true
+	}
+
+	if cfg == nil || other == nil {
+		return false
+	}
+
 	return other.DefaultTimeoutMinutes == cfg.DefaultTimeoutMinutes &&
-		other.DefaultServiceAccount == cfg.DefaultServiceAccount
+		other.DefaultServiceAccount == cfg.DefaultServiceAccount &&
+		other.DefaultManagedByLabelValue == cfg.DefaultManagedByLabelValue &&
+		other.DefaultPodTemplate.Equals(cfg.DefaultPodTemplate) &&
+		other.DefaultCloudEventsSink == cfg.DefaultCloudEventsSink &&
+		other.DefaultTaskRunWorkspaceBinding == cfg.DefaultTaskRunWorkspaceBinding
 }
 
 // NewDefaultsFromMap returns a Config given a map corresponding to a ConfigMap
 func NewDefaultsFromMap(cfgMap map[string]string) (*Defaults, error) {
 	tc := Defaults{
-		DefaultTimeoutMinutes: DefaultTimeoutMinutes,
+		DefaultTimeoutMinutes:      DefaultTimeoutMinutes,
+		DefaultServiceAccount:      DefaultServiceAccountValue,
+		DefaultManagedByLabelValue: DefaultManagedByLabelValue,
+		DefaultCloudEventsSink:     DefaultCloudEventSinkValue,
 	}
+
 	if defaultTimeoutMin, ok := cfgMap[defaultTimeoutMinutesKey]; ok {
 		timeout, err := strconv.ParseInt(defaultTimeoutMin, 10, 0)
 		if err != nil {
@@ -63,6 +106,25 @@ func NewDefaultsFromMap(cfgMap map[string]string) (*Defaults, error) {
 		tc.DefaultServiceAccount = defaultServiceAccount
 	}
 
+	if defaultManagedByLabelValue, ok := cfgMap[defaultManagedByLabelValueKey]; ok {
+		tc.DefaultManagedByLabelValue = defaultManagedByLabelValue
+	}
+
+	if defaultPodTemplate, ok := cfgMap[defaultPodTemplateKey]; ok {
+		var podTemplate pod.Template
+		if err := yaml.Unmarshal([]byte(defaultPodTemplate), &podTemplate); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal %v", defaultPodTemplate)
+		}
+		tc.DefaultPodTemplate = &podTemplate
+	}
+
+	if defaultCloudEventsSink, ok := cfgMap[defaultCloudEventsSinkKey]; ok {
+		tc.DefaultCloudEventsSink = defaultCloudEventsSink
+	}
+
+	if bindingYAML, ok := cfgMap[defaultTaskRunWorkspaceBinding]; ok {
+		tc.DefaultTaskRunWorkspaceBinding = bindingYAML
+	}
 	return &tc, nil
 }
 

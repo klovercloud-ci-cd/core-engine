@@ -23,6 +23,7 @@ import (
 
 	"github.com/tektoncd/pipeline/pkg/apis/validate"
 	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"knative.dev/pkg/apis"
 )
 
@@ -32,6 +33,9 @@ var _ apis.Validatable = (*TaskRun)(nil)
 func (tr *TaskRun) Validate(ctx context.Context) *apis.FieldError {
 	if err := validate.ObjectMetadata(tr.GetObjectMeta()).ViaField("metadata"); err != nil {
 		return err
+	}
+	if apis.IsInDelete(ctx) {
+		return nil
 	}
 	return tr.Spec.Validate(ctx)
 }
@@ -59,13 +63,31 @@ func (ts *TaskRunSpec) Validate(ctx context.Context) *apis.FieldError {
 		}
 	}
 
+	// Deprecated
 	// check for input resources
-	if err := ts.Inputs.Validate(ctx, "spec.Inputs"); err != nil {
+	if ts.Inputs != nil {
+		if err := ts.Inputs.Validate(ctx, "spec.Inputs"); err != nil {
+			return err
+		}
+	}
+
+	// Deprecated
+	// check for output resources
+	if ts.Outputs != nil {
+		if err := ts.Outputs.Validate(ctx, "spec.Outputs"); err != nil {
+			return err
+		}
+	}
+
+	// Validate Resources
+	if err := ts.Resources.Validate(ctx); err != nil {
 		return err
 	}
 
-	// check for output resources
-	if err := ts.Outputs.Validate(ctx, "spec.Outputs"); err != nil {
+	if err := validateWorkspaceBindings(ctx, ts.Workspaces); err != nil {
+		return err
+	}
+	if err := validateParameters("spec.inputs.params", ts.Params); err != nil {
 		return err
 	}
 
@@ -79,15 +101,34 @@ func (ts *TaskRunSpec) Validate(ctx context.Context) *apis.FieldError {
 	return nil
 }
 
+// Validate implements apis.Validatable
 func (i TaskRunInputs) Validate(ctx context.Context, path string) *apis.FieldError {
 	if err := validatePipelineResources(ctx, i.Resources, fmt.Sprintf("%s.Resources.Name", path)); err != nil {
 		return err
 	}
-	return validateParameters(i.Params)
+	return validateParameters("spec.inputs.params", i.Params)
 }
 
+// Validate implements apis.Validatable
 func (o TaskRunOutputs) Validate(ctx context.Context, path string) *apis.FieldError {
 	return validatePipelineResources(ctx, o.Resources, fmt.Sprintf("%s.Resources.Name", path))
+}
+
+// validateWorkspaceBindings makes sure the volumes provided for the Task's declared workspaces make sense.
+func validateWorkspaceBindings(ctx context.Context, wb []WorkspaceBinding) *apis.FieldError {
+	seen := sets.NewString()
+	for _, w := range wb {
+		if seen.Has(w.Name) {
+			return apis.ErrMultipleOneOf("spec.workspaces.name")
+		}
+		seen.Insert(w.Name)
+
+		if err := w.Validate(ctx).ViaField("workspace"); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // validatePipelineResources validates that
@@ -95,14 +136,14 @@ func (o TaskRunOutputs) Validate(ctx context.Context, path string) *apis.FieldEr
 //	2. if both resource reference and resource spec is defined at the same time
 //	3. at least resource ref or resource spec is defined
 func validatePipelineResources(ctx context.Context, resources []TaskResourceBinding, path string) *apis.FieldError {
-	encountered := map[string]struct{}{}
+	encountered := sets.NewString()
 	for _, r := range resources {
 		// We should provide only one binding for each resource required by the Task.
 		name := strings.ToLower(r.Name)
-		if _, ok := encountered[strings.ToLower(name)]; ok {
+		if encountered.Has(strings.ToLower(name)) {
 			return apis.ErrMultipleOneOf(path)
 		}
-		encountered[name] = struct{}{}
+		encountered.Insert(name)
 		// Check that both resource ref and resource Spec are not present
 		if r.ResourceRef != nil && r.ResourceSpec != nil {
 			return apis.ErrDisallowedFields(fmt.Sprintf("%s.ResourceRef", path), fmt.Sprintf("%s.ResourceSpec", path))
@@ -119,14 +160,15 @@ func validatePipelineResources(ctx context.Context, resources []TaskResourceBind
 	return nil
 }
 
-func validateParameters(params []Param) *apis.FieldError {
+// TODO(jasonhall): Share this with v1beta1/taskrun_validation.go
+func validateParameters(path string, params []Param) *apis.FieldError {
 	// Template must not duplicate parameter names.
-	seen := map[string]struct{}{}
+	seen := sets.NewString()
 	for _, p := range params {
-		if _, ok := seen[strings.ToLower(p.Name)]; ok {
-			return apis.ErrMultipleOneOf("spec.inputs.params")
+		if seen.Has(strings.ToLower(p.Name)) {
+			return apis.ErrMultipleOneOf(path)
 		}
-		seen[p.Name] = struct{}{}
+		seen.Insert(p.Name)
 	}
 	return nil
 }

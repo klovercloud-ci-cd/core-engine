@@ -27,10 +27,26 @@ import (
 
 var _ apis.Defaultable = (*TaskRun)(nil)
 
+// ManagedByLabelKey is the label key used to mark what is managing this resource
+const ManagedByLabelKey = "app.kubernetes.io/managed-by"
+
+// SetDefaults implements apis.Defaultable
 func (tr *TaskRun) SetDefaults(ctx context.Context) {
-	tr.Spec.SetDefaults(ctx)
+	ctx = apis.WithinParent(ctx, tr.ObjectMeta)
+	tr.Spec.SetDefaults(apis.WithinSpec(ctx))
+
+	// If the TaskRun doesn't have a managed-by label, apply the default
+	// specified in the config.
+	cfg := config.FromContextOrDefaults(ctx)
+	if tr.ObjectMeta.Labels == nil {
+		tr.ObjectMeta.Labels = map[string]string{}
+	}
+	if _, found := tr.ObjectMeta.Labels[ManagedByLabelKey]; !found {
+		tr.ObjectMeta.Labels[ManagedByLabelKey] = cfg.Defaults.DefaultManagedByLabelValue
+	}
 }
 
+// SetDefaults implements apis.Defaultable
 func (trs *TaskRunSpec) SetDefaults(ctx context.Context) {
 	cfg := config.FromContextOrDefaults(ctx)
 	if trs.TaskRef != nil && trs.TaskRef.Kind == "" {
@@ -38,21 +54,17 @@ func (trs *TaskRunSpec) SetDefaults(ctx context.Context) {
 	}
 
 	if trs.Timeout == nil {
-		var timeout *metav1.Duration
-		if IsUpgradeViaDefaulting(ctx) {
-			// This case is for preexisting `TaskRun` before 0.5.0, so let's
-			// add the old default timeout.
-			// Most likely those TaskRun passing here are already done and/or already running
-			timeout = &metav1.Duration{Duration: config.DefaultTimeoutMinutes * time.Minute}
-		} else {
-			timeout = &metav1.Duration{Duration: time.Duration(cfg.Defaults.DefaultTimeoutMinutes) * time.Minute}
-		}
-		trs.Timeout = timeout
+		trs.Timeout = &metav1.Duration{Duration: time.Duration(cfg.Defaults.DefaultTimeoutMinutes) * time.Minute}
 	}
 
 	defaultSA := cfg.Defaults.DefaultServiceAccount
 	if trs.ServiceAccountName == "" && defaultSA != "" {
 		trs.ServiceAccountName = defaultSA
+	}
+
+	defaultPodTemplate := cfg.Defaults.DefaultPodTemplate
+	if trs.PodTemplate == nil {
+		trs.PodTemplate = defaultPodTemplate
 	}
 
 	// If this taskrun has an embedded task, apply the usual task defaults
