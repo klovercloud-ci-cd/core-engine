@@ -148,6 +148,15 @@ const (
 	JENKINS_SECRET = PARAMS("secret")
 	// JENKINS_PARAMS key for jenkins params
 	JENKINS_PARAMS = PARAMS("params")
+
+	// BUILD_TYPE key for build type
+	BUILD_TYPE = PARAMS("build_type")
+
+	// RESOURCE_SIZE key for storage
+	RESOURCE_SIZE = PARAMS("storage")
+
+	// RESOURCE_ACCESS_MODE key for access mode
+	RESOURCE_ACCESS_MODE = PARAMS("access_mode")
 )
 
 // PROCESS_STATUS pipeline steps status

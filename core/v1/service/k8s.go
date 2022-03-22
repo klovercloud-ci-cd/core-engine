@@ -17,4 +17,7 @@ type K8s interface {
 	FollowContainerLifeCycle(namespace, podName, containerName, step, processId string, stepType enums.STEP_TYPE)
 	GetContainerLog(namespace, podName, containerName string, taskRunLabel map[string]string) (io.ReadCloser, error)
 	RequestContainerLog(namespace string, podName string, containerName string) *rest.Request
+	CreatePersistentVolumeClaim(source corev1.PersistentVolumeClaim) error
+	InitPersistentVolumeClaim(step v1.Step, label map[string]string, processId string) corev1.PersistentVolumeClaim
+	DeletePersistentVolumeClaimByProcessId(processId string) error
 }

@@ -19,4 +19,5 @@ type Pipeline interface {
 	ApplyIntermediarySteps()
 	ApplyJenkinsJobSteps()
 	ApplyBuildCancellationSteps()
+	PostOperationsForBuildPack(step string, stepType enums.STEP_TYPE, pipeline v1.Pipeline)
 }

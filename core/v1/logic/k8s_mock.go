@@ -16,6 +16,21 @@ type mockK8sService struct {
 	service service.LogEvent
 }
 
+func (k8s mockK8sService) DeletePersistentVolumeClaimByProcessId(processId string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (k8s mockK8sService) CreatePersistentVolumeClaim(source corev1.PersistentVolumeClaim) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (k8s mockK8sService) InitPersistentVolumeClaim(step v1.Step, label map[string]string, processId string) corev1.PersistentVolumeClaim {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (k8s mockK8sService) RequestContainerLog(namespace string, podName string, containerName string) *rest.Request {
 	panic("implement me")
 }

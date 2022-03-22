@@ -3,11 +3,13 @@ package logic
 import (
 	"bufio"
 	"context"
+	"github.com/klovercloud-ci-cd/core-engine/config"
 	v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1/service"
 	"github.com/klovercloud-ci-cd/core-engine/enums"
 	"io"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -20,6 +22,56 @@ type k8sService struct {
 	Kcs          *kubernetes.Clientset
 	tekton       service.Tekton
 	observerList []service.Observer
+}
+
+func (k8s k8sService) DeletePersistentVolumeClaimByProcessId(processId string) error {
+	list, err := k8s.Kcs.CoreV1().PersistentVolumeClaims(config.CiNamespace).List(context.Background(), metav1.ListOptions{
+		LabelSelector: "processId=" + processId,
+	})
+	if err != nil {
+		log.Println("[WARNING]:", err.Error())
+		return err
+	}
+	for _, each := range list.Items {
+		err = k8s.Kcs.CoreV1().PersistentVolumeClaims(config.CiNamespace).Delete(context.Background(), each.Name, metav1.DeleteOptions{})
+		if err != nil {
+			log.Println("[ERROR]:", err.Error())
+		}
+	}
+	return nil
+}
+
+func (k8s k8sService) CreatePersistentVolumeClaim(source corev1.PersistentVolumeClaim) error {
+	_, err := k8s.Kcs.CoreV1().PersistentVolumeClaims(source.Namespace).Create(context.Background(), &source, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (k8s k8sService) InitPersistentVolumeClaim(step v1.Step, label map[string]string, processId string) corev1.PersistentVolumeClaim {
+	label = make(map[string]string)
+	label["step"] = step.Name
+	label["processId"] = processId
+	pvc := corev1.PersistentVolumeClaim{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PersistentVolumeClaim",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      step.Name + "-" + processId,
+			Labels:    label,
+			Namespace: config.CiNamespace,
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.PersistentVolumeAccessMode(step.Params[enums.RESOURCE_ACCESS_MODE])},
+			Resources: corev1.ResourceRequirements{
+				Limits:   nil,
+				Requests: map[corev1.ResourceName]resource.Quantity{corev1.ResourceStorage: resource.MustParse(step.Params[enums.RESOURCE_SIZE])},
+			},
+		},
+	}
+	return pvc
 }
 
 func (k8s k8sService) GetContainerLog(namespace, podName, containerName string, taskRunLabel map[string]string) (io.ReadCloser, error) {
@@ -125,7 +177,7 @@ func (k8s k8sService) RequestContainerLog(namespace string, podName string, cont
 func (k8s *k8sService) GetSecret(name, namespace string) (corev1.Secret, error) {
 	sec, err := k8s.Kcs.CoreV1().
 		Secrets(namespace).
-		Get(context.Background(),name, metav1.GetOptions{})
+		Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
 		return corev1.Secret{}, err
 	}
@@ -135,7 +187,7 @@ func (k8s *k8sService) GetSecret(name, namespace string) (corev1.Secret, error) 
 func (k8s *k8sService) GetConfigMap(name, namespace string) (corev1.ConfigMap, error) {
 	sec, err := k8s.Kcs.CoreV1().
 		ConfigMaps(namespace).
-		Get(context.Background(),name, metav1.GetOptions{})
+		Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
 		return corev1.ConfigMap{}, err
 	}
@@ -147,7 +199,7 @@ func (k8s *k8sService) GetPodListByProcessId(namespace, processId string, option
 	data := make(map[string]interface{})
 	listener.Pipeline.ProcessId = processId
 	labelSelector := "processId=" + processId
-	podList, err := k8s.Kcs.CoreV1().Pods(namespace).List(context.Background(),metav1.ListOptions{
+	podList, err := k8s.Kcs.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -159,7 +211,7 @@ func (k8s *k8sService) GetPodListByProcessId(namespace, processId string, option
 		listener.EventData = data
 		go k8s.notifyAll(listener)
 		count++
-		podList, err = k8s.Kcs.CoreV1().Pods(namespace).List(context.Background(),metav1.ListOptions{
+		podList, err = k8s.Kcs.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{
 			LabelSelector: labelSelector,
 		})
 		if err == nil && len(podList.Items) == 0 && count > option.Duration {

@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"errors"
 	"github.com/klovercloud-ci-cd/core-engine/config"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1/service"
@@ -18,12 +19,237 @@ import (
 )
 
 type tektonService struct {
-	Tcs *versioned.Clientset
+	Tcs  *versioned.Clientset
 	Vrcs *versionedResource.Clientset
 }
 
+func (tekton *tektonService) GetPipelineRun(name string, waitUntilPipelineRunIsCompleted bool) (*v1beta1.PipelineRun, error) {
+	pRun, pipelineRunGetingErr := tekton.Tcs.TektonV1beta1().PipelineRuns(config.CiNamespace).Get(context.Background(), name, metaV1.GetOptions{
+		TypeMeta: metaV1.TypeMeta{
+			Kind:       "TaskRun",
+			APIVersion: "tekton.dev/v1",
+		},
+	})
+	if pipelineRunGetingErr != nil {
+		return nil, pipelineRunGetingErr
+	}
+	if !pRun.IsDone() && waitUntilPipelineRunIsCompleted == true {
+		return tekton.GetPipelineRun(name, waitUntilPipelineRunIsCompleted)
+	}
+	return pRun, nil
+}
+
+func (tekton *tektonService) DeletePipelineByProcessId(processId string) error {
+	list, err := tekton.Tcs.TektonV1beta1().Pipelines(config.CiNamespace).List(context.Background(), metaV1.ListOptions{
+		LabelSelector: "processId=" + processId,
+	})
+	if err != nil {
+		log.Println("[WARNING]:", err.Error())
+		return err
+	}
+	for _, each := range list.Items {
+		err = tekton.Tcs.TektonV1beta1().Pipelines(config.CiNamespace).Delete(context.Background(), each.Name, metaV1.DeleteOptions{})
+		if err != nil {
+			log.Println("[ERROR]:", err.Error())
+		}
+	}
+	return nil
+}
+
+func (tekton *tektonService) DeletePipelineRunByProcessId(processId string) error {
+	list, err := tekton.Tcs.TektonV1beta1().PipelineRuns(config.CiNamespace).List(context.Background(), metaV1.ListOptions{
+		LabelSelector: "processId=" + processId,
+	})
+	if err != nil {
+		log.Println("[WARNING]:", err.Error())
+		return err
+	}
+	for _, each := range list.Items {
+		err = tekton.Tcs.TektonV1beta1().PipelineRuns(config.CiNamespace).Delete(context.Background(), each.Name, metaV1.DeleteOptions{})
+		if err != nil {
+			log.Println("[ERROR]:", err.Error())
+		}
+	}
+	return nil
+}
+
+func (tekton *tektonService) InitPipeline(step v1.Step, label map[string]string, processId string) v1beta1.Pipeline {
+	if label == nil {
+		label = make(map[string]string)
+	}
+	label["revision"] = step.Params[enums.REVISION]
+	label["processId"] = processId
+	pipeline := v1beta1.Pipeline{
+		//TypeMeta: metaV1.TypeMeta{
+		//	Kind:       "Pipeline",
+		//	APIVersion: "tekton.dev/v1beta1",
+		//},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      step.Name,
+			Namespace: config.CiNamespace,
+			Labels:    label,
+		},
+		Spec: v1beta1.PipelineSpec{
+			Params: []v1beta1.ParamSpec{
+				{Name: "image", Type: "string", Description: "image URL to push"},
+			},
+			Workspaces: []v1beta1.PipelineWorkspaceDeclaration{
+				{Name: "source-workspace", Description: "Directory where application source is located"},
+				{Name: "cache-workspace", Description: "Directory where cache is stored for the application"},
+			},
+			Tasks: []v1beta1.PipelineTask{
+				{Name: "fetch-repository", TaskRef: &v1beta1.TaskRef{
+					Name: "git-clone",
+				}, Params: []v1beta1.Param{
+					{
+						Name: "url", Value: v1beta1.ArrayOrString{
+							Type:      v1beta1.ParamTypeString,
+							StringVal: step.Params[enums.IMAGE_URL],
+						},
+					},
+					{
+						Name: "subdirectory", Value: v1beta1.ArrayOrString{
+							Type:      v1beta1.ParamTypeString,
+							StringVal: "",
+						},
+					},
+					{
+						Name: "deleteExisting", Value: v1beta1.ArrayOrString{
+							Type:      v1beta1.ParamTypeString,
+							StringVal: "true",
+						},
+					},
+				}, Workspaces: []v1beta1.WorkspacePipelineTaskBinding{{Name: "output", Workspace: "source-workspace"}}},
+
+				{Name: "buildpacks", TaskRef: &v1beta1.TaskRef{
+					Name: "buildpacks",
+				}, Params: []v1beta1.Param{
+					{
+						Name: "APP_IMAGE", Value: v1beta1.ArrayOrString{
+							Type:      v1beta1.ParamTypeString,
+							StringVal: "$(params.image)",
+						},
+					},
+					{
+						Name: "SOURCE_SUBPATH", Value: v1beta1.ArrayOrString{
+							Type:      v1beta1.ParamTypeString,
+							StringVal: "apps/java-maven",
+						},
+					},
+					{
+						Name: "BUILDER_IMAGE", Value: v1beta1.ArrayOrString{
+							Type:      v1beta1.ParamTypeString,
+							StringVal: "paketobuildpacks/builder:base",
+						},
+					},
+				}, RunAfter: []string{"fetch-repository"}, Workspaces: []v1beta1.WorkspacePipelineTaskBinding{{Name: "source", Workspace: "source-workspace"}, {Name: "cache", Workspace: "cache-workspace"}}},
+
+				{Name: "display-results", TaskSpec: &v1beta1.EmbeddedTask{
+					TaskSpec: v1beta1.TaskSpec{
+						Params: []v1beta1.ParamSpec{
+							{Name: "DIGEST"},
+						},
+						Steps: []v1beta1.Step{{Container: corev1.Container{
+							Name:  "print",
+							Image: "docker.io/library/bash:5.1.4@sha256:b208215a4655538be652b2769d82e576bc4d0a2bb132144c060efc5be8c3f5d6",
+						}, Script: " #!/usr/bin/env bash\n              set -e\n              echo \"Digest of created app image: $(params.DIGEST)\""}},
+					},
+				}, Params: []v1beta1.Param{
+					{
+						Name: "DIGEST", Value: v1beta1.ArrayOrString{
+							Type:      v1beta1.ParamTypeString,
+							StringVal: "$(tasks.buildpacks.results.APP_IMAGE_DIGEST)",
+						},
+					},
+				}, RunAfter: []string{"buildpacks"}},
+			},
+		},
+	}
+	return pipeline
+}
+
+func (tekton *tektonService) InitPipelineRun(step v1.Step, label map[string]string, processId string) (v1beta1.PipelineRun, error) {
+	if label == nil {
+		label = make(map[string]string)
+	}
+	label["revision"] = step.Params[enums.REVISION]
+	label["processId"] = processId
+	pipelineRun := v1beta1.PipelineRun{
+		TypeMeta: metaV1.TypeMeta{
+			Kind:       "PipelineRun",
+			APIVersion: "tekton.dev/v1beta1",
+		},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      step.Name + "-" + processId,
+			Namespace: config.CiNamespace,
+			Labels:    label,
+		},
+		Spec: v1beta1.PipelineRunSpec{
+			PipelineRef: &v1beta1.PipelineRef{
+				Name: step.Name,
+			},
+			Params: []v1beta1.Param{
+				{
+					Name: "image",
+					Value: v1beta1.ArrayOrString{
+						StringVal: step.Params[enums.IMAGES],
+					},
+				},
+			},
+			ServiceAccountName: step.Params[enums.SERVICE_ACCOUNT],
+			Workspaces: []v1beta1.WorkspaceBinding{
+				{
+					Name:    "source-workspace",
+					SubPath: "source",
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: step.Name + "-" + processId,
+					},
+				},
+				{
+					Name:    "cache-workspace",
+					SubPath: "cache",
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: step.Name + "-" + processId,
+					},
+				},
+			},
+		},
+	}
+	err := pipelineRun.Validate(context.Background())
+
+	if err != nil {
+		return v1beta1.PipelineRun{}, err
+	}
+	return pipelineRun, nil
+}
+
+func (tekton *tektonService) CreatePipeline(pipeline v1beta1.Pipeline) error {
+	create, err := tekton.Tcs.TektonV1beta1().Pipelines(config.CiNamespace).Create(context.Background(), &pipeline, metaV1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+	err = create.Validate(context.Background())
+	if err != nil {
+		return errors.New(err.Error())
+	}
+	return nil
+}
+
+func (tekton *tektonService) CreatePipelineRun(pipelineRun v1beta1.PipelineRun) error {
+	_, err := tekton.Tcs.TektonV1beta1().PipelineRuns(config.CiNamespace).Create(context.Background(), &pipelineRun, metaV1.CreateOptions{
+		TypeMeta: metaV1.TypeMeta{
+			Kind:       "PipelineRun",
+			APIVersion: "tekton.dev/v1beta1",
+		},
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (tekton *tektonService) GetTaskRun(name string, waitUntilTaskRunIsCompleted bool) (*v1alpha1.TaskRun, error) {
-	tRun, taskrunGetingErr := tekton.Tcs.TektonV1alpha1().TaskRuns(config.CiNamespace).Get(context.Background(),name, metaV1.GetOptions{
+	tRun, taskrunGetingErr := tekton.Tcs.TektonV1alpha1().TaskRuns(config.CiNamespace).Get(context.Background(), name, metaV1.GetOptions{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       "TaskRun",
 			APIVersion: "tekton.dev/v1",
@@ -160,7 +386,7 @@ func initIntermediaryTaskSpec(step v1.Step, task *v1alpha1.Task) {
 	task.Spec.Steps = steps
 }
 func initBuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
-	params := []v1alpha1.ParamSpec{}
+	var params []v1alpha1.ParamSpec
 	params = append(params, v1alpha1.ParamSpec{
 		Name:        "pathToDockerFile",
 		Type:        "string",
@@ -231,6 +457,7 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 		label = make(map[string]string)
 	}
 	label["step"] = step.Name
+	label["processId"] = processId
 	taskrun := v1alpha1.TaskRun{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       "TaskRun",
@@ -258,17 +485,17 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 	}
 	if step.Type == enums.BUILD {
 		var paramSpecs []v1alpha1.ParamSpec
-		paramSpecs=append(paramSpecs,v1alpha1.ParamSpec{
-			Name:        "pathToDockerFile",
-			Type:        v1alpha1.ParamTypeString,
-			Default:     &v1alpha1.ArrayOrString{
+		paramSpecs = append(paramSpecs, v1alpha1.ParamSpec{
+			Name: "pathToDockerFile",
+			Type: v1alpha1.ParamTypeString,
+			Default: &v1alpha1.ArrayOrString{
 				StringVal: "Dockerfile",
 			},
 		})
-		paramSpecs=append(paramSpecs,v1alpha1.ParamSpec{
-			Name:        "pathToContext",
-			Type:        v1alpha1.ParamTypeString,
-			Default:     &v1alpha1.ArrayOrString{
+		paramSpecs = append(paramSpecs, v1alpha1.ParamSpec{
+			Name: "pathToContext",
+			Type: v1alpha1.ParamTypeString,
+			Default: &v1alpha1.ArrayOrString{
 				StringVal: "/workspace/docker-source",
 			},
 		})
@@ -276,38 +503,37 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 			for k, v := range step.ArgData {
 				paramSpecs = append(paramSpecs, v1alpha1.ParamSpec{
 					Name: k,
-					Type:        v1alpha1.ParamTypeString,
-					Default:     &v1alpha1.ArrayOrString{
-						StringVal:v,
+					Type: v1alpha1.ParamTypeString,
+					Default: &v1alpha1.ArrayOrString{
+						StringVal: v,
 					},
-
 				})
 			}
 
 		}
-		taskSpec:=v1alpha1.TaskSpec{}
-		taskSpec.Inputs=&v1alpha1.Inputs{
+		taskSpec := v1alpha1.TaskSpec{}
+		taskSpec.Inputs = &v1alpha1.Inputs{
 			Resources: []v1alpha1.TaskResource{
 				{ResourceDeclaration: v1alpha1.ResourceDeclaration{
-					Name:        step.Params[enums.REVISION][:15] + "-" + processId,
-					Type:        v1alpha1.PipelineResourceType(v1alpha1.PipelineResourceTypeGit),
-					Optional:    false,
+					Name:     step.Params[enums.REVISION][:15] + "-" + processId,
+					Type:     v1alpha1.PipelineResourceType(v1alpha1.PipelineResourceTypeGit),
+					Optional: false,
 				}},
 			},
 			Params: paramSpecs,
 		}
 
-		outputResources:=[]v1alpha1.TaskResource{}
+		outputResources := []v1alpha1.TaskResource{}
 
 		for i := range strings.Split(step.Params[enums.IMAGES], ",") {
-			outputResources= append(outputResources, v1alpha1.TaskResource{
+			outputResources = append(outputResources, v1alpha1.TaskResource{
 				v1beta1.ResourceDeclaration{
-					Name:        step.Name + "" + processId + "" + strconv.Itoa(i),
-					Type:       v1alpha1.PipelineResourceType(v1alpha1.PipelineResourceTypeImage),
+					Name: step.Name + "" + processId + "" + strconv.Itoa(i),
+					Type: v1alpha1.PipelineResourceType(v1alpha1.PipelineResourceTypeImage),
 				},
 			})
 		}
-		taskrun.Spec.TaskSpec=&taskSpec
+		taskrun.Spec.TaskSpec = &taskSpec
 		resourceBindings := []v1alpha1.TaskResourceBinding{}
 		for i := range strings.Split(step.Params[enums.IMAGES], ",") {
 			resourceBindings = append(resourceBindings, v1alpha1.TaskResourceBinding{
@@ -324,27 +550,27 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 		}
 		taskrun.Spec.Outputs = &taskRunOutputs
 	} else if step.Type == enums.JENKINS_JOB {
-		var params []v1alpha1.Param
-		params = append(params, v1alpha1.Param{
+
+		var paramSpecs []v1alpha1.ParamSpec
+		paramSpecs = append(paramSpecs, v1alpha1.ParamSpec{
 			Name: "JENKINS_HOST_URL",
-			Value: v1alpha1.ArrayOrString{
-				Type:      v1alpha1.ParamTypeString,
+			Type: v1alpha1.ParamTypeString,
+			Default: &v1alpha1.ArrayOrString{
 				StringVal: step.Params[enums.JENKINS_URL],
 			},
 		})
-		params = append(params, v1alpha1.Param{
+		paramSpecs = append(paramSpecs, v1alpha1.ParamSpec{
 			Name: "JOB_NAME",
-			Value: v1alpha1.ArrayOrString{
-				Type:      v1alpha1.ParamTypeString,
+			Type: v1alpha1.ParamTypeString,
+			Default: &v1alpha1.ArrayOrString{
 				StringVal: step.Params[enums.JENKINS_JOB_NAME],
 			},
 		})
-
 		if step.Params[enums.JENKINS_SECRET] != "" {
-			params = append(params, v1alpha1.Param{
+			paramSpecs = append(paramSpecs, v1alpha1.ParamSpec{
 				Name: "JENKINS_SECRETS",
-				Value: v1alpha1.ArrayOrString{
-					Type:      v1alpha1.ParamTypeString,
+				Type: v1alpha1.ParamTypeString,
+				Default: &v1alpha1.ArrayOrString{
 					StringVal: step.Params[enums.JENKINS_SECRET],
 				},
 			})
@@ -356,18 +582,17 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 				keyAndValue := strings.Split(each, ":")
 				paramsData = append(paramsData, keyAndValue[0]+"="+keyAndValue[1])
 			}
-			params = append(params, v1alpha1.Param{
+			paramSpecs = append(paramSpecs, v1alpha1.ParamSpec{
 				Name: "JOB_PARAMS",
-				Value: v1alpha1.ArrayOrString{
-					Type:     v1alpha1.ParamTypeArray,
+				Type: v1alpha1.ParamTypeArray,
+				Default: &v1alpha1.ArrayOrString{
 					ArrayVal: paramsData,
 				},
 			})
 		}
-		taskrun.Spec.Inputs.Params=params
-		taskrun.Spec.PodTemplate.Volumes= []corev1.Volume{}
+		taskrun.Spec.TaskSpec.Inputs.Params = paramSpecs
+		taskrun.Spec.PodTemplate.Volumes = []corev1.Volume{}
 	}
-
 	err := taskrun.Validate(context.Background())
 	if err != nil {
 		return taskrun, err
@@ -375,7 +600,7 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 	return taskrun, nil
 }
 func (tekton *tektonService) CreatePipelineResource(resource v1alpha1.PipelineResource) error {
-	_,err:=tekton.Vrcs.TektonV1alpha1().PipelineResources(config.CiNamespace).Create(context.Background(),&resource,metaV1.CreateOptions{})
+	_, err := tekton.Vrcs.TektonV1alpha1().PipelineResources(config.CiNamespace).Create(context.Background(), &resource, metaV1.CreateOptions{})
 	if err != nil {
 		log.Println("[ERROR]:", "Failed to create pipelineresource", err.Error())
 		return err
@@ -383,7 +608,7 @@ func (tekton *tektonService) CreatePipelineResource(resource v1alpha1.PipelineRe
 	return nil
 }
 func (tekton *tektonService) CreateTask(resource v1alpha1.Task) error {
-	_, err := tekton.Tcs.TektonV1alpha1().Tasks(config.CiNamespace).Create(context.Background(),&resource,metaV1.CreateOptions{})
+	_, err := tekton.Tcs.TektonV1alpha1().Tasks(config.CiNamespace).Create(context.Background(), &resource, metaV1.CreateOptions{})
 	if err != nil {
 		log.Println("[ERROR]:", "Failed to create task", err.Error())
 		return err
@@ -391,7 +616,7 @@ func (tekton *tektonService) CreateTask(resource v1alpha1.Task) error {
 	return nil
 }
 func (tekton *tektonService) CreateTaskRun(resource v1alpha1.TaskRun) error {
-	_, err := tekton.Tcs.TektonV1alpha1().TaskRuns(config.CiNamespace).Create(context.Background(),&resource,metaV1.CreateOptions{})
+	_, err := tekton.Tcs.TektonV1alpha1().TaskRuns(config.CiNamespace).Create(context.Background(), &resource, metaV1.CreateOptions{})
 	if err != nil {
 		log.Println("[ERROR]:", "Failed to create taskrun", err.Error())
 		return err
@@ -400,7 +625,7 @@ func (tekton *tektonService) CreateTaskRun(resource v1alpha1.TaskRun) error {
 
 }
 func (tekton *tektonService) DeletePipelineResourceByProcessId(processId string) error {
-	list, err :=tekton.Vrcs.TektonV1alpha1().PipelineResources(config.CiNamespace).List(context.Background(),metaV1.ListOptions{
+	list, err := tekton.Vrcs.TektonV1alpha1().PipelineResources(config.CiNamespace).List(context.Background(), metaV1.ListOptions{
 		LabelSelector: "processId=" + processId,
 	})
 	if err != nil {
@@ -408,7 +633,7 @@ func (tekton *tektonService) DeletePipelineResourceByProcessId(processId string)
 		return err
 	}
 	for _, each := range list.Items {
-		err = tekton.Vrcs.TektonV1alpha1().PipelineResources(config.CiNamespace).Delete(context.Background(),each.Name, metaV1.DeleteOptions{})
+		err = tekton.Vrcs.TektonV1alpha1().PipelineResources(config.CiNamespace).Delete(context.Background(), each.Name, metaV1.DeleteOptions{})
 		if err != nil {
 			log.Println("[ERROR]:", err.Error())
 		}
@@ -416,7 +641,7 @@ func (tekton *tektonService) DeletePipelineResourceByProcessId(processId string)
 	return nil
 }
 func (tekton *tektonService) DeleteTaskByProcessId(processId string) error {
-	list, err := tekton.Tcs.TektonV1alpha1().Tasks(config.CiNamespace).List(context.Background(),metaV1.ListOptions{
+	list, err := tekton.Tcs.TektonV1alpha1().Tasks(config.CiNamespace).List(context.Background(), metaV1.ListOptions{
 		LabelSelector: "processId=" + processId,
 	})
 	if err != nil {
@@ -424,7 +649,7 @@ func (tekton *tektonService) DeleteTaskByProcessId(processId string) error {
 		return err
 	}
 	for _, each := range list.Items {
-		err = tekton.Tcs.TektonV1alpha1().Tasks(config.CiNamespace).Delete(context.Background(),each.Name, metaV1.DeleteOptions{})
+		err = tekton.Tcs.TektonV1alpha1().Tasks(config.CiNamespace).Delete(context.Background(), each.Name, metaV1.DeleteOptions{})
 		if err != nil {
 			log.Println("[ERROR]:", err.Error())
 		}
@@ -432,7 +657,7 @@ func (tekton *tektonService) DeleteTaskByProcessId(processId string) error {
 	return nil
 }
 func (tekton *tektonService) DeleteTaskRunByProcessId(processId string) error {
-	list, err := tekton.Tcs.TektonV1alpha1().TaskRuns(config.CiNamespace).List(context.Background(),metaV1.ListOptions{
+	list, err := tekton.Tcs.TektonV1alpha1().TaskRuns(config.CiNamespace).List(context.Background(), metaV1.ListOptions{
 		LabelSelector: "processId=" + processId,
 	})
 	if err != nil {
@@ -440,7 +665,7 @@ func (tekton *tektonService) DeleteTaskRunByProcessId(processId string) error {
 		return err
 	}
 	for _, each := range list.Items {
-		err = tekton.Tcs.TektonV1alpha1().TaskRuns(config.CiNamespace).Delete(context.Background(),each.Name, metaV1.DeleteOptions{})
+		err = tekton.Tcs.TektonV1alpha1().TaskRuns(config.CiNamespace).Delete(context.Background(), each.Name, metaV1.DeleteOptions{})
 		if err != nil {
 			log.Println("[ERROR]:", err.Error())
 		}
@@ -472,9 +697,9 @@ func initBuildArgs(arg map[string]string) []string {
 }
 
 // NewTektonService returns tekton type service
-func NewTektonService(tcs *versioned.Clientset,vrcs *versionedResource.Clientset) service.Tekton {
+func NewTektonService(tcs *versioned.Clientset, vrcs *versionedResource.Clientset) service.Tekton {
 	return &tektonService{
-		Tcs: tcs,
+		Tcs:  tcs,
 		Vrcs: vrcs,
 	}
 }
