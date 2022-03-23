@@ -46,7 +46,7 @@ func ApplyIntermediarySteps() {
 	ApplyIntermediarySteps()
 }
 
-// ApplyIntermediarySteps routine that pulls intermediary steps in every interval.
+// ApplyJenkinsJobSteps routine that pulls intermediary steps in every interval.
 func ApplyJenkinsJobSteps() {
 	pipelineServie := dependency.GetV1PipelineService()
 	pipelineServie.ApplyJenkinsJobSteps()

@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-	"errors"
 	"github.com/klovercloud-ci-cd/core-engine/config"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1/service"
@@ -13,6 +12,8 @@ import (
 	versionedResource "github.com/tektoncd/pipeline/pkg/client/resource/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
+
 	"log"
 	"strconv"
 	"strings"
@@ -21,6 +22,7 @@ import (
 type tektonService struct {
 	Tcs  *versioned.Clientset
 	Vrcs *versionedResource.Clientset
+	DynamicClient dynamic.Interface
 }
 
 func (tekton *tektonService) GetPipelineRun(name string, waitUntilPipelineRunIsCompleted bool) (*v1beta1.PipelineRun, error) {
@@ -80,10 +82,10 @@ func (tekton *tektonService) InitPipeline(step v1.Step, label map[string]string,
 	label["revision"] = step.Params[enums.REVISION]
 	label["processId"] = processId
 	pipeline := v1beta1.Pipeline{
-		//TypeMeta: metaV1.TypeMeta{
-		//	Kind:       "Pipeline",
-		//	APIVersion: "tekton.dev/v1beta1",
-		//},
+		TypeMeta: metaV1.TypeMeta{
+			Kind:       "Pipeline",
+			APIVersion: "tekton.dev/v1beta1",
+		},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      step.Name,
 			Namespace: config.CiNamespace,
@@ -143,25 +145,21 @@ func (tekton *tektonService) InitPipeline(step v1.Step, label map[string]string,
 						},
 					},
 				}, RunAfter: []string{"fetch-repository"}, Workspaces: []v1beta1.WorkspacePipelineTaskBinding{{Name: "source", Workspace: "source-workspace"}, {Name: "cache", Workspace: "cache-workspace"}}},
-
-				{Name: "display-results", TaskSpec: &v1beta1.EmbeddedTask{
-					TaskSpec: v1beta1.TaskSpec{
-						Params: []v1beta1.ParamSpec{
-							{Name: "DIGEST"},
-						},
-						Steps: []v1beta1.Step{{Container: corev1.Container{
-							Name:  "print",
-							Image: "docker.io/library/bash:5.1.4@sha256:b208215a4655538be652b2769d82e576bc4d0a2bb132144c060efc5be8c3f5d6",
-						}, Script: " #!/usr/bin/env bash\n              set -e\n              echo \"Digest of created app image: $(params.DIGEST)\""}},
+				{
+					Name:     "display-results",
+					TaskRef:  &v1beta1.TaskRef{
+						Name: "buildpack-display-results",
 					},
-				}, Params: []v1beta1.Param{
-					{
-						Name: "DIGEST", Value: v1beta1.ArrayOrString{
+					RunAfter: []string{"buildpacks"},
+					Params: []v1beta1.Param{
+						{
+							Name: "DIGEST", Value: v1beta1.ArrayOrString{
 							Type:      v1beta1.ParamTypeString,
 							StringVal: "$(tasks.buildpacks.results.APP_IMAGE_DIGEST)",
 						},
+						},
 					},
-				}, RunAfter: []string{"buildpacks"}},
+				},
 			},
 		},
 	}
@@ -192,6 +190,7 @@ func (tekton *tektonService) InitPipelineRun(step v1.Step, label map[string]stri
 				{
 					Name: "image",
 					Value: v1beta1.ArrayOrString{
+						Type:      v1beta1.ParamTypeString,
 						StringVal: step.Params[enums.IMAGES],
 					},
 				},
@@ -224,15 +223,8 @@ func (tekton *tektonService) InitPipelineRun(step v1.Step, label map[string]stri
 }
 
 func (tekton *tektonService) CreatePipeline(pipeline v1beta1.Pipeline) error {
-	create, err := tekton.Tcs.TektonV1beta1().Pipelines(config.CiNamespace).Create(context.Background(), &pipeline, metaV1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-	err = create.Validate(context.Background())
-	if err != nil {
-		return errors.New(err.Error())
-	}
-	return nil
+	_, err := tekton.Tcs.TektonV1beta1().Pipelines(config.CiNamespace).Create(context.Background(), &pipeline, metaV1.CreateOptions{})
+	return err
 }
 
 func (tekton *tektonService) CreatePipelineRun(pipelineRun v1beta1.PipelineRun) error {
@@ -509,7 +501,6 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 					},
 				})
 			}
-
 		}
 		taskSpec := v1alpha1.TaskSpec{}
 		taskSpec.Inputs = &v1alpha1.Inputs{
@@ -697,9 +688,10 @@ func initBuildArgs(arg map[string]string) []string {
 }
 
 // NewTektonService returns tekton type service
-func NewTektonService(tcs *versioned.Clientset, vrcs *versionedResource.Clientset) service.Tekton {
+func NewTektonService(tcs *versioned.Clientset, vrcs *versionedResource.Clientset,dynamicClient *dynamic.Interface) service.Tekton {
 	return &tektonService{
 		Tcs:  tcs,
 		Vrcs: vrcs,
+		DynamicClient: *dynamicClient,
 	}
 }

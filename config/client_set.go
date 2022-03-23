@@ -4,11 +4,11 @@ import (
 	"flag"
 	"github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	versionedResource "github.com/tektoncd/pipeline/pkg/client/resource/clientset/versioned"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	"log"
 	"path/filepath"
 	"sync"
 )
@@ -39,24 +39,25 @@ func GetKubeConfig() *rest.Config {
 }
 
 // GetClientSet returns k8s clientSets
-func GetClientSet() (*versioned.Clientset,*versionedResource.Clientset, *kubernetes.Clientset) {
+func GetClientSet() (*versioned.Clientset,*versionedResource.Clientset, *kubernetes.Clientset,*dynamic.Interface) {
 	once.Do(func() {
 		config = GetKubeConfig()
 	})
-
 	cs, vcsErr := versioned.NewForConfig(config)
 	vrcs,vrcsErr:=versionedResource.NewForConfig(config)
 	kcs, kcsErr := kubernetes.NewForConfig(config)
-
 	if vcsErr != nil {
-		log.Printf("failed to create versioned clientset: %s", vcsErr)
+		panic(vcsErr)
 	}
 	if kcsErr != nil {
-		log.Printf("failed to create pipeline clientset: %s", kcsErr)
+		panic(kcsErr)
 	}
-
 	if vrcsErr!=nil{
-		log.Println("Failed to create versionedResource clientset %s", vrcsErr)
+		panic(vrcsErr)
 	}
-	return cs,vrcs, kcs
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		panic(err)
+	}
+	return cs,vrcs, kcs,&dynamicClient
 }

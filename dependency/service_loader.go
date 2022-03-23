@@ -50,7 +50,7 @@ func GetV1PipelineService() service.Pipeline {
 	var processLifeCycleEvent service.ProcessLifeCycleEvent
 	var eventStoreProcessLifeCycleEvent service.ProcessLifeCycleEvent
 	var observers []service.Observer
-	tektonClientSet,tektonVersionedResourceClientSet, k8sClientSet := config.GetClientSet()
+	tektonClientSet,tektonVersionedResourceClientSet, k8sClientSet,dynamicClient := config.GetClientSet()
 
 	if config.UseLocalEventStore {
 		if config.Database == enums.MONGO {
@@ -60,7 +60,7 @@ func GetV1PipelineService() service.Pipeline {
 			observers = append(observers, logEventService)
 			observers = append(observers, processEventService)
 			observers = append(observers, processLifeCycleEvent)
-			tekton = logic.NewTektonService(tektonClientSet,tektonVersionedResourceClientSet)
+			tekton = logic.NewTektonService(tektonClientSet,tektonVersionedResourceClientSet,dynamicClient)
 			k8s = logic.NewK8sService(k8sClientSet, tekton, observers)
 
 		}
@@ -75,7 +75,7 @@ func GetV1PipelineService() service.Pipeline {
 			observers = append(observers, eventStoreLogEventService)
 			observers = append(observers, eventStoreProcessEvent)
 			observers = append(observers, processLifeCycleEvent)
-			tekton = logic.NewTektonService(tektonClientSet,tektonVersionedResourceClientSet)
+			tekton = logic.NewTektonService(tektonClientSet,tektonVersionedResourceClientSet,dynamicClient)
 			k8s = logic.NewK8sService(k8sClientSet, tekton, observers)
 		}
 	} else {
@@ -85,7 +85,7 @@ func GetV1PipelineService() service.Pipeline {
 		observers = append(observers, eventStoreLogEventService)
 		observers = append(observers, eventStoreProcessEvent)
 		observers = append(observers, eventStoreProcessLifeCycleEvent)
-		tekton = logic.NewTektonService(tektonClientSet,tektonVersionedResourceClientSet)
+		tekton = logic.NewTektonService(tektonClientSet,tektonVersionedResourceClientSet,dynamicClient)
 		k8s = logic.NewK8sService(k8sClientSet, tekton, observers)
 	}
 
