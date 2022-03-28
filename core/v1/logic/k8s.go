@@ -121,6 +121,7 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 		if err != nil {
 			listener := v1.Subject{Pipeline: v1.Pipeline{ProcessId: processId}, Log: err.Error(), Step: step}
 			processEventData["reason"] = err.Error()
+			listener.EventData = make(map[string]interface{})
 			listener.EventData = processEventData
 			go k8s.notifyAll(listener)
 			return
@@ -136,10 +137,12 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 			lines = lines[:(length - 1)]
 		}
 		for _, line := range lines {
+			log.Println(containerName, podName, "+++++++", line)
 			temp := strings.ToLower(line)
 			processEventData["log"] = temp
 			processEventData["reason"] = "n/a"
 			listener := v1.Subject{Pipeline: v1.Pipeline{ProcessId: processId}, Log: temp, Step: step}
+			listener.EventData = make(map[string]interface{})
 			listener.EventData = processEventData
 			go k8s.notifyAll(listener)
 			if (!strings.HasPrefix(temp, "progress") && (!strings.HasSuffix(temp, " mb") || !strings.HasSuffix(temp, " kb"))) && !strings.HasPrefix(temp, "downloading from") {

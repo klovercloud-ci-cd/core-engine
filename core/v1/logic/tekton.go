@@ -20,23 +20,44 @@ import (
 )
 
 type tektonService struct {
-	Tcs  *versioned.Clientset
-	Vrcs *versionedResource.Clientset
+	Tcs           *versioned.Clientset
+	Vrcs          *versionedResource.Clientset
 	DynamicClient dynamic.Interface
+	K8s           service.K8s
 }
 
-func (tekton *tektonService) GetPipelineRun(name string, waitUntilPipelineRunIsCompleted bool) (*v1beta1.PipelineRun, error) {
-	pRun, pipelineRunGetingErr := tekton.Tcs.TektonV1beta1().PipelineRuns(config.CiNamespace).Get(context.Background(), name, metaV1.GetOptions{
+func (tekton *tektonService) GetPipelineRun(name, id, stepType string, waitUntilPipelineRunIsCompleted bool, podList corev1.PodList) (*v1beta1.PipelineRun, error) {
+	pRun, pipelineRunGetingErr := tekton.Tcs.TektonV1beta1().PipelineRuns(config.CiNamespace).Get(context.Background(), name+"-"+id, metaV1.GetOptions{
 		TypeMeta: metaV1.TypeMeta{
-			Kind:       "TaskRun",
-			APIVersion: "tekton.dev/v1",
+			Kind:       "PipelineRun",
+			APIVersion: "tekton.dev/v1beta1",
 		},
 	})
 	if pipelineRunGetingErr != nil {
 		return nil, pipelineRunGetingErr
 	}
+	podListMap := make(map[string]bool)
+	for _, pod := range podList.Items {
+		podListMap[pod.Name] = true
+	}
 	if !pRun.IsDone() && waitUntilPipelineRunIsCompleted == true {
-		return tekton.GetPipelineRun(name, waitUntilPipelineRunIsCompleted)
+		var pList *corev1.PodList
+		pList = tekton.K8s.WaitAndGetInitializedPods(config.CiNamespace, id, name)
+		var NewPodList corev1.PodList
+		for _, i := range pList.Items {
+			if _, ok := podListMap[i.Name]; !ok {
+				NewPodList.Items = append(NewPodList.Items, i)
+			}
+		}
+		if len(NewPodList.Items) > 0 {
+			for _, each := range NewPodList.Items {
+				for index := range each.Spec.Containers {
+					go tekton.K8s.FollowContainerLifeCycle(each.Namespace, each.Name, each.Spec.Containers[index].Name, name, id, enums.STEP_TYPE(stepType))
+				}
+			}
+
+		}
+		return tekton.GetPipelineRun(name, id, stepType, waitUntilPipelineRunIsCompleted, podList)
 	}
 	return pRun, nil
 }
@@ -87,7 +108,7 @@ func (tekton *tektonService) InitPipeline(step v1.Step, label map[string]string,
 			APIVersion: "tekton.dev/v1beta1",
 		},
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      step.Name,
+			Name:      step.Name + "-" + processId,
 			Namespace: config.CiNamespace,
 			Labels:    label,
 		},
@@ -106,7 +127,7 @@ func (tekton *tektonService) InitPipeline(step v1.Step, label map[string]string,
 					{
 						Name: "url", Value: v1beta1.ArrayOrString{
 							Type:      v1beta1.ParamTypeString,
-							StringVal: step.Params[enums.IMAGE_URL],
+							StringVal: "https://github.com/buildpacks/samples",
 						},
 					},
 					{
@@ -145,21 +166,6 @@ func (tekton *tektonService) InitPipeline(step v1.Step, label map[string]string,
 						},
 					},
 				}, RunAfter: []string{"fetch-repository"}, Workspaces: []v1beta1.WorkspacePipelineTaskBinding{{Name: "source", Workspace: "source-workspace"}, {Name: "cache", Workspace: "cache-workspace"}}},
-				{
-					Name:     "display-results",
-					TaskRef:  &v1beta1.TaskRef{
-						Name: "buildpack-display-results",
-					},
-					RunAfter: []string{"buildpacks"},
-					Params: []v1beta1.Param{
-						{
-							Name: "DIGEST", Value: v1beta1.ArrayOrString{
-							Type:      v1beta1.ParamTypeString,
-							StringVal: "$(tasks.buildpacks.results.APP_IMAGE_DIGEST)",
-						},
-						},
-					},
-				},
 			},
 		},
 	}
@@ -184,7 +190,7 @@ func (tekton *tektonService) InitPipelineRun(step v1.Step, label map[string]stri
 		},
 		Spec: v1beta1.PipelineRunSpec{
 			PipelineRef: &v1beta1.PipelineRef{
-				Name: step.Name,
+				Name: step.Name + "-" + processId,
 			},
 			Params: []v1beta1.Param{
 				{
@@ -688,10 +694,12 @@ func initBuildArgs(arg map[string]string) []string {
 }
 
 // NewTektonService returns tekton type service
-func NewTektonService(tcs *versioned.Clientset, vrcs *versionedResource.Clientset,dynamicClient *dynamic.Interface) service.Tekton {
+func NewTektonService(tcs *versioned.Clientset, vrcs *versionedResource.Clientset, dynamicClient *dynamic.Interface, k8s service.K8s) service.Tekton {
+
 	return &tektonService{
-		Tcs:  tcs,
-		Vrcs: vrcs,
+		Tcs:           tcs,
+		Vrcs:          vrcs,
 		DynamicClient: *dynamicClient,
+		K8s:           k8s,
 	}
 }

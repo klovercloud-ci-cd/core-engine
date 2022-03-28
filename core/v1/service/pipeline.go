@@ -20,4 +20,5 @@ type Pipeline interface {
 	ApplyJenkinsJobSteps()
 	ApplyBuildCancellationSteps()
 	PostOperationsForBuildPack(step string, stepType enums.STEP_TYPE, pipeline v1.Pipeline)
+	FollowContainerLogs(pipeline Pipeline)
 }

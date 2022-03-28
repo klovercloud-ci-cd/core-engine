@@ -86,15 +86,21 @@ func (p *pipelineService) GetLogsByProcessId(processId string, option v1.LogEven
 	return p.logEventService.GetByProcessId(processId, option)
 }
 
+func (p *pipelineService) FollowContainerLogs(pipeline service.Pipeline) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (p *pipelineService) PostOperationsForBuildPack(step string, stepType enums.STEP_TYPE, pipeline v1.Pipeline) {
 	podList := p.k8s.WaitAndGetInitializedPods(config.CiNamespace, pipeline.ProcessId, step)
 	if len(podList.Items) > 0 {
-		pod := podList.Items[0]
-		for index := range pod.Spec.Containers {
-			p.k8s.FollowContainerLifeCycle(pod.Namespace, pod.Name, pod.Spec.Containers[index].Name, step, pipeline.ProcessId, stepType)
+		for _, pod := range podList.Items {
+			for index := range pod.Spec.Containers {
+				go p.k8s.FollowContainerLifeCycle(pod.Namespace, pod.Name, pod.Spec.Containers[index].Name, step, pipeline.ProcessId, stepType)
+			}
 		}
 	}
-	pRun, pRunError := p.tekton.GetPipelineRun(step+"-"+pipeline.ProcessId, true)
+	pRun, pRunError := p.tekton.GetPipelineRun(step, pipeline.ProcessId, string(stepType), true, *podList)
 	pRunStatus := ""
 	if pRunError != nil {
 		pRunStatus = pRunError.Error()
@@ -302,39 +308,46 @@ func (p *pipelineService) applyIntermediaryStep(step v1.Step) error {
 	return nil
 }
 
+//applyBuildPackStep applies build step, follows pod lifecycle and the notifies observers
 func (p *pipelineService) applyBuildPackStep(step v1.Step) error {
-	// init pvc
-	// init pipeline
-	// init pipelinerun
-	// then create pvc
-	// create pipeline
-	// create pipelinerun
-	// if any step fails, delete all the resources by label
 	pvc := p.k8s.InitPersistentVolumeClaim(step, p.pipeline.Label, p.pipeline.ProcessId)
-	err := p.k8s.CreatePersistentVolumeClaim(pvc)
+	//yPvc, _ := json.Marshal(&pvc)
+	//print(string(yPvc))
+	_ = p.tekton.DeletePipelineByProcessId(p.pipeline.ProcessId)
+	_ = p.tekton.DeletePipelineRunByProcessId(p.pipeline.ProcessId)
+	err := p.k8s.DeletePersistentVolumeClaimByProcessId(p.pipeline.ProcessId)
 	if err != nil {
 		return err
 	}
-	_ = p.k8s.DeletePersistentVolumeClaimByProcessId(p.pipeline.ProcessId)
+	err = p.k8s.CreatePersistentVolumeClaim(pvc)
+	if err != nil {
+		return err
+	}
 	pipeline := p.tekton.InitPipeline(step, p.pipeline.Label, p.pipeline.ProcessId)
+	//ypipeline, _ := json.Marshal(&pipeline)
+	//print(string(ypipeline))
 	err = p.tekton.CreatePipeline(pipeline)
 	if err != nil {
 		_ = p.tekton.DeletePipelineByProcessId(p.pipeline.ProcessId)
 		return errors.New("Failed to apply pipeline" + err.Error())
 	}
 	pRun, err := p.tekton.InitPipelineRun(step, p.pipeline.Label, p.pipeline.ProcessId)
+	//ypRun, _ := json.Marshal(&pRun)
+	//print(string(ypRun))
 	if err != nil {
 		return err
 	}
+	_ = p.tekton.DeletePipelineRunByProcessId(p.pipeline.ProcessId)
 	err = p.tekton.CreatePipelineRun(pRun)
 	if err != nil {
 		_ = p.tekton.DeletePipelineRunByProcessId(p.pipeline.ProcessId)
 		return errors.New("Failed to apply pipeline run" + err.Error())
 	}
-	go p.PostOperations(step.Name, step.Type, p.pipeline)
+	p.PostOperationsForBuildPack(step.Name, step.Type, p.pipeline)
 	return nil
 }
 
+//applyRegularBuildStep applies build step, follows pod lifecycle and the notifies observers
 func (p *pipelineService) applyRegularBuildStep(step v1.Step) error {
 	input, outputs, err := p.tekton.InitPipelineResources(step, p.pipeline.Label, p.pipeline.ProcessId)
 	if err != nil {
@@ -381,9 +394,15 @@ func (p *pipelineService) applyRegularBuildStep(step v1.Step) error {
 
 //applyBuildStep applies build step, follows pod lifecycle and the notifies observers
 func (p *pipelineService) applyBuildStep(step v1.Step) error {
+	processEventData := make(map[string]interface{})
+	processEventData["step"] = step
+	processEventData["status"] = enums.ACTIVE
+	processEventData["type"] = step.Type
+	listener := v1.Subject{Log: "Build Step Started", Step: step.Name, StepType: step.Type}
+	listener.EventData = processEventData
+	go p.notifyAll(listener)
 	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
 	step.Name = trimmedStepName
-	// check if built type equals build back
 	if step.Params[enums.BUILD_TYPE] == "buildpack" {
 		return p.applyBuildPackStep(step)
 	} else {
