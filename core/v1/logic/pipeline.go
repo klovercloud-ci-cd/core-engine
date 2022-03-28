@@ -263,6 +263,13 @@ func (p *pipelineService) applySteps(step v1.Step) {
 
 //applyJenkinsJobStep applies jenkins step, follows pod lifecycle and the notifies observers
 func (p *pipelineService) applyJenkinsJobStep(step v1.Step) error {
+	processEventData := make(map[string]interface{})
+	processEventData["step"] = step
+	processEventData["status"] = enums.ACTIVE
+	processEventData["type"] = step.Type
+	listener := v1.Subject{Log: "JenkinsJob Step Started", Step: step.Name, StepType: step.Type}
+	listener.EventData = processEventData
+	go p.notifyAll(listener)
 	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
 	step.Name = trimmedStepName
 	taskrun, err := p.tekton.InitTaskRun(step, p.pipeline.Label, p.pipeline.ProcessId)
@@ -280,6 +287,13 @@ func (p *pipelineService) applyJenkinsJobStep(step v1.Step) error {
 
 //applyIntermediaryStep applies intermediary step, follows pod lifecycle and the notifies observers
 func (p *pipelineService) applyIntermediaryStep(step v1.Step) error {
+	processEventData := make(map[string]interface{})
+	processEventData["step"] = step
+	processEventData["status"] = enums.ACTIVE
+	processEventData["type"] = step.Type
+	listener := v1.Subject{Log: "Intermediary Step Started", Step: step.Name, StepType: step.Type}
+	listener.EventData = processEventData
+	go p.notifyAll(listener)
 	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
 	step.Name = trimmedStepName
 	task, err := p.tekton.InitTask(step, p.pipeline.Label, p.pipeline.ProcessId)
