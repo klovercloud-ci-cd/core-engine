@@ -482,6 +482,34 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 		}
 	}
 	if step.Type == enums.BUILD {
+		var params []v1alpha1.Param
+		params = append(params, v1alpha1.Param{
+			Name: "pathToDockerFile",
+			Value: v1alpha1.ArrayOrString{
+				Type:      v1alpha1.ParamTypeString,
+				StringVal: "Dockerfile",
+			},
+		})
+		params = append(params, v1alpha1.Param{
+			Name: "pathToContext",
+			Value: v1alpha1.ArrayOrString{
+				Type:      v1alpha1.ParamTypeString,
+				StringVal: "/workspace/docker-source",
+			},
+		})
+		if step.ArgData != nil {
+			for k, v := range step.ArgData {
+				params = append(params, v1alpha1.Param{
+					Name: k,
+					Value: v1alpha1.ArrayOrString{
+						Type:      v1alpha1.ParamTypeString,
+						StringVal: v,
+					},
+				})
+			}
+
+		}
+
 		var paramSpecs []v1alpha1.ParamSpec
 		paramSpecs = append(paramSpecs, v1alpha1.ParamSpec{
 			Name: "pathToDockerFile",
@@ -508,32 +536,20 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 				})
 			}
 		}
-		taskSpec := v1alpha1.TaskSpec{}
-		taskSpec.Inputs = &v1alpha1.Inputs{
-			Resources: []v1alpha1.TaskResource{
-				{ResourceDeclaration: v1alpha1.ResourceDeclaration{
-					Name:     step.Params[enums.REVISION][:15] + "-" + processId,
-					Type:     v1alpha1.PipelineResourceType(v1alpha1.PipelineResourceTypeGit),
-					Optional: false,
-				}},
-			},
-			Params: paramSpecs,
-		}
 
-		outputResources := []v1alpha1.TaskResource{}
-
-		for i := range strings.Split(step.Params[enums.IMAGES], ",") {
-			outputResources = append(outputResources, v1alpha1.TaskResource{
-				v1beta1.ResourceDeclaration{
-					Name: step.Name + "" + processId + "" + strconv.Itoa(i),
-					Type: v1alpha1.PipelineResourceType(v1alpha1.PipelineResourceTypeImage),
+		inputresourceBindings := []v1alpha1.TaskResourceBinding{}
+		inputresourceBindings= append(inputresourceBindings, v1alpha1.TaskResourceBinding{
+			PipelineResourceBinding: v1alpha1.PipelineResourceBinding{
+				Name: "docker-source",
+				ResourceRef: &v1alpha1.PipelineResourceRef{
+					Name: step.Params[enums.REVISION][:15] + "-" + processId,
 				},
-			})
-		}
-		taskrun.Spec.TaskSpec = &taskSpec
-		resourceBindings := []v1alpha1.TaskResourceBinding{}
+			},
+		})
+
+		outputResourceBindings := []v1alpha1.TaskResourceBinding{}
 		for i := range strings.Split(step.Params[enums.IMAGES], ",") {
-			resourceBindings = append(resourceBindings, v1alpha1.TaskResourceBinding{
+			outputResourceBindings = append(outputResourceBindings, v1alpha1.TaskResourceBinding{
 				PipelineResourceBinding: v1alpha1.PipelineResourceBinding{
 					Name: "builtImage" + strconv.Itoa(i),
 					ResourceRef: &v1alpha1.PipelineResourceRef{
@@ -542,32 +558,36 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 				},
 			})
 		}
-		taskRunOutputs := v1alpha1.TaskRunOutputs{
-			Resources: resourceBindings,
+		taskRunResources:=&v1beta1.TaskRunResources{
+			Inputs:  inputresourceBindings,
+			Outputs: outputResourceBindings,
 		}
-		taskrun.Spec.Outputs = &taskRunOutputs
+
+		taskrun.Spec.Resources=taskRunResources
+		taskrun.Spec.Params=params
 	} else if step.Type == enums.JENKINS_JOB {
 
-		var paramSpecs []v1alpha1.ParamSpec
-		paramSpecs = append(paramSpecs, v1alpha1.ParamSpec{
+		var params []v1alpha1.Param
+		params = append(params, v1alpha1.Param{
 			Name: "JENKINS_HOST_URL",
-			Type: v1alpha1.ParamTypeString,
-			Default: &v1alpha1.ArrayOrString{
+			Value: v1alpha1.ArrayOrString{
+				Type:      v1alpha1.ParamTypeString,
 				StringVal: step.Params[enums.JENKINS_URL],
 			},
 		})
-		paramSpecs = append(paramSpecs, v1alpha1.ParamSpec{
+		params = append(params, v1alpha1.Param{
 			Name: "JOB_NAME",
-			Type: v1alpha1.ParamTypeString,
-			Default: &v1alpha1.ArrayOrString{
+			Value: v1alpha1.ArrayOrString{
+				Type:      v1alpha1.ParamTypeString,
 				StringVal: step.Params[enums.JENKINS_JOB_NAME],
 			},
 		})
+
 		if step.Params[enums.JENKINS_SECRET] != "" {
-			paramSpecs = append(paramSpecs, v1alpha1.ParamSpec{
+			params = append(params, v1alpha1.Param{
 				Name: "JENKINS_SECRETS",
-				Type: v1alpha1.ParamTypeString,
-				Default: &v1alpha1.ArrayOrString{
+				Value: v1alpha1.ArrayOrString{
+					Type:      v1alpha1.ParamTypeString,
 					StringVal: step.Params[enums.JENKINS_SECRET],
 				},
 			})
@@ -579,15 +599,15 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 				keyAndValue := strings.Split(each, ":")
 				paramsData = append(paramsData, keyAndValue[0]+"="+keyAndValue[1])
 			}
-			paramSpecs = append(paramSpecs, v1alpha1.ParamSpec{
+			params = append(params, v1alpha1.Param{
 				Name: "JOB_PARAMS",
-				Type: v1alpha1.ParamTypeArray,
-				Default: &v1alpha1.ArrayOrString{
+				Value: v1alpha1.ArrayOrString{
+					Type:     v1alpha1.ParamTypeArray,
 					ArrayVal: paramsData,
 				},
 			})
 		}
-		taskrun.Spec.TaskSpec.Inputs.Params = paramSpecs
+		taskrun.Spec.Params = params
 		taskrun.Spec.PodTemplate.Volumes = []corev1.Volume{}
 	}
 	err := taskrun.Validate(context.Background())
