@@ -18,7 +18,6 @@ func (e eventStoreProcessEventService) Listen(subject v1.Subject) {
 			ProcessId: subject.Pipeline.ProcessId,
 			Data:      subject.EventData,
 		}
-		log.Println(event, "ssssssssss")
 		header := make(map[string]string)
 		header["Content-Type"] = "application/json"
 		header["token"] = config.Token

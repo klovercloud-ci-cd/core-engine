@@ -127,7 +127,7 @@ func (tekton *tektonService) InitPipeline(step v1.Step, label map[string]string,
 					{
 						Name: "url", Value: v1beta1.ArrayOrString{
 							Type:      v1beta1.ParamTypeString,
-							StringVal: "https://github.com/buildpacks/samples",
+							StringVal: step.Params[enums.IMAGE_URL],
 						},
 					},
 					{
@@ -538,7 +538,7 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 		}
 
 		inputresourceBindings := []v1alpha1.TaskResourceBinding{}
-		inputresourceBindings= append(inputresourceBindings, v1alpha1.TaskResourceBinding{
+		inputresourceBindings = append(inputresourceBindings, v1alpha1.TaskResourceBinding{
 			PipelineResourceBinding: v1alpha1.PipelineResourceBinding{
 				Name: "docker-source",
 				ResourceRef: &v1alpha1.PipelineResourceRef{
@@ -558,13 +558,13 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 				},
 			})
 		}
-		taskRunResources:=&v1beta1.TaskRunResources{
+		taskRunResources := &v1beta1.TaskRunResources{
 			Inputs:  inputresourceBindings,
 			Outputs: outputResourceBindings,
 		}
 
-		taskrun.Spec.Resources=taskRunResources
-		taskrun.Spec.Params=params
+		taskrun.Spec.Resources = taskRunResources
+		taskrun.Spec.Params = params
 	} else if step.Type == enums.JENKINS_JOB {
 
 		var params []v1alpha1.Param

@@ -325,8 +325,6 @@ func (p *pipelineService) applyIntermediaryStep(step v1.Step) error {
 //applyBuildPackStep applies build step, follows pod lifecycle and the notifies observers
 func (p *pipelineService) applyBuildPackStep(step v1.Step) error {
 	pvc := p.k8s.InitPersistentVolumeClaim(step, p.pipeline.Label, p.pipeline.ProcessId)
-	//yPvc, _ := json.Marshal(&pvc)
-	//print(string(yPvc))
 	_ = p.tekton.DeletePipelineByProcessId(p.pipeline.ProcessId)
 	_ = p.tekton.DeletePipelineRunByProcessId(p.pipeline.ProcessId)
 	err := p.k8s.DeletePersistentVolumeClaimByProcessId(p.pipeline.ProcessId)
@@ -338,16 +336,12 @@ func (p *pipelineService) applyBuildPackStep(step v1.Step) error {
 		return err
 	}
 	pipeline := p.tekton.InitPipeline(step, p.pipeline.Label, p.pipeline.ProcessId)
-	//ypipeline, _ := json.Marshal(&pipeline)
-	//print(string(ypipeline))
 	err = p.tekton.CreatePipeline(pipeline)
 	if err != nil {
 		_ = p.tekton.DeletePipelineByProcessId(p.pipeline.ProcessId)
 		return errors.New("Failed to apply pipeline" + err.Error())
 	}
 	pRun, err := p.tekton.InitPipelineRun(step, p.pipeline.Label, p.pipeline.ProcessId)
-	//ypRun, _ := json.Marshal(&pRun)
-	//print(string(ypRun))
 	if err != nil {
 		return err
 	}
@@ -357,7 +351,7 @@ func (p *pipelineService) applyBuildPackStep(step v1.Step) error {
 		_ = p.tekton.DeletePipelineRunByProcessId(p.pipeline.ProcessId)
 		return errors.New("Failed to apply pipeline run" + err.Error())
 	}
-	p.PostOperationsForBuildPack(step.Name, step.Type, p.pipeline)
+	go p.PostOperationsForBuildPack(step.Name, step.Type, p.pipeline)
 	return nil
 }
 
