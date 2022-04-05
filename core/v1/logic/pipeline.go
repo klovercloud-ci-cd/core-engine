@@ -267,7 +267,7 @@ func (p *pipelineService) applyJenkinsJobStep(step v1.Step) error {
 	processEventData["step"] = step
 	processEventData["status"] = enums.ACTIVE
 	processEventData["type"] = step.Type
-	listener := v1.Subject{Log: "JenkinsJob Step Started", Step: step.Name, StepType: step.Type}
+	listener := v1.Subject{Log: "JenkinsJob Step Started", Pipeline: v1.Pipeline{ProcessId: p.pipeline.ProcessId}}
 	listener.EventData = processEventData
 	go p.notifyAll(listener)
 	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
@@ -291,7 +291,7 @@ func (p *pipelineService) applyIntermediaryStep(step v1.Step) error {
 	processEventData["step"] = step
 	processEventData["status"] = enums.ACTIVE
 	processEventData["type"] = step.Type
-	listener := v1.Subject{Log: "Intermediary Step Started", Step: step.Name, StepType: step.Type}
+	listener := v1.Subject{Log: "Intermediary Step Started", Pipeline: v1.Pipeline{ProcessId: p.pipeline.ProcessId}}
 	listener.EventData = processEventData
 	go p.notifyAll(listener)
 	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
@@ -406,7 +406,7 @@ func (p *pipelineService) applyBuildStep(step v1.Step) error {
 	processEventData["step"] = step
 	processEventData["status"] = enums.ACTIVE
 	processEventData["type"] = step.Type
-	listener := v1.Subject{Log: "Build Step Started", Step: step.Name, StepType: step.Type}
+	listener := v1.Subject{Log: "Build Step Started", Pipeline: v1.Pipeline{ProcessId: p.pipeline.ProcessId}}
 	listener.EventData = processEventData
 	go p.notifyAll(listener)
 	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
