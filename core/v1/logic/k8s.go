@@ -258,7 +258,7 @@ func (k8s *k8sService) WaitAndGetInitializedPods(namespace, processId, step stri
 
 func (k8s k8sService) notifyAll(listener v1.Subject) {
 	for _, observer := range k8s.observerList {
-		go observer.Listen(listener)
+		observer.Listen(listener)
 	}
 }
 
