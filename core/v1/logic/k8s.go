@@ -3,6 +3,7 @@ package logic
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"github.com/klovercloud-ci-cd/core-engine/config"
 	v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1/service"
@@ -100,15 +101,31 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 	processEventData := make(map[string]interface{})
 	processEventData["step"] = step
 	req := k8s.RequestContainerLog(namespace, podName, containerName)
+	var footmark string
+	if strings.HasPrefix(containerName, "step-git-source-docker-source") {
+		footmark = string(enums.GIT_CLONE)
+	} else if strings.HasPrefix(containerName, "step-build-and-push0") {
+		footmark = string(enums.BUILD_AND_PUSH_0)
+	} else if strings.HasPrefix(containerName, "step-custom-stage") {
+		footmark = string(enums.INIT_INTERMEDIARY_JOB)
+	} else if strings.HasPrefix(containerName, "step-build-and-push1") {
+		footmark = string(enums.BUILD_AND_PUSH_1)
+	} else if strings.HasPrefix(containerName, "step-trigger-pipeline") {
+		footmark = string(enums.INIT_JENKINS_JOB)
+	} else {
+		footmark = string(enums.INIT_BUILD_JOB)
+	}
 	readCloser, err := req.Stream(context.Background())
 	for err != nil {
-		listener := v1.Subject{Pipeline: v1.Pipeline{ProcessId: processId}, Log: err.Error(), Step: step}
+		subject := v1.Subject{step, err.Error(), stepType, nil, nil, v1.Pipeline{ProcessId: processId}}
 		if strings.Contains(err.Error(), "image can't be pulled") || strings.Contains(err.Error(), "pods \""+podName+"\" not found") || strings.Contains(err.Error(), "pod \""+podName+"\" is terminated") {
 			if stepType == enums.BUILD {
-				processEventData["status"] = enums.STEP_FAILED
-				processEventData["reason"] = err.Error()
-				listener.EventData = processEventData
-				go k8s.notifyAll(listener)
+				subject.EventData = make(map[string]interface{})
+				subject.EventData["log"] = subject.Log
+				subject.EventData["footmark"] = footmark
+				subject.EventData["status"] = enums.STEP_FAILED
+				subject.EventData["reason"] = "n/a"
+				go k8s.notifyAll(subject)
 			}
 			return
 		}
@@ -119,11 +136,13 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 	for {
 		data, isPrefix, err := reader.ReadLine()
 		if err != nil {
-			listener := v1.Subject{Pipeline: v1.Pipeline{ProcessId: processId}, Log: err.Error(), Step: step}
-			processEventData["reason"] = err.Error()
-			listener.EventData = make(map[string]interface{})
-			listener.EventData = processEventData
-			go k8s.notifyAll(listener)
+			subject := v1.Subject{step, err.Error(), stepType, nil, nil, v1.Pipeline{ProcessId: processId}}
+			subject.EventData = make(map[string]interface{})
+			subject.EventData["log"] = subject.Log
+			subject.EventData["footmark"] = footmark
+			subject.EventData["reason"] = "n/a"
+			subject.EventData["status"] = enums.STEP_FAILED
+			go k8s.notifyAll(subject)
 			return
 		}
 		lines := strings.Split(string(data), "\r")
@@ -139,12 +158,13 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 		for _, line := range lines {
 			log.Println(containerName, podName, "+++++++", line)
 			temp := strings.ToLower(line)
-			processEventData["log"] = temp
-			processEventData["reason"] = "n/a"
-			listener := v1.Subject{Pipeline: v1.Pipeline{ProcessId: processId}, Log: temp, Step: step}
-			listener.EventData = make(map[string]interface{})
-			listener.EventData = processEventData
-			go k8s.notifyAll(listener)
+			subject := v1.Subject{step, temp, stepType, nil, nil, v1.Pipeline{ProcessId: processId}}
+			subject.EventData = make(map[string]interface{})
+			subject.EventData["log"] = subject.Log
+			subject.EventData["footmark"] = footmark
+			subject.EventData["reason"] = "n/a"
+			subject.EventData["status"] = enums.BUILD_PROCESSING
+			go k8s.notifyAll(subject)
 			if (!strings.HasPrefix(temp, "progress") && (!strings.HasSuffix(temp, " mb") || !strings.HasSuffix(temp, " kb"))) && !strings.HasPrefix(temp, "downloading from") {
 
 			}
@@ -225,11 +245,23 @@ func (k8s *k8sService) GetPodListByProcessId(namespace, processId string, option
 	return podList
 }
 
-func (k8s *k8sService) WaitAndGetInitializedPods(namespace, processId, step string) *corev1.PodList {
+func (k8s *k8sService) WaitAndGetInitializedPods(namespace, processId, step string, stepType string) *corev1.PodList {
 	var podList *corev1.PodList
-	listener := v1.Subject{}
+	listener := v1.Subject{
+		Step: step,
+		Log:  "Waiting for pod to be initialized ...",
+	}
 	data := make(map[string]interface{})
+	data["log"] = listener.Log
 	data["step"] = step
+	if stepType == string(enums.BUILD) {
+		data["footmark"] = fmt.Sprint(enums.INIT_BUILD_JOB)
+	} else if stepType == string(enums.INTERMEDIARY) {
+		data["footmark"] = fmt.Sprint(enums.INIT_INTERMEDIARY_JOB)
+	} else {
+		data["footmark"] = fmt.Sprint(enums.INIT_JENKINS_JOB)
+	}
+
 	listener.Pipeline.ProcessId = processId
 	podList = k8s.GetPodListByProcessId(namespace, processId, v1.PodListGetOption{
 		Wait:     true,
@@ -244,9 +276,16 @@ func (k8s *k8sService) WaitAndGetInitializedPods(namespace, processId, step stri
 	podStatus := podList.Items[0].Status.Phase
 	if enums.POD_STATUS(podStatus) == enums.POD_TERMINATING {
 		data["status"] = enums.TERMINATING
+		if stepType == string(enums.BUILD) {
+			data["footmark"] = fmt.Sprint(enums.POST_BUILD_JOB)
+		} else if stepType == string(enums.INTERMEDIARY) {
+			data["footmark"] = fmt.Sprint(enums.INIT_INTERMEDIARY_JOB)
+		} else {
+			data["footmark"] = fmt.Sprint(enums.INIT_JENKINS_JOB)
+		}
 		listener.EventData = data
 		go k8s.notifyAll(listener)
-		return k8s.WaitAndGetInitializedPods(namespace, processId, step)
+		return k8s.WaitAndGetInitializedPods(namespace, processId, step, stepType)
 	}
 	if enums.POD_STATUS(podStatus) == enums.POD_INITIALIZING {
 		data["status"] = enums.INITIALIZING

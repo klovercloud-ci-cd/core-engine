@@ -42,7 +42,7 @@ func (tekton *tektonService) GetPipelineRun(name, id, stepType string, waitUntil
 	}
 	if !pRun.IsDone() && waitUntilPipelineRunIsCompleted == true {
 		var pList *corev1.PodList
-		pList = tekton.K8s.WaitAndGetInitializedPods(config.CiNamespace, id, name)
+		pList = tekton.K8s.WaitAndGetInitializedPods(config.CiNamespace, id, name, stepType)
 		var NewPodList corev1.PodList
 		for _, i := range pList.Items {
 			if _, ok := podListMap[i.Name]; !ok {

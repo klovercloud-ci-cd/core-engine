@@ -2,10 +2,12 @@ package logic
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/klovercloud-ci-cd/core-engine/config"
 	v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1/service"
 	"log"
+	"time"
 )
 
 type eventStoreEventService struct {
@@ -13,10 +15,15 @@ type eventStoreEventService struct {
 }
 
 func (e eventStoreEventService) Listen(subject v1.Subject) {
+	if subject.Log == "" || subject.Step == "" {
+		return
+	}
 	data := v1.LogEvent{
 		ProcessId: subject.Pipeline.ProcessId,
 		Log:       subject.Log,
 		Step:      subject.Step,
+		Footmark:  fmt.Sprint(subject.EventData["footmark"]),
+		CreatedAt: time.Now().UTC(),
 	}
 	header := make(map[string]string)
 	header["Content-Type"] = "application/json"

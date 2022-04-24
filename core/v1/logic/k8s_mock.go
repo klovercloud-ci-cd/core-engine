@@ -47,7 +47,7 @@ func (k8s mockK8sService) GetPodListByProcessId(namespace, processId string, opt
 	panic("implement me")
 }
 
-func (k8s mockK8sService) WaitAndGetInitializedPods(namespace, processId, step string) *corev1.PodList {
+func (k8s mockK8sService) WaitAndGetInitializedPods(namespace, processId, step, stepType string) *corev1.PodList {
 	panic("implement me")
 }
 
