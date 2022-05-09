@@ -39,7 +39,7 @@ func (k8s mockK8sService) GetContainerLog(namespace, podName, containerName stri
 	panic("implement me")
 }
 
-func (k8s mockK8sService) FollowContainerLifeCycle(namespace, podName, containerName, step, processId string, stepType enums.STEP_TYPE) {
+func (k8s mockK8sService) FollowContainerLifeCycle(namespace, podName, containerName, step, processId string, stepType enums.STEP_TYPE, claim int) {
 	panic("implement me")
 }
 
@@ -47,7 +47,7 @@ func (k8s mockK8sService) GetPodListByProcessId(namespace, processId string, opt
 	panic("implement me")
 }
 
-func (k8s mockK8sService) WaitAndGetInitializedPods(namespace, processId, step, stepType string) *corev1.PodList {
+func (k8s mockK8sService) WaitAndGetInitializedPods(namespace, processId, step, stepType string, claim int) *corev1.PodList {
 	panic("implement me")
 }
 

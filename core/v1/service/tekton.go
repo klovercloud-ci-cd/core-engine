@@ -22,7 +22,7 @@ type Tekton interface {
 	DeleteTaskRunByProcessId(processId string) error
 	PurgeByProcessId(processId string)
 	GetTaskRun(name string, waitUntilTaskRunIsCompleted bool) (*v1alpha1.TaskRun, error)
-	GetPipelineRun(name, id, stepType string, waitUntilPipelineRunIsCompleted bool, podList corev1.PodList) (*v1beta1.PipelineRun, error)
+	GetPipelineRun(name, id, stepType string, waitUntilPipelineRunIsCompleted bool, podList corev1.PodList, claim int) (*v1beta1.PipelineRun, error)
 	CreatePipeline(pipeline v1beta1.Pipeline) error
 	InitPipeline(step v1.Step, label map[string]string, processId string) v1beta1.Pipeline
 	CreatePipelineRun(pipelineRun v1beta1.PipelineRun) error

@@ -187,15 +187,6 @@ func mapCloneStr(src map[string]string) map[string]string {
 }
 
 func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
-	//subject := v1.Subject{
-	//	Step:         body.Step,
-	//	Log:          body.Log,
-	//	StepType:     body.StepType,
-	//	EventData:    mapClone(body.EventData),
-	//	ProcessLabel: mapCloneStr(body.ProcessLabel),
-	//	Pipeline:     body.Pipeline,
-	//}
-
 	if subject.EventData["status"] == nil {
 		return
 	}
@@ -264,7 +255,7 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 		}
 	}
 	type ProcessLifeCycleEventList struct {
-		Events []v1.ProcessLifeCycleEvent `bson:"events" json :"events"`
+		Events []v1.ProcessLifeCycleEvent `bson:"events" json:"events"`
 	}
 	if len(data) > 0 {
 		events := ProcessLifeCycleEventList{data}
