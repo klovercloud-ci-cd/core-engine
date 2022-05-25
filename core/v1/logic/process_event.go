@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"fmt"
 	v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1/repository"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1/service"
@@ -15,6 +16,7 @@ func (p processEventService) Listen(listener v1.Subject) {
 		p.repo.Store(v1.ProcessEvent{
 			ProcessId: listener.Pipeline.ProcessId,
 			Data:      listener.EventData,
+			CompanyId: fmt.Sprint(listener.EventData["company_id"]),
 		})
 	}
 }
@@ -23,12 +25,12 @@ func (p processEventService) Store(data v1.ProcessEvent) {
 	p.repo.Store(data)
 }
 
-func (p processEventService) GetByProcessId(processId string) map[string]interface{} {
-	return p.repo.GetByProcessId(processId)
+func (p processEventService) GetByCompanyId(companyId string) map[string]interface{} {
+	return p.repo.GetByCompanyId(companyId)
 }
 
-func (p processEventService) DequeueByProcessId(processId string) map[string]interface{} {
-	return p.repo.DequeueByProcessId(processId)
+func (p processEventService) DequeueByCompanyId(companyId string) map[string]interface{} {
+	return p.repo.DequeueByCompanyId(companyId)
 }
 
 // NewProcessEventService returns ProcessEvent type service

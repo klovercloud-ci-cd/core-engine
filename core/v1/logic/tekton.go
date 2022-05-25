@@ -26,7 +26,7 @@ type tektonService struct {
 	K8s           service.K8s
 }
 
-func (tekton *tektonService) GetPipelineRun(name, id, stepType string, waitUntilPipelineRunIsCompleted bool, podList corev1.PodList, claim int) (*v1beta1.PipelineRun, error) {
+func (tekton *tektonService) GetPipelineRun(companyId,name, id, stepType string, waitUntilPipelineRunIsCompleted bool, podList corev1.PodList, claim int) (*v1beta1.PipelineRun, error) {
 	pRun, pipelineRunGetingErr := tekton.Tcs.TektonV1beta1().PipelineRuns(config.CiNamespace).Get(context.Background(), name+"-"+id, metaV1.GetOptions{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       "PipelineRun",
@@ -42,7 +42,7 @@ func (tekton *tektonService) GetPipelineRun(name, id, stepType string, waitUntil
 	}
 	if !pRun.IsDone() && waitUntilPipelineRunIsCompleted == true {
 		var pList *corev1.PodList
-		pList = tekton.K8s.WaitAndGetInitializedPods(config.CiNamespace, id, name, stepType, claim)
+		pList = tekton.K8s.WaitAndGetInitializedPods(companyId,config.CiNamespace, id, name, stepType, claim)
 		var NewPodList corev1.PodList
 		for _, i := range pList.Items {
 			if _, ok := podListMap[i.Name]; !ok {
@@ -52,12 +52,12 @@ func (tekton *tektonService) GetPipelineRun(name, id, stepType string, waitUntil
 		if len(NewPodList.Items) > 0 {
 			for _, each := range NewPodList.Items {
 				for index := range each.Spec.Containers {
-					go tekton.K8s.FollowContainerLifeCycle(each.Namespace, each.Name, each.Spec.Containers[index].Name, name, id, enums.STEP_TYPE(stepType), claim)
+					go tekton.K8s.FollowContainerLifeCycle(companyId,each.Namespace, each.Name, each.Spec.Containers[index].Name, name, id, enums.STEP_TYPE(stepType), claim)
 				}
 			}
 
 		}
-		return tekton.GetPipelineRun(name, id, stepType, waitUntilPipelineRunIsCompleted, podList, claim)
+		return tekton.GetPipelineRun(companyId,name, id, stepType, waitUntilPipelineRunIsCompleted, podList, claim)
 	}
 	return pRun, nil
 }

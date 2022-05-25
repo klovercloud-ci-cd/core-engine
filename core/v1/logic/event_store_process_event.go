@@ -2,6 +2,7 @@ package logic
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/klovercloud-ci-cd/core-engine/config"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1/service"
@@ -17,6 +18,7 @@ func (e eventStoreProcessEventService) Listen(subject v1.Subject) {
 		event := v1.ProcessEvent{
 			ProcessId: subject.Pipeline.ProcessId,
 			Data:      subject.EventData,
+			CompanyId: fmt.Sprint(subject.EventData["company_id"]),
 		}
 		header := make(map[string]string)
 		header["Content-Type"] = "application/json"

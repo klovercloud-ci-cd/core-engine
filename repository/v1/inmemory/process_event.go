@@ -15,17 +15,17 @@ func (p processEventRepository) Store(data v1.ProcessEvent) {
 	if ProcessEventStore == nil {
 		ProcessEventStore = map[string]*list.List{}
 	}
-	_, ok := ProcessEventStore[data.ProcessId]
+	_, ok := ProcessEventStore[data.CompanyId]
 	if !ok {
-		ProcessEventStore[data.ProcessId] = list.New()
+		ProcessEventStore[data.CompanyId] = list.New()
 	}
-	ProcessEventStore[data.ProcessId].PushBack(data.Data)
+	ProcessEventStore[data.CompanyId].PushBack(data.Data)
 }
 
-func (p processEventRepository) GetByProcessId(processId string) map[string]interface{} {
-	if _, ok := ProcessEventStore[processId]; ok {
-		e := ProcessEventStore[processId]
-		if ProcessEventStore[processId].Front() != nil {
+func (p processEventRepository) GetByCompanyId(companyId string) map[string]interface{} {
+	if _, ok := ProcessEventStore[companyId]; ok {
+		e := ProcessEventStore[companyId]
+		if ProcessEventStore[companyId].Front() != nil {
 			m := make(map[string]interface{})
 			t := &e.Front().Value
 			jsonString, err := json.Marshal(t)
@@ -43,10 +43,10 @@ func (p processEventRepository) GetByProcessId(processId string) map[string]inte
 	return nil
 }
 
-func (p processEventRepository) DequeueByProcessId(processId string) map[string]interface{} {
-	if _, ok := ProcessEventStore[processId]; ok {
-		e := ProcessEventStore[processId]
-		if ProcessEventStore[processId].Front() != nil {
+func (p processEventRepository) DequeueByCompanyId(companyId string) map[string]interface{} {
+	if _, ok := ProcessEventStore[companyId]; ok {
+		e := ProcessEventStore[companyId]
+		if ProcessEventStore[companyId].Front() != nil {
 			m := make(map[string]interface{})
 			t := e.Remove(e.Front())
 			jsonString, MarshalErr := json.Marshal(&t)

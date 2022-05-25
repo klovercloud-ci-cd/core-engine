@@ -97,9 +97,7 @@ func (k8s k8sService) GetContainerLog(namespace, podName, containerName string, 
 	return readCloser, nil
 }
 
-func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName, step string, processId string, stepType enums.STEP_TYPE, claim int) {
-	processEventData := make(map[string]interface{})
-	processEventData["step"] = step
+func (k8s k8sService) FollowContainerLifeCycle(companyId,namespace, podName, containerName, step string, processId string, stepType enums.STEP_TYPE, claim int) {
 	req := k8s.RequestContainerLog(namespace, podName, containerName)
 	var footmark string
 	if strings.HasPrefix(containerName, "step-git-source-docker-source") {
@@ -124,6 +122,8 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 				subject.EventData["log"] = subject.Log
 				subject.EventData["footmark"] = footmark
 				subject.EventData["status"] = enums.STEP_FAILED
+				subject.EventData["step"] = step
+				subject.EventData["company_id"] = companyId
 				subject.EventData["reason"] = "n/a"
 				subject.EventData["claim"] = claim
 				go k8s.notifyAll(subject)
@@ -143,6 +143,8 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 			subject.EventData["footmark"] = footmark
 			subject.EventData["reason"] = "n/a"
 			subject.EventData["status"] = enums.STEP_FAILED
+			subject.EventData["step"] = step
+			subject.EventData["company_id"] = companyId
 			subject.EventData["claim"] = claim
 			go k8s.notifyAll(subject)
 			return
@@ -167,6 +169,8 @@ func (k8s k8sService) FollowContainerLifeCycle(namespace, podName, containerName
 			subject.EventData["reason"] = "n/a"
 			subject.EventData["status"] = enums.BUILD_PROCESSING
 			subject.EventData["claim"] = claim
+			subject.EventData["step"] = step
+			subject.EventData["company_id"] = companyId
 			go k8s.notifyAll(subject)
 			if (!strings.HasPrefix(temp, "progress") && (!strings.HasSuffix(temp, " mb") || !strings.HasSuffix(temp, " kb"))) && !strings.HasPrefix(temp, "downloading from") {
 
@@ -248,13 +252,14 @@ func (k8s *k8sService) GetPodListByProcessId(namespace, processId string, option
 	return podList
 }
 
-func (k8s *k8sService) WaitAndGetInitializedPods(namespace, processId, step string, stepType string, claim int) *corev1.PodList {
+func (k8s *k8sService) WaitAndGetInitializedPods(companyId,namespace, processId, step string, stepType string, claim int) *corev1.PodList {
 	var podList *corev1.PodList
 	listener := v1.Subject{
 		Step: step,
 		Log:  "Waiting for pod to be initialized ...",
 	}
 	data := make(map[string]interface{})
+	data["company_id"] = companyId
 	data["log"] = listener.Log
 	data["step"] = step
 	data["claim"] = claim
@@ -289,11 +294,17 @@ func (k8s *k8sService) WaitAndGetInitializedPods(namespace, processId, step stri
 		}
 		listener.EventData = data
 		go k8s.notifyAll(listener)
-		return k8s.WaitAndGetInitializedPods(namespace, processId, step, stepType, claim)
+		return k8s.WaitAndGetInitializedPods(companyId,namespace, processId, step, stepType, claim)
 	}
 	if enums.POD_STATUS(podStatus) == enums.POD_INITIALIZING {
 		data["status"] = enums.INITIALIZING
+		data["company_id"] = companyId
+		data["log"] = listener.Log
+		data["step"] = step
+		data["claim"] = claim
 		listener.EventData = data
+		listener.Step=step
+		listener.StepType= enums.STEP_TYPE(stepType)
 		go k8s.notifyAll(listener)
 	}
 	return podList
