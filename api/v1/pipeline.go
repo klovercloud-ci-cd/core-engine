@@ -55,7 +55,7 @@ func (p pipelineApi) GetLogs(context echo.Context) error {
 }
 
 func (p pipelineApi) GetEvents(context echo.Context) error {
-	processId := context.QueryParam("companyId")
+	processId := context.QueryParam("company_id")
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(context.Response(), context.Request(), nil)
 	if err != nil {
