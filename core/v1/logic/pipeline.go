@@ -41,6 +41,7 @@ func (p *pipelineService) ApplyBuildCancellationSteps() {
 //ApplyJenkinsJobSteps pulls jenkins steps and then applies.
 func (p *pipelineService) ApplyJenkinsJobSteps() {
 	events := p.processLifeCycleEvent.PullJenkinsJobStepsEvents()
+	config.CurrentConcurrentJenkinsJobs= config.CurrentConcurrentJenkinsJobs+int64(len(events))
 	for _, each := range events {
 		p.pipeline = *each.Pipeline
 		for i, step := range each.Pipeline.Steps {
@@ -54,6 +55,7 @@ func (p *pipelineService) ApplyJenkinsJobSteps() {
 //ApplyIntermediarySteps pulls intermediary steps and then applies.
 func (p *pipelineService) ApplyIntermediarySteps() {
 	events := p.processLifeCycleEvent.PullIntermediaryStepsEvents()
+	config.CurrentConcurrentIntermediaryJobs= config.CurrentConcurrentIntermediaryJobs+int64(len(events))
 	for _, each := range events {
 		p.pipeline = *each.Pipeline
 		for i, step := range each.Pipeline.Steps {
@@ -67,6 +69,7 @@ func (p *pipelineService) ApplyIntermediarySteps() {
 //ApplyBuildSteps pulls build steps and then applies.
 func (p *pipelineService) ApplyBuildSteps() {
 	events := p.processLifeCycleEvent.PullBuildEvents()
+	config.CurrentConcurrentBuildJobs= config.CurrentConcurrentBuildJobs+int64(len(events))
 	for _, each := range events {
 		p.pipeline = *each.Pipeline
 		for i, step := range each.Pipeline.Steps {

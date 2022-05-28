@@ -66,6 +66,15 @@ var EnableOpenTracing bool
 // RunMode refers to run mode.
 var RunMode string
 
+// CurrentConcurrentBuildJobs running build jobs count.
+var CurrentConcurrentBuildJobs int64
+
+// CurrentConcurrentIntermediaryJobs running intermediary jobs count.
+var CurrentConcurrentIntermediaryJobs int64
+
+// CurrentConcurrentJenkinsJobs running jenkins jobs count.
+var CurrentConcurrentJenkinsJobs int64
+
 // InitEnvironmentVariables initializes environment variables
 func InitEnvironmentVariables() {
 	RunMode = os.Getenv("RUN_MODE")
@@ -114,6 +123,9 @@ func InitEnvironmentVariables() {
 		AllowedConcurrentBuild = 4
 	}
 
+	CurrentConcurrentBuildJobs=0
+	CurrentConcurrentIntermediaryJobs=0
+	CurrentConcurrentJenkinsJobs=0
 	PublicKey = os.Getenv("PUBLIC_KEY")
 
 	if os.Getenv("ENABLE_AUTHENTICATION") == "" {

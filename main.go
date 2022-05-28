@@ -32,24 +32,24 @@ func main() {
 
 // ApplyBuildSteps routine that pulls build steps in every interval.
 func ApplyBuildSteps() {
-	pipelineServie := dependency.GetV1PipelineService()
-	pipelineServie.ApplyBuildSteps()
+	pipelineService := dependency.GetV1PipelineService()
+	pipelineService.ApplyBuildSteps()
 	time.Sleep(time.Second * 5)
 	ApplyBuildSteps()
 }
 
 // ApplyIntermediarySteps routine that pulls intermediary steps in every interval.
 func ApplyIntermediarySteps() {
-	pipelineServie := dependency.GetV1PipelineService()
-	pipelineServie.ApplyIntermediarySteps()
+	pipelineService := dependency.GetV1PipelineService()
+	pipelineService.ApplyIntermediarySteps()
 	time.Sleep(time.Second * 5)
 	ApplyIntermediarySteps()
 }
 
 // ApplyJenkinsJobSteps routine that pulls intermediary steps in every interval.
 func ApplyJenkinsJobSteps() {
-	pipelineServie := dependency.GetV1PipelineService()
-	pipelineServie.ApplyJenkinsJobSteps()
+	pipelineService := dependency.GetV1PipelineService()
+	pipelineService.ApplyJenkinsJobSteps()
 	time.Sleep(time.Second * 5)
 	ApplyJenkinsJobSteps()
 }

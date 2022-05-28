@@ -22,7 +22,15 @@ type eventStoreProcessLifeCycleService struct {
 }
 
 func (e eventStoreProcessLifeCycleService) PullJenkinsJobStepsEvents() []v1.ProcessLifeCycleEvent {
-	url := config.EventStoreUrl + "/process_life_cycle_events?count=" + strconv.FormatInt(config.AllowedConcurrentBuild, 10) + "&step_type=" + string(enums.JENKINS_JOB)
+	pullSize:=config.AllowedConcurrentBuild-config.CurrentConcurrentJenkinsJobs
+	if config.CurrentConcurrentJenkinsJobs<0{
+		config.CurrentConcurrentJenkinsJobs=0
+	}
+	if pullSize<1{
+		log.Println("Pull size is loaded with intermediary jobs. Skipping new pulls... ")
+		return nil
+	}
+	url := config.EventStoreUrl + "/process_life_cycle_events?count=" + strconv.FormatInt(pullSize, 10) + "&step_type=" + string(enums.JENKINS_JOB)
 	header := make(map[string]string)
 	header["Authorization"] = "token " + config.Token
 	header["Accept"] = "application/json"
@@ -57,7 +65,15 @@ func (e eventStoreProcessLifeCycleService) PullJenkinsJobStepsEvents() []v1.Proc
 }
 
 func (e eventStoreProcessLifeCycleService) PullIntermediaryStepsEvents() []v1.ProcessLifeCycleEvent {
-	url := config.EventStoreUrl + "/process_life_cycle_events?count=" + strconv.FormatInt(config.AllowedConcurrentBuild, 10) + "&step_type=" + string(enums.INTERMEDIARY)
+	pullSize:=config.AllowedConcurrentBuild-config.CurrentConcurrentIntermediaryJobs
+	if config.CurrentConcurrentIntermediaryJobs<0{
+		config.CurrentConcurrentIntermediaryJobs=0
+	}
+	if pullSize<1{
+		log.Println("Pull size is loaded with intermediary jobs. Skipping new pulls... ")
+		return nil
+	}
+	url := config.EventStoreUrl + "/process_life_cycle_events?count=" + strconv.FormatInt(pullSize, 10) + "&step_type=" + string(enums.INTERMEDIARY)
 	header := make(map[string]string)
 	header["Authorization"] = "token " + config.Token
 	header["Accept"] = "application/json"
@@ -127,7 +143,15 @@ func (e eventStoreProcessLifeCycleService) PullBuildCancellingEvents() []v1.Proc
 }
 
 func (e eventStoreProcessLifeCycleService) PullBuildEvents() []v1.ProcessLifeCycleEvent {
-	url := config.EventStoreUrl + "/process_life_cycle_events?count=" + strconv.FormatInt(config.AllowedConcurrentBuild, 10) + "&step_type=" + string(enums.BUILD)
+	pullSize:=config.AllowedConcurrentBuild-config.CurrentConcurrentBuildJobs
+	if config.CurrentConcurrentBuildJobs<0{
+		config.CurrentConcurrentBuildJobs=0
+	}
+	if pullSize<1{
+		log.Println("Pull size is loaded with build jobs. Skipping new pulls... ")
+		return nil
+	}
+	url := config.EventStoreUrl + "/process_life_cycle_events?count=" + strconv.FormatInt(pullSize, 10) + "&step_type=" + string(enums.BUILD)
 	header := make(map[string]string)
 	header["Authorization"] = "token " + config.Token
 	header["Accept"] = "application/json"
@@ -208,6 +232,13 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 		}
 		if subject.EventData["status"] == string(enums.STEP_FAILED) || subject.EventData["status"] == string(enums.ERROR) || subject.EventData["status"] == string(enums.TERMINATING) {
 			processLifeCycleEvent.Status = enums.FAILED
+			if subject.StepType == enums.BUILD {
+				config.CurrentConcurrentBuildJobs = config.CurrentConcurrentBuildJobs - 1
+			} else if subject.StepType == enums.INTERMEDIARY {
+				config.CurrentConcurrentIntermediaryJobs = config.CurrentConcurrentIntermediaryJobs - 1
+			} else if subject.StepType == enums.JENKINS_JOB {
+				config.CurrentConcurrentJenkinsJobs = config.CurrentConcurrentJenkinsJobs - 1
+			}
 			data = append(data, processLifeCycleEvent)
 		} else if subject.EventData["status"] == string(enums.SUCCESSFUL) {
 			processLifeCycleEvent.Status = enums.COMPLETED
@@ -219,7 +250,13 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 					Step:      each,
 				})
 			}
-
+			if subject.StepType == enums.BUILD {
+				config.CurrentConcurrentBuildJobs = config.CurrentConcurrentBuildJobs - 1
+			} else if subject.StepType == enums.INTERMEDIARY {
+				config.CurrentConcurrentIntermediaryJobs = config.CurrentConcurrentIntermediaryJobs - 1
+			} else if subject.StepType == enums.JENKINS_JOB {
+				config.CurrentConcurrentJenkinsJobs = config.CurrentConcurrentJenkinsJobs - 1
+			}
 		}
 
 	} else {
