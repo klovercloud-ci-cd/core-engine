@@ -34,7 +34,7 @@ func main() {
 func ApplyBuildSteps() {
 	pipelineService := dependency.GetV1PipelineService()
 	pipelineService.ApplyBuildSteps()
-	time.Sleep(time.Millisecond)
+	time.Sleep(time.Second)
 	ApplyBuildSteps()
 }
 
@@ -42,7 +42,7 @@ func ApplyBuildSteps() {
 func ApplyIntermediarySteps() {
 	pipelineService := dependency.GetV1PipelineService()
 	pipelineService.ApplyIntermediarySteps()
-	time.Sleep(time.Millisecond)
+	time.Sleep(time.Second)
 	ApplyIntermediarySteps()
 }
 
@@ -50,7 +50,7 @@ func ApplyIntermediarySteps() {
 func ApplyJenkinsJobSteps() {
 	pipelineService := dependency.GetV1PipelineService()
 	pipelineService.ApplyJenkinsJobSteps()
-	time.Sleep(time.Millisecond)
+	time.Sleep(time.Second)
 	ApplyJenkinsJobSteps()
 }
 
@@ -58,6 +58,6 @@ func ApplyJenkinsJobSteps() {
 func ApplyBuildCancellationSteps() {
 	pipelineService := dependency.GetV1PipelineService()
 	pipelineService.ApplyBuildSteps()
-	time.Sleep(time.Millisecond)
+	time.Sleep(time.Second)
 	ApplyBuildSteps()
 }
