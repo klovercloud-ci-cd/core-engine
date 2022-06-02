@@ -12,14 +12,18 @@
   \____|  \___/  |_| \_\ |_____|         |_____| |_| \_|  \____| |___| |_| \_| |_____|
                                                                                       
 ```
+## Responsibility
 
-Primary Responsibility of this project is building docker image and pushing to the registry. Run on any kubernetes.
+- Building Image from source code
+- Pushing Image to registry
+- Running container with provided args, envs
+- Triggering Jenkins jobs
 
 ## Tutorial
 
-| Version   | tutorial       | Kubernetes api | Kubernetes client-go | kubernetes apimachinery   | Tektoncd
+| Version  | | Kubernetes api | Kubernetes client-go | kubernetes apimachinery   | Tektoncd
 |--------------------------|------------|----------------|----------------------|---------------------------|----------|
-| v1 | [tutorial-v1.0.0](markdownfiles/tutorial-v1.0.0.md)   | 1.12.9            | 1.12.9          | 1.12.9                      |  v1aplha1 |
+| 0.0.1      | |     1.22.2           | v1.5.2          | v0.23.4                     |  0.34.x |
 
 ## Want to contribute
 
