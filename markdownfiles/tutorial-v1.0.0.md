@@ -193,7 +193,8 @@ Responsibility: Apply pipeline
 }
 
 ```
-User can pass ```command``` and ```command_args``` as comma (,) separated array.  
+
+User can pass ```command``` and ```command_args``` as comma (,) separated array.
 
 ##### Trigger Jenkins Job
 
@@ -250,9 +251,11 @@ stringData:
 ```
 
 To create get crumb run the following command,
+
 ```
 $ wget -q --auth-no-challenge --user username --password password --output-document - 'http://${Jenkins_URL}/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)'
 ```
+
 It will return a value like, ```Jenkins-Crumb:24343r4343544f454fdft454```. Use this as crumb.
 
 
@@ -264,7 +267,6 @@ It will return a value like, ```Jenkins-Crumb:24343r4343544f454fdft454```. Use t
   yaml in ```descriptors```
 
 ---
-
 
 ## API 2
 

@@ -21,7 +21,7 @@ type processLifeCycleRepository struct {
 	timeout time.Duration
 }
 
-func (p processLifeCycleRepository) PullCancellingStepsByProcessStatusAndStepType( stepType string) []v1.ProcessLifeCycleEvent {
+func (p processLifeCycleRepository) PullCancellingStepsByProcessStatusAndStepType(stepType string) []v1.ProcessLifeCycleEvent {
 	var data []v1.ProcessLifeCycleEvent
 	query := bson.M{
 		"$and": []bson.M{
@@ -52,7 +52,7 @@ func (p processLifeCycleRepository) PullCancellingStepsByProcessStatusAndStepTyp
 func (p processLifeCycleRepository) PullNonInitializedAndAutoTriggerEnabledEventsByStepType(count int64, stepType string) []v1.ProcessLifeCycleEvent {
 	var data []v1.ProcessLifeCycleEvent
 	var query bson.M
-	if stepType==string(enums.BUILD){
+	if stepType == string(enums.BUILD) {
 		query = bson.M{
 			"$and": []bson.M{
 				{"status": enums.NON_INITIALIZED},
@@ -60,7 +60,7 @@ func (p processLifeCycleRepository) PullNonInitializedAndAutoTriggerEnabledEvent
 				{"step_type": stepType},
 			},
 		}
-	}else{
+	} else {
 		query = bson.M{
 			"$and": []bson.M{
 				{"status": enums.PAUSED},
@@ -69,7 +69,6 @@ func (p processLifeCycleRepository) PullNonInitializedAndAutoTriggerEnabledEvent
 			},
 		}
 	}
-
 
 	coll := p.manager.Db.Collection(ProcessLifeCycleCollection)
 	result, err := coll.Find(p.manager.Ctx, query, &options.FindOptions{

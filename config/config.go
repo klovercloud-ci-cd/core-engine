@@ -123,9 +123,9 @@ func InitEnvironmentVariables() {
 		AllowedConcurrentBuild = 4
 	}
 
-	CurrentConcurrentBuildJobs=0
-	CurrentConcurrentIntermediaryJobs=0
-	CurrentConcurrentJenkinsJobs=0
+	CurrentConcurrentBuildJobs = 0
+	CurrentConcurrentIntermediaryJobs = 0
+	CurrentConcurrentJenkinsJobs = 0
 	PublicKey = os.Getenv("PUBLIC_KEY")
 
 	if os.Getenv("ENABLE_AUTHENTICATION") == "" {
@@ -139,9 +139,9 @@ func InitEnvironmentVariables() {
 	}
 	Token = os.Getenv("TOKEN")
 
-	if os.Getenv("ENABLE_OPENTRACING")==""{
-		EnableOpenTracing=false
-	}else{
+	if os.Getenv("ENABLE_OPENTRACING") == "" {
+		EnableOpenTracing = false
+	} else {
 		if strings.ToLower(os.Getenv("ENABLE_OPENTRACING")) == "true" {
 			EnableOpenTracing = true
 		} else {

@@ -35,7 +35,7 @@ spec:
     - name: JOB_PARAMS
       type: array
       description: Extra arguments to append as a part of CURL request
-      default: [""]
+      default: [ "" ]
     # - name: FILE_PATH
     #   type: array
     #   description: Mount file to send with

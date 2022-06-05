@@ -39,12 +39,12 @@ func GetKubeConfig() *rest.Config {
 }
 
 // GetClientSet returns k8s clientSets
-func GetClientSet() (*versioned.Clientset,*versionedResource.Clientset, *kubernetes.Clientset,*dynamic.Interface) {
+func GetClientSet() (*versioned.Clientset, *versionedResource.Clientset, *kubernetes.Clientset, *dynamic.Interface) {
 	once.Do(func() {
 		config = GetKubeConfig()
 	})
 	cs, vcsErr := versioned.NewForConfig(config)
-	vrcs,vrcsErr:=versionedResource.NewForConfig(config)
+	vrcs, vrcsErr := versionedResource.NewForConfig(config)
 	kcs, kcsErr := kubernetes.NewForConfig(config)
 	if vcsErr != nil {
 		panic(vcsErr)
@@ -52,12 +52,12 @@ func GetClientSet() (*versioned.Clientset,*versionedResource.Clientset, *kuberne
 	if kcsErr != nil {
 		panic(kcsErr)
 	}
-	if vrcsErr!=nil{
+	if vrcsErr != nil {
 		panic(vrcsErr)
 	}
 	dynamicClient, err := dynamic.NewForConfig(config)
 	if err != nil {
 		panic(err)
 	}
-	return cs,vrcs, kcs,&dynamicClient
+	return cs, vrcs, kcs, &dynamicClient
 }

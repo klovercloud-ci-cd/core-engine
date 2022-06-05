@@ -15,8 +15,6 @@ type processLifeCycleEventService struct {
 	repo repository.ProcessLifeCycleEventRepository
 }
 
-
-
 func (p processLifeCycleEventService) PullBuildCancellingEvents() []v1.ProcessLifeCycleEvent {
 	return p.repo.PullCancellingStepsByProcessStatusAndStepType(string(enums.BUILD))
 }

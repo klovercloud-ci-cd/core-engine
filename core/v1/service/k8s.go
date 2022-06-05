@@ -13,8 +13,8 @@ type K8s interface {
 	GetSecret(name, namespace string) (corev1.Secret, error)
 	GetConfigMap(name, namespace string) (corev1.ConfigMap, error)
 	GetPodListByProcessId(namespace, processId string, option v1.PodListGetOption) *corev1.PodList
-	WaitAndGetInitializedPods(companyId,namespace, processId, step string, stepType string, claim int) *corev1.PodList
-	FollowContainerLifeCycle(companyId,namespace, podName, containerName, step, processId string, stepType enums.STEP_TYPE, claim int)
+	WaitAndGetInitializedPods(companyId, namespace, processId, step string, stepType string, claim int) *corev1.PodList
+	FollowContainerLifeCycle(companyId, namespace, podName, containerName, step, processId string, stepType enums.STEP_TYPE, claim int)
 	GetContainerLog(namespace, podName, containerName string, taskRunLabel map[string]string) (io.ReadCloser, error)
 	RequestContainerLog(namespace string, podName string, containerName string) *rest.Request
 	CreatePersistentVolumeClaim(source corev1.PersistentVolumeClaim) error

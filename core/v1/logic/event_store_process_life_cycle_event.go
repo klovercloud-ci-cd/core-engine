@@ -22,11 +22,11 @@ type eventStoreProcessLifeCycleService struct {
 }
 
 func (e eventStoreProcessLifeCycleService) PullJenkinsJobStepsEvents() []v1.ProcessLifeCycleEvent {
-	pullSize:=config.AllowedConcurrentBuild-config.CurrentConcurrentJenkinsJobs
-	if config.CurrentConcurrentJenkinsJobs<0{
-		config.CurrentConcurrentJenkinsJobs=0
+	pullSize := config.AllowedConcurrentBuild - config.CurrentConcurrentJenkinsJobs
+	if config.CurrentConcurrentJenkinsJobs < 0 {
+		config.CurrentConcurrentJenkinsJobs = 0
 	}
-	if pullSize<1{
+	if pullSize < 1 {
 		log.Println("Pull size is loaded with intermediary jobs. Skipping new pulls... ")
 		return nil
 	}
@@ -65,11 +65,11 @@ func (e eventStoreProcessLifeCycleService) PullJenkinsJobStepsEvents() []v1.Proc
 }
 
 func (e eventStoreProcessLifeCycleService) PullIntermediaryStepsEvents() []v1.ProcessLifeCycleEvent {
-	pullSize:=config.AllowedConcurrentBuild-config.CurrentConcurrentIntermediaryJobs
-	if config.CurrentConcurrentIntermediaryJobs<0{
-		config.CurrentConcurrentIntermediaryJobs=0
+	pullSize := config.AllowedConcurrentBuild - config.CurrentConcurrentIntermediaryJobs
+	if config.CurrentConcurrentIntermediaryJobs < 0 {
+		config.CurrentConcurrentIntermediaryJobs = 0
 	}
-	if pullSize<1{
+	if pullSize < 1 {
 		log.Println("Pull size is loaded with intermediary jobs. Skipping new pulls... ")
 		return nil
 	}
@@ -143,11 +143,11 @@ func (e eventStoreProcessLifeCycleService) PullBuildCancellingEvents() []v1.Proc
 }
 
 func (e eventStoreProcessLifeCycleService) PullBuildEvents() []v1.ProcessLifeCycleEvent {
-	pullSize:=config.AllowedConcurrentBuild-config.CurrentConcurrentBuildJobs
-	if config.CurrentConcurrentBuildJobs<0{
-		config.CurrentConcurrentBuildJobs=0
+	pullSize := config.AllowedConcurrentBuild - config.CurrentConcurrentBuildJobs
+	if config.CurrentConcurrentBuildJobs < 0 {
+		config.CurrentConcurrentBuildJobs = 0
 	}
-	if pullSize<1{
+	if pullSize < 1 {
 		log.Println("Pull size is loaded with build jobs. Skipping new pulls... ")
 		return nil
 	}

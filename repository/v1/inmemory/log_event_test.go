@@ -88,9 +88,9 @@ func Test_Store(t *testing.T) {
 		ProcessId string
 	}
 	data := []TestData{
-		{Data: v1.LogEvent{"01", "test", "BUILD", string(enums.INITIALIZING), time.Time{}.UTC(),0}, Expected: 51, ProcessId: "01"},
-		{Data: v1.LogEvent{"01", "test", "BUILD", string(enums.BUILD_PROCESSING), time.Time{}.UTC(),0}, Expected: 52, ProcessId: "01"},
-		{Data: v1.LogEvent{"02", "test", "BUILD", string(enums.BUILD_PROCESSING), time.Time{}.UTC(),0}, Expected: 51, ProcessId: "02"},
+		{Data: v1.LogEvent{"01", "test", "BUILD", string(enums.INITIALIZING), time.Time{}.UTC(), 0}, Expected: 51, ProcessId: "01"},
+		{Data: v1.LogEvent{"01", "test", "BUILD", string(enums.BUILD_PROCESSING), time.Time{}.UTC(), 0}, Expected: 52, ProcessId: "01"},
+		{Data: v1.LogEvent{"02", "test", "BUILD", string(enums.BUILD_PROCESSING), time.Time{}.UTC(), 0}, Expected: 51, ProcessId: "02"},
 	}
 	repo := NewLogEventRepository()
 	for i, each := range data {

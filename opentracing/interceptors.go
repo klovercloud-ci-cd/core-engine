@@ -13,4 +13,3 @@ func Inject(span opentracing.Span, request *http.Request) error {
 		opentracing.HTTPHeaders,
 		opentracing.HTTPHeadersCarrier(request.Header))
 }
-
