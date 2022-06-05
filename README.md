@@ -19,7 +19,6 @@
 - Running container with provided args, envs
 - Triggering Jenkins jobs
 
-## Tutorial
 
 | Version  | | Kubernetes api | Kubernetes client-go | kubernetes apimachinery   | Tektoncd
 |--------------------------|------------|----------------|----------------------|---------------------------|----------|
