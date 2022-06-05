@@ -20,10 +20,9 @@
 - Running container with provided args, envs
 - Triggering Jenkins jobs
 
-| Version  | | Kubernetes api | Kubernetes client-go | kubernetes apimachinery   | Tektoncd
-|--------------------------|------------|----------------|----------------------|---------------------------|----------|
-| 0.0.1      | |     1.22.2           | v1.5.2          | v0.23.4                     |  0.34.x |
-
+| Version | tutorial                                            | Kubernetes api | Kubernetes client-go | kubernetes apimachinery | Tektoncd |
+|---------|-----------------------------------------------------|----------------|----------------------|-------------------------|----------|
+| v1      | [tutorial-v1.0.0](markdownfiles/tutorial-v1.0.0.md) | 1.12.9         | 1.12.9               | 1.12.9                  | v1aplha1 |
 ## Want to contribute
 
 - See [CONTRIBUTING.md](markdownfiles/CONTRIBUTING.md)
