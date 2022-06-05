@@ -175,20 +175,11 @@ func (k8s k8sService) FollowContainerLifeCycle(companyId, namespace, podName, co
 			subject.EventData["company_id"] = companyId
 			subject.EventData["process_id"] = processId
 			go k8s.notifyAll(subject)
-			if (!strings.HasPrefix(temp, "progress") && (!strings.HasSuffix(temp, " mb") || !strings.HasSuffix(temp, " kb"))) && !strings.HasPrefix(temp, "downloading from") {
-
-			}
 			if strings.Contains(line, "image can't be pulled") || strings.Contains(line, "pods \""+podName+"\" not found") {
-				if strings.Contains(line, "image can't be pulled") {
-
-				}
 				break
 			}
 
 		}
-	}
-	if readCloser != nil {
-		readCloser.Close()
 	}
 
 }
