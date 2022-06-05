@@ -148,6 +148,15 @@ const (
 	JENKINS_SECRET = PARAMS("secret")
 	// JENKINS_PARAMS key for jenkins params
 	JENKINS_PARAMS = PARAMS("params")
+
+	// BUILD_TYPE key for build type
+	BUILD_TYPE = PARAMS("build_type")
+
+	// RESOURCE_SIZE key for storage
+	RESOURCE_SIZE = PARAMS("storage")
+
+	// RESOURCE_ACCESS_MODE key for access mode
+	RESOURCE_ACCESS_MODE = PARAMS("access_mode")
 )
 
 // PROCESS_STATUS pipeline steps status
@@ -202,4 +211,30 @@ const (
 	DEVELOP = ENVIRONMENT("DEVELOP")
 	// TEST test environment
 	TEST = ENVIRONMENT("TEST")
+)
+
+// FOOTMARK process footmark (step breakdown)
+type FOOTMARK string
+
+const (
+	// INIT_BUILD_JOB FOOTMARK name
+	INIT_BUILD_JOB = FOOTMARK("init_build_job")
+	// POST_BUILD_JOB FOOTMARK name
+	POST_BUILD_JOB = FOOTMARK("post_build_job")
+	// BUILD_AND_PUSH_0 FOOTMARK name
+	BUILD_AND_PUSH_0 = FOOTMARK("build_and_push0")
+	// BUILD_AND_PUSH_1 FOOTMARK name
+	BUILD_AND_PUSH_1 = FOOTMARK("build_and_push1")
+	// GIT_CLONE FOOTMARK name
+	GIT_CLONE = FOOTMARK("git_clone")
+
+	// INIT_INTERMEDIARY_JOB FOOTMARK name
+	INIT_INTERMEDIARY_JOB = FOOTMARK("init_intermediary_job")
+	// POST_INTERMEDIARY_JOB FOOTMARK name
+	POST_INTERMEDIARY_JOB = FOOTMARK("post_intermediary_job")
+
+	// INIT_JENKINS_JOB FOOTMARK name
+	INIT_JENKINS_JOB = FOOTMARK("init_jenkins_job")
+	// POST_JENKINS_JOB FOOTMARK name
+	POST_JENKINS_JOB = FOOTMARK("post_jenkins_job")
 )

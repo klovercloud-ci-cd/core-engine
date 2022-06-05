@@ -6,6 +6,7 @@
 - Create and manage test fies in the same package.
 - Add testcases considering corner cases.
 - Please follow interface first development.
+- In api layer try to follow ```hateoas principle``` and add ```swagger``` automation 
 
 ## Commit
 

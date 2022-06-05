@@ -16,6 +16,21 @@ type mockK8sService struct {
 	service service.LogEvent
 }
 
+func (k8s mockK8sService) DeletePersistentVolumeClaimByProcessId(processId string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (k8s mockK8sService) CreatePersistentVolumeClaim(source corev1.PersistentVolumeClaim) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (k8s mockK8sService) InitPersistentVolumeClaim(step v1.Step, label map[string]string, processId string) corev1.PersistentVolumeClaim {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (k8s mockK8sService) RequestContainerLog(namespace string, podName string, containerName string) *rest.Request {
 	panic("implement me")
 }
@@ -24,7 +39,7 @@ func (k8s mockK8sService) GetContainerLog(namespace, podName, containerName stri
 	panic("implement me")
 }
 
-func (k8s mockK8sService) FollowContainerLifeCycle(namespace, podName, containerName, step, processId string, stepType enums.STEP_TYPE) {
+func (k8s mockK8sService) FollowContainerLifeCycle(companyId,namespace, podName, containerName, step, processId string, stepType enums.STEP_TYPE, claim int) {
 	panic("implement me")
 }
 
@@ -32,7 +47,7 @@ func (k8s mockK8sService) GetPodListByProcessId(namespace, processId string, opt
 	panic("implement me")
 }
 
-func (k8s mockK8sService) WaitAndGetInitializedPods(namespace, processId, step string) *corev1.PodList {
+func (k8s mockK8sService) WaitAndGetInitializedPods(companyId,namespace, processId, step, stepType string, claim int) *corev1.PodList {
 	panic("implement me")
 }
 

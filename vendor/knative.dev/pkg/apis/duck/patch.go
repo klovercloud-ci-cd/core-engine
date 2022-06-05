@@ -19,8 +19,8 @@ package duck
 import (
 	"encoding/json"
 
-	jsonmergepatch "github.com/evanphx/json-patch"
-	"github.com/mattbaird/jsonpatch"
+	jsonmergepatch "github.com/evanphx/json-patch/v5"
+	jsonpatch "gomodules.xyz/jsonpatch/v2"
 )
 
 func marshallBeforeAfter(before, after interface{}) ([]byte, []byte, error) {

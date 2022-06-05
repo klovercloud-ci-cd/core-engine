@@ -2,6 +2,7 @@ package logic
 
 import (
 	"errors"
+	"fmt"
 	"github.com/klovercloud-ci-cd/core-engine/config"
 	v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1/service"
@@ -22,72 +23,121 @@ type pipelineService struct {
 
 //ApplyBuildCancellationSteps pulls cancellation events for build job and the process the cancellation.
 func (p *pipelineService) ApplyBuildCancellationSteps() {
-	steps:=p.processLifeCycleEvent.PullBuildCancellingEvents()
-	for _,each:=range steps{
-		 p.tekton.PurgeByProcessId(each.ProcessId)
+	steps := p.processLifeCycleEvent.PullBuildCancellingEvents()
+	for _, each := range steps {
+		p.tekton.PurgeByProcessId(each.ProcessId)
 		processEventData := make(map[string]interface{})
 		processEventData["step"] = each.Step
-		if each.Pipeline==nil{
-			each.Pipeline=&v1.Pipeline{
+		if each.Pipeline == nil {
+			each.Pipeline = &v1.Pipeline{
 				ProcessId: each.ProcessId,
 			}
 		}
-		subject := v1.Subject{Pipeline: *each.Pipeline, Step: each.Step,Log: "Cancelled Successfully",StepType: enums.BUILD}
+		subject := v1.Subject{Pipeline: *each.Pipeline, Step: each.Step, Log: "Cancelled Successfully", StepType: enums.BUILD}
 		go p.notifyAll(subject)
 	}
 }
+
 //ApplyJenkinsJobSteps pulls jenkins steps and then applies.
 func (p *pipelineService) ApplyJenkinsJobSteps() {
 	events := p.processLifeCycleEvent.PullJenkinsJobStepsEvents()
+	config.CurrentConcurrentJenkinsJobs= config.CurrentConcurrentJenkinsJobs+int64(len(events))
 	for _, each := range events {
 		p.pipeline = *each.Pipeline
 		for i, step := range each.Pipeline.Steps {
 			if each.Step == step.Name && each.StepType == step.Type {
-				p.applySteps(each.Pipeline.Steps[i])
-			}
-		}
-	}
-}
-//ApplyIntermediarySteps pulls intermediary steps and then applies.
-func (p *pipelineService) ApplyIntermediarySteps() {
-	events := p.processLifeCycleEvent.PullIntermediaryStepsEvents()
-	for _, each := range events {
-		p.pipeline = *each.Pipeline
-		for i, step := range each.Pipeline.Steps {
-			if each.Step == step.Name && each.StepType == step.Type {
-				p.applySteps(each.Pipeline.Steps[i])
-			}
-		}
-	}
-}
-//ApplyBuildSteps pulls build steps and then applies.
-func (p *pipelineService) ApplyBuildSteps() {
-	events := p.processLifeCycleEvent.PullBuildEvents()
-	for _, each := range events {
-		p.pipeline = *each.Pipeline
-		for i, step := range each.Pipeline.Steps {
-			if each.Step == step.Name && each.StepType == step.Type {
-				p.applySteps(each.Pipeline.Steps[i])
+				p.applySteps(each.Pipeline.Steps[i], each.Claim)
 			}
 		}
 	}
 }
 
-//ReadEventByProcessId reads live events from queue and then dequeues read messages. This is used optionally, only when local event store is used.
-func (p *pipelineService) ReadEventByProcessId(c chan map[string]interface{}, processId string) {
-	c <- p.processEventService.DequeueByProcessId(processId)
+//ApplyIntermediarySteps pulls intermediary steps and then applies.
+func (p *pipelineService) ApplyIntermediarySteps() {
+	events := p.processLifeCycleEvent.PullIntermediaryStepsEvents()
+	config.CurrentConcurrentIntermediaryJobs= config.CurrentConcurrentIntermediaryJobs+int64(len(events))
+	for _, each := range events {
+		p.pipeline = *each.Pipeline
+		for i, step := range each.Pipeline.Steps {
+			if each.Step == step.Name && each.StepType == step.Type {
+				p.applySteps(each.Pipeline.Steps[i], each.Claim)
+			}
+		}
+	}
 }
+
+//ApplyBuildSteps pulls build steps and then applies.
+func (p *pipelineService) ApplyBuildSteps() {
+	events := p.processLifeCycleEvent.PullBuildEvents()
+	config.CurrentConcurrentBuildJobs= config.CurrentConcurrentBuildJobs+int64(len(events))
+	for _, each := range events {
+		p.pipeline = *each.Pipeline
+		for i, step := range each.Pipeline.Steps {
+			if each.Step == step.Name && each.StepType == step.Type {
+				p.applySteps(each.Pipeline.Steps[i], each.Claim)
+			}
+		}
+	}
+}
+
+//ReadEventByCompanyId reads live events from queue and then dequeues read messages. This is used optionally, only when local event store is used.
+func (p *pipelineService) ReadEventByCompanyId(c chan map[string]interface{}, processId string) {
+	c <- p.processEventService.DequeueByCompanyId(processId)
+}
+
 //GetLogsByProcessId get Logs by process id and log event options. This is used optionally, only when local event store is used.
 func (p *pipelineService) GetLogsByProcessId(processId string, option v1.LogEventQueryOption) ([]string, int64) {
 	return p.logEventService.GetByProcessId(processId, option)
 }
+
+func (p *pipelineService) FollowContainerLogs(pipeline service.Pipeline) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *pipelineService) PostOperationsForBuildPack(step string, stepType enums.STEP_TYPE, pipeline v1.Pipeline, claim int) {
+	podList := p.k8s.WaitAndGetInitializedPods(pipeline.MetaData.CompanyId, config.CiNamespace, pipeline.ProcessId, step, string(stepType), claim)
+	if len(podList.Items) > 0 {
+		for _, pod := range podList.Items {
+			for index := range pod.Spec.Containers {
+				go p.k8s.FollowContainerLifeCycle(pipeline.MetaData.CompanyId, pod.Namespace, pod.Name, pod.Spec.Containers[index].Name, step, pipeline.ProcessId, stepType, claim)
+			}
+		}
+	}
+	pRun, pRunError := p.tekton.GetPipelineRun(pipeline.MetaData.CompanyId, step, pipeline.ProcessId, string(stepType), true, *podList, claim)
+	pRunStatus := ""
+	if pRunError != nil {
+		pRunStatus = pRunError.Error()
+	} else {
+		if pRun.IsDone() {
+			pRunStatus = string(enums.SUCCESSFUL)
+		} else if pRun.IsCancelled() {
+			pRunStatus = string(enums.CANCELLED)
+		} else {
+			pRunStatus = string(enums.ERROR)
+		}
+	}
+	processEventData := make(map[string]interface{})
+	processEventData["step"] = step
+	processEventData["status"] = pRunStatus
+	processEventData["type"] = stepType
+	processEventData["company_id"] = pipeline.MetaData.CompanyId
+	processEventData["process_id"] = pipeline.ProcessId
+	listener := v1.Subject{Pipeline: pipeline, Step: step}
+	listener.EventData = processEventData
+	go p.notifyAll(listener)
+	if pipeline.Option.Purging == enums.PIPELINE_PURGING_ENABLE {
+		go p.tekton.PurgeByProcessId(p.pipeline.ProcessId)
+	}
+}
+
 // PostOperations Wait until pod is created, watches pod lifecycle, sends events to all the observers. Purges resources if purging is enabled.
-func (p *pipelineService) PostOperations(step string, stepType enums.STEP_TYPE, pipeline v1.Pipeline) {
-	podList := p.k8s.WaitAndGetInitializedPods(config.CiNamespace, pipeline.ProcessId, step)
+func (p *pipelineService) PostOperations(step string, stepType enums.STEP_TYPE, pipeline v1.Pipeline, claim int) {
+	podList := p.k8s.WaitAndGetInitializedPods(pipeline.MetaData.CompanyId, config.CiNamespace, pipeline.ProcessId, step, string(stepType), claim)
 	if len(podList.Items) > 0 {
 		pod := podList.Items[0]
 		for index := range pod.Spec.Containers {
-			p.k8s.FollowContainerLifeCycle(pod.Namespace, pod.Name, pod.Spec.Containers[index].Name, step, pipeline.ProcessId, stepType)
+			p.k8s.FollowContainerLifeCycle(pipeline.MetaData.CompanyId, pod.Namespace, pod.Name, pod.Spec.Containers[index].Name, step, pipeline.ProcessId, stepType, claim)
 		}
 	}
 	tRun, tRunError := p.tekton.GetTaskRun(step+"-"+pipeline.ProcessId, true)
@@ -103,17 +153,27 @@ func (p *pipelineService) PostOperations(step string, stepType enums.STEP_TYPE, 
 			tRunStatus = string(enums.ERROR)
 		}
 	}
-	processEventData := make(map[string]interface{})
-	processEventData["step"] = step
-	processEventData["status"] = tRunStatus
-	processEventData["type"] = stepType
-	listener := v1.Subject{Pipeline: pipeline, Step: step}
-	listener.EventData = processEventData
-	go p.notifyAll(listener)
+	subject := v1.Subject{step, string(stepType + " Step Finished"), stepType, nil, nil, p.pipeline}
+	subject.EventData = make(map[string]interface{})
+	subject.EventData["reason"] = "n/a"
+	subject.EventData["log"] = subject.Log
+	subject.EventData["step"] = step
+	subject.EventData["company_id"] = pipeline.MetaData.CompanyId
+	subject.EventData["process_id"] = pipeline.ProcessId
+	if stepType == enums.BUILD {
+		subject.EventData["footmark"] = fmt.Sprint(enums.POST_BUILD_JOB)
+	} else if stepType == enums.INTERMEDIARY {
+		subject.EventData["footmark"] = fmt.Sprint(enums.POST_INTERMEDIARY_JOB)
+	} else {
+		subject.EventData["footmark"] = fmt.Sprint(enums.POST_JENKINS_JOB)
+	}
+	subject.EventData["status"] = tRunStatus
+	go p.notifyAll(subject)
 	if pipeline.Option.Purging == enums.PIPELINE_PURGING_ENABLE {
 		go p.tekton.PurgeByProcessId(p.pipeline.ProcessId)
 	}
 }
+
 //LoadArgs reads data from arg, serializes string into map and set into argData of step
 func (p *pipelineService) LoadArgs(pipeline v1.Pipeline) {
 	p.pipeline = pipeline
@@ -123,6 +183,7 @@ func (p *pipelineService) LoadArgs(pipeline v1.Pipeline) {
 		p.pipeline.Steps[i] = s.step
 	}
 }
+
 // LoadEnvs reads data from env, serializes string into map and set into envData of step
 func (p *pipelineService) LoadEnvs(pipeline v1.Pipeline) {
 	p.pipeline = pipeline
@@ -132,6 +193,7 @@ func (p *pipelineService) LoadEnvs(pipeline v1.Pipeline) {
 		p.pipeline.Steps[i] = s.step
 	}
 }
+
 // SetInputResource sets input resources for build step
 func (p *pipelineService) SetInputResource(url, revision string, pipeline v1.Pipeline) {
 	p.pipeline = pipeline
@@ -141,12 +203,14 @@ func (p *pipelineService) SetInputResource(url, revision string, pipeline v1.Pip
 		p.pipeline.Steps[i] = s.step
 	}
 }
+
 // Build reads data from arg, serializes string into map and set into argData of step, reads data from env, serializes string into map and set into envData of step, sets input resources for build step
 func (p *pipelineService) Build(url, revision string, pipeline v1.Pipeline) {
 	p.LoadArgs(pipeline)
 	p.LoadEnvs(pipeline)
 	p.SetInputResource(url, revision, pipeline)
 }
+
 //BuildProcessLifeCycleEvents Builds pipeline By triggering Build method, then validates pipeline, and then notifies the observers.
 func (p *pipelineService) BuildProcessLifeCycleEvents(url, revision string, pipeline v1.Pipeline) error {
 	p.Build(url, revision, pipeline)
@@ -162,6 +226,7 @@ func (p *pipelineService) BuildProcessLifeCycleEvents(url, revision string, pipe
 	p.buildProcessLifeCycleEvents()
 	return nil
 }
+
 // buildProcessLifeCycleEvents initializes build events subject and then notifies observers.
 func (p *pipelineService) buildProcessLifeCycleEvents() {
 	if len(p.pipeline.Steps) > 0 {
@@ -174,32 +239,51 @@ func (p *pipelineService) buildProcessLifeCycleEvents() {
 		processEventData["next"] = strings.Join(initialStep.Next, ",")
 		processEventData["type"] = initialStep.Type
 		listener.EventData = processEventData
-		if initialStep.Type == enums.BUILD || initialStep.Type == enums.INTERMEDIARY || initialStep.Type==enums.JENKINS_JOB{
+		if initialStep.Type == enums.BUILD || initialStep.Type == enums.INTERMEDIARY || initialStep.Type == enums.JENKINS_JOB {
 			go p.notifyAll(listener)
 		}
 	}
 }
+
 // applySteps applies steps and then notifies observers.
-func (p *pipelineService) applySteps(step v1.Step) {
+func (p *pipelineService) applySteps(step v1.Step, claim int) {
 	listener := v1.Subject{Pipeline: p.pipeline, Step: step.Name}
 	processEventData := make(map[string]interface{})
 	processEventData["step"] = step.Name
+	processEventData["company_id"] = p.pipeline.MetaData.CompanyId
 	processEventData["trigger"] = step.Params["trigger"]
 	processEventData["type"] = step.Type
+	processEventData["process_id"] = p.pipeline.ProcessId
 	var err error
 	if step.Type == enums.BUILD {
-		err = p.applyBuildStep(step)
-	}else if step.Type==enums.INTERMEDIARY{
-		err=p.applyIntermediaryStep(step)
-	}else if step.Type==enums.JENKINS_JOB{
-		err=p.applyJenkinsJobStep(step)
-	}else {
+		err = p.applyBuildStep(step, claim)
+		if err != nil {
+			processEventData["footmark"] = fmt.Sprint(enums.POST_BUILD_JOB)
+		} else {
+			processEventData["footmark"] = fmt.Sprint(enums.INIT_BUILD_JOB)
+		}
+	} else if step.Type == enums.INTERMEDIARY {
+		err = p.applyIntermediaryStep(step, claim)
+		if err != nil {
+			processEventData["footmark"] = fmt.Sprint(enums.INIT_INTERMEDIARY_JOB)
+		} else {
+			processEventData["footmark"] = fmt.Sprint(enums.POST_INTERMEDIARY_JOB)
+		}
+	} else if step.Type == enums.JENKINS_JOB {
+		err = p.applyJenkinsJobStep(step, claim)
+		if err != nil {
+			processEventData["footmark"] = fmt.Sprint(enums.INIT_JENKINS_JOB)
+		} else {
+			processEventData["footmark"] = fmt.Sprint(enums.POST_JENKINS_JOB)
+		}
+	} else {
 		return
 	}
-	if err!=nil{
+	if err != nil {
 		log.Println(err.Error())
 		processEventData["status"] = string(enums.STEP_FAILED)
-		processEventData["log"] = err
+		processEventData["log"] = err.Error()
+		processEventData["claim"] = claim
 		listener.EventData = processEventData
 		go p.notifyAll(listener)
 		return
@@ -211,7 +295,18 @@ func (p *pipelineService) applySteps(step v1.Step) {
 }
 
 //applyJenkinsJobStep applies jenkins step, follows pod lifecycle and the notifies observers
-func (p *pipelineService) applyJenkinsJobStep(step v1.Step) error {
+func (p *pipelineService) applyJenkinsJobStep(step v1.Step, claim int) error {
+	processEventData := make(map[string]interface{})
+	processEventData["step"] = step
+	processEventData["company_id"] = p.pipeline.MetaData.CompanyId
+	processEventData["status"] = enums.ACTIVE
+	processEventData["type"] = step.Type
+	processEventData["footmark"] = fmt.Sprint(enums.INIT_JENKINS_JOB)
+	processEventData["claim"] = claim
+	processEventData["process_id"] = p.pipeline.ProcessId
+	listener := v1.Subject{Step: step.Name, Log: "JenkinsJob Step Started", Pipeline: v1.Pipeline{ProcessId: p.pipeline.ProcessId}}
+	listener.EventData = processEventData
+	go p.notifyAll(listener)
 	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
 	step.Name = trimmedStepName
 	taskrun, err := p.tekton.InitTaskRun(step, p.pipeline.Label, p.pipeline.ProcessId)
@@ -223,11 +318,23 @@ func (p *pipelineService) applyJenkinsJobStep(step v1.Step) error {
 		_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
 		return errors.New("Failed to apply taskrun" + err.Error())
 	}
-	go p.PostOperations(step.Name, step.Type, p.pipeline)
+	go p.PostOperations(step.Name, step.Type, p.pipeline, claim)
 	return nil
 }
+
 //applyIntermediaryStep applies intermediary step, follows pod lifecycle and the notifies observers
-func (p *pipelineService) applyIntermediaryStep(step v1.Step) error {
+func (p *pipelineService) applyIntermediaryStep(step v1.Step, claim int) error {
+	processEventData := make(map[string]interface{})
+	processEventData["step"] = step
+	processEventData["status"] = enums.ACTIVE
+	processEventData["company_id"] = p.pipeline.MetaData.CompanyId
+	processEventData["type"] = step.Type
+	processEventData["footmark"] = fmt.Sprint(enums.INIT_INTERMEDIARY_JOB)
+	processEventData["claim"] = claim
+	processEventData["process_id"] = p.pipeline.ProcessId
+	listener := v1.Subject{Step: step.Name, Log: "Intermediary Step Started", Pipeline: v1.Pipeline{ProcessId: p.pipeline.ProcessId}}
+	listener.EventData = processEventData
+	go p.notifyAll(listener)
 	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
 	step.Name = trimmedStepName
 	task, err := p.tekton.InitTask(step, p.pipeline.Label, p.pipeline.ProcessId)
@@ -252,13 +359,45 @@ func (p *pipelineService) applyIntermediaryStep(step v1.Step) error {
 		_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
 		return errors.New("Failed to apply taskrun" + err.Error())
 	}
-	go p.PostOperations(step.Name, step.Type, p.pipeline)
+	go p.PostOperations(step.Name, step.Type, p.pipeline, claim)
 	return nil
 }
-//applyBuildStep applies build step, follows pod lifecycle and the notifies observers
-func (p *pipelineService) applyBuildStep(step v1.Step) error {
-	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
-	step.Name = trimmedStepName
+
+//applyBuildPackStep applies build step, follows pod lifecycle and the notifies observers
+func (p *pipelineService) applyBuildPackStep(step v1.Step, claim int) error {
+	pvc := p.k8s.InitPersistentVolumeClaim(step, p.pipeline.Label, p.pipeline.ProcessId)
+	_ = p.tekton.DeletePipelineByProcessId(p.pipeline.ProcessId)
+	_ = p.tekton.DeletePipelineRunByProcessId(p.pipeline.ProcessId)
+	err := p.k8s.DeletePersistentVolumeClaimByProcessId(p.pipeline.ProcessId)
+	if err != nil {
+		return err
+	}
+	err = p.k8s.CreatePersistentVolumeClaim(pvc)
+	if err != nil {
+		return err
+	}
+	pipeline := p.tekton.InitPipeline(step, p.pipeline.Label, p.pipeline.ProcessId)
+	err = p.tekton.CreatePipeline(pipeline)
+	if err != nil {
+		_ = p.tekton.DeletePipelineByProcessId(p.pipeline.ProcessId)
+		return errors.New("Failed to apply pipeline" + err.Error())
+	}
+	pRun, err := p.tekton.InitPipelineRun(step, p.pipeline.Label, p.pipeline.ProcessId)
+	if err != nil {
+		return err
+	}
+	_ = p.tekton.DeletePipelineRunByProcessId(p.pipeline.ProcessId)
+	err = p.tekton.CreatePipelineRun(pRun)
+	if err != nil {
+		_ = p.tekton.DeletePipelineRunByProcessId(p.pipeline.ProcessId)
+		return errors.New("Failed to apply pipeline run" + err.Error())
+	}
+	go p.PostOperationsForBuildPack(step.Name, step.Type, p.pipeline, claim)
+	return nil
+}
+
+//applyRegularBuildStep applies build step, follows pod lifecycle and the notifies observers
+func (p *pipelineService) applyRegularBuildStep(step v1.Step, claim int) error {
 	input, outputs, err := p.tekton.InitPipelineResources(step, p.pipeline.Label, p.pipeline.ProcessId)
 	if err != nil {
 		return errors.New("Failed to initialize input/output resource" + err.Error())
@@ -298,9 +437,32 @@ func (p *pipelineService) applyBuildStep(step v1.Step) error {
 		_ = p.tekton.DeleteTaskRunByProcessId(p.pipeline.ProcessId)
 		return errors.New("Failed to apply taskrun" + err.Error())
 	}
-	go p.PostOperations(step.Name, step.Type, p.pipeline)
+	go p.PostOperations(step.Name, step.Type, p.pipeline, claim)
 	return nil
 }
+
+//applyBuildStep applies build step, follows pod lifecycle and the notifies observers
+func (p *pipelineService) applyBuildStep(step v1.Step, claim int) error {
+	subject := v1.Subject{step.Name, "Build Step Started", step.Type, nil, nil, p.pipeline}
+	subject.EventData = make(map[string]interface{})
+	subject.EventData["reason"] = "n/a"
+	subject.EventData["log"] = subject.Log
+	subject.EventData["footmark"] = enums.INIT_BUILD_JOB
+	subject.EventData["status"] = enums.INITIALIZING
+	subject.EventData["step"] = step.Name
+	subject.EventData["company_id"] = p.pipeline.MetaData.CompanyId
+	subject.EventData["claim"] = claim
+	subject.EventData["process_id"] = p.pipeline.ProcessId
+	go p.notifyAll(subject)
+	trimmedStepName := strings.ReplaceAll(step.Name, " ", "")
+	step.Name = trimmedStepName
+	if step.Params[enums.BUILD_TYPE] == "buildpack" {
+		return p.applyBuildPackStep(step, claim)
+	} else {
+		return p.applyRegularBuildStep(step, claim)
+	}
+}
+
 // notifyAll notifies all the observers
 func (p *pipelineService) notifyAll(listener v1.Subject) {
 	for _, observer := range p.observerList {

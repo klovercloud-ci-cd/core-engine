@@ -21,17 +21,20 @@ import (
 	"regexp"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/sets"
 	"knative.dev/pkg/apis"
 )
 
-const parameterSubstitution = "[_a-zA-Z][_a-zA-Z0-9.-]*"
+const parameterSubstitution = `[_a-zA-Z][_a-zA-Z0-9.-]*(\[\*\])?`
 
-const braceMatchingRegex = "(\\$(\\(%s.(?P<var>%s)\\)))"
+const braceMatchingRegex = "(\\$(\\(%s\\.(?P<var>%s)\\)))"
 
-func ValidateVariable(name, value, prefix, contextPrefix, locationName, path string, vars map[string]struct{}) *apis.FieldError {
-	if vs, present := extractVariablesFromString(value, contextPrefix+prefix); present {
+// ValidateVariable makes sure all variables in the provided string are known
+func ValidateVariable(name, value, prefix, locationName, path string, vars sets.String) *apis.FieldError {
+	if vs, present := extractVariablesFromString(value, prefix); present {
 		for _, v := range vs {
-			if _, ok := vars[v]; !ok {
+			v = strings.TrimSuffix(v, "[*]")
+			if !vars.Has(v) {
 				return &apis.FieldError{
 					Message: fmt.Sprintf("non-existent variable in %q for %s %s", value, locationName, name),
 					Paths:   []string{path + "." + name},
@@ -42,11 +45,29 @@ func ValidateVariable(name, value, prefix, contextPrefix, locationName, path str
 	return nil
 }
 
-// Verifies that variables matching the relevant string expressions do not reference any of the names present in vars.
-func ValidateVariableProhibited(name, value, prefix, contextPrefix, locationName, path string, vars map[string]struct{}) *apis.FieldError {
-	if vs, present := extractVariablesFromString(value, contextPrefix+prefix); present {
+// ValidateVariableP makes sure all variables for a parameter in the provided string are known
+func ValidateVariableP(value, prefix string, vars sets.String) *apis.FieldError {
+	if vs, present := extractVariablesFromString(value, prefix); present {
 		for _, v := range vs {
-			if _, ok := vars[v]; ok {
+			v = strings.TrimSuffix(v, "[*]")
+			if !vars.Has(v) {
+				return &apis.FieldError{
+					Message: fmt.Sprintf("non-existent variable in %q", value),
+					// Empty path is required to make the `ViaField`, … work
+					Paths: []string{""},
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// ValidateVariableProhibited verifies that variables matching the relevant string expressions do not reference any of the names present in vars.
+func ValidateVariableProhibited(name, value, prefix, locationName, path string, vars sets.String) *apis.FieldError {
+	if vs, present := extractVariablesFromString(value, prefix); present {
+		for _, v := range vs {
+			v = strings.TrimSuffix(v, "[*]")
+			if vars.Has(v) {
 				return &apis.FieldError{
 					Message: fmt.Sprintf("variable type invalid in %q for %s %s", value, locationName, name),
 					Paths:   []string{path + "." + name},
@@ -57,16 +78,54 @@ func ValidateVariableProhibited(name, value, prefix, contextPrefix, locationName
 	return nil
 }
 
-// Verifies that variables matching the relevant string expressions are completely isolated if present.
-func ValidateVariableIsolated(name, value, prefix, contextPrefix, locationName, path string, vars map[string]struct{}) *apis.FieldError {
-	if vs, present := extractVariablesFromString(value, contextPrefix+prefix); present {
-		firstMatch, _ := extractExpressionFromString(value, contextPrefix+prefix)
+// ValidateVariableProhibitedP verifies that variables for a parameter matching the relevant string expressions do not reference any of the names present in vars.
+func ValidateVariableProhibitedP(value, prefix string, vars sets.String) *apis.FieldError {
+	if vs, present := extractVariablesFromString(value, prefix); present {
 		for _, v := range vs {
-			if _, ok := vars[v]; ok {
+			v = strings.TrimSuffix(v, "[*]")
+			if vars.Has(v) {
+				return &apis.FieldError{
+					Message: fmt.Sprintf("variable type invalid in %q", value),
+					// Empty path is required to make the `ViaField`, … work
+					Paths: []string{""},
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// ValidateVariableIsolated verifies that variables matching the relevant string expressions are completely isolated if present.
+func ValidateVariableIsolated(name, value, prefix, locationName, path string, vars sets.String) *apis.FieldError {
+	if vs, present := extractVariablesFromString(value, prefix); present {
+		firstMatch, _ := extractExpressionFromString(value, prefix)
+		for _, v := range vs {
+			v = strings.TrimSuffix(v, "[*]")
+			if vars.Has(v) {
 				if len(value) != len(firstMatch) {
 					return &apis.FieldError{
 						Message: fmt.Sprintf("variable is not properly isolated in %q for %s %s", value, locationName, name),
 						Paths:   []string{path + "." + name},
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// ValidateVariableIsolatedP verifies that variables matching the relevant string expressions are completely isolated if present.
+func ValidateVariableIsolatedP(value, prefix string, vars sets.String) *apis.FieldError {
+	if vs, present := extractVariablesFromString(value, prefix); present {
+		firstMatch, _ := extractExpressionFromString(value, prefix)
+		for _, v := range vs {
+			v = strings.TrimSuffix(v, "[*]")
+			if vars.Has(v) {
+				if len(value) != len(firstMatch) {
+					return &apis.FieldError{
+						Message: fmt.Sprintf("variable is not properly isolated in %q", value),
+						// Empty path is required to make the `ViaField`, … work
+						Paths: []string{""},
 					}
 				}
 			}
@@ -113,14 +172,19 @@ func matchGroups(matches []string, pattern *regexp.Regexp) map[string]string {
 	return groups
 }
 
+// ApplyReplacements applies string replacements
 func ApplyReplacements(in string, replacements map[string]string) string {
+	replacementsList := []string{}
 	for k, v := range replacements {
-		in = strings.Replace(in, fmt.Sprintf("$(%s)", k), v, -1)
+		replacementsList = append(replacementsList, fmt.Sprintf("$(%s)", k), v)
 	}
-	return in
+	// strings.Replacer does all replacements in one pass, preventing multiple replacements
+	// See #2093 for an explanation on why we need to do this.
+	replacer := strings.NewReplacer(replacementsList...)
+	return replacer.Replace(in)
 }
 
-// Take an input string, and output an array of strings related to possible arrayReplacements. If there aren't any
+// ApplyArrayReplacements takes an input string, and output an array of strings related to possible arrayReplacements. If there aren't any
 // areas where the input can be split up via arrayReplacements, then just return an array with a single element,
 // which is ApplyReplacements(in, replacements).
 func ApplyArrayReplacements(in string, stringReplacements map[string]string, arrayReplacements map[string][]string) []string {
@@ -130,6 +194,12 @@ func ApplyArrayReplacements(in string, stringReplacements map[string]string, arr
 		// If the input string matches a replacement's key (without padding characters), return the corresponding array.
 		// Note that the webhook should prevent all instances where this could evaluate to false.
 		if (strings.Count(in, stringToReplace) == 1) && len(in) == len(stringToReplace) {
+			return v
+		}
+
+		// same replace logic for star array expressions
+		starStringtoReplace := fmt.Sprintf("$(%s[*])", k)
+		if (strings.Count(in, starStringtoReplace) == 1) && len(in) == len(starStringtoReplace) {
 			return v
 		}
 	}

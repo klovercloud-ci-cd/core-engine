@@ -7,7 +7,7 @@ import (
 // ProcessEvent Process event operations.
 type ProcessEvent interface {
 	Store(data v1.ProcessEvent)
-	GetByProcessId(processId string) map[string]interface{}
-	DequeueByProcessId(processId string) map[string]interface{}
+	GetByCompanyId(companyId string) map[string]interface{}
+	DequeueByCompanyId(companyId string) map[string]interface{}
 	Listen(subject v1.Subject)
 }

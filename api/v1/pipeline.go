@@ -55,7 +55,7 @@ func (p pipelineApi) GetLogs(context echo.Context) error {
 }
 
 func (p pipelineApi) GetEvents(context echo.Context) error {
-	processId := context.QueryParam("processId")
+	processId := context.QueryParam("company_id")
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(context.Response(), context.Request(), nil)
 	if err != nil {
@@ -66,7 +66,7 @@ func (p pipelineApi) GetEvents(context echo.Context) error {
 
 	status := make(chan map[string]interface{})
 	for {
-		go p.pipelineService.ReadEventByProcessId(status, processId)
+		go p.pipelineService.ReadEventByCompanyId(status, processId)
 		jsonStr, err := json.Marshal(<-status)
 		if err != nil {
 			log.Println(err.Error())

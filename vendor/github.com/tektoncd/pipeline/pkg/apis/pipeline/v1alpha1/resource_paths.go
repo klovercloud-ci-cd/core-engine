@@ -24,13 +24,16 @@ func InputResourcePath(r ResourceDeclaration) string {
 	return path("/workspace", r)
 }
 
-// OutputResourcePath returns the path to the output resouce in a Pod
+// OutputResourcePath returns the path to the output resource in a Pod
 func OutputResourcePath(r ResourceDeclaration) string {
 	return path("/workspace/output", r)
 }
 
 func path(root string, r ResourceDeclaration) string {
 	if r.TargetPath != "" {
+		if filepath.IsAbs(r.TargetPath) {
+			return r.TargetPath
+		}
 		return filepath.Join("/workspace", r.TargetPath)
 	}
 	return filepath.Join(root, r.Name)

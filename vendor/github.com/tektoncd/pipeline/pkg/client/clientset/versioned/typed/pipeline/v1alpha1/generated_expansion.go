@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Tekton Authors
+Copyright 2020 The Tekton Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ type ConditionExpansion interface{}
 
 type PipelineExpansion interface{}
 
-type PipelineResourceExpansion interface{}
-
 type PipelineRunExpansion interface{}
+
+type RunExpansion interface{}
 
 type TaskExpansion interface{}
 

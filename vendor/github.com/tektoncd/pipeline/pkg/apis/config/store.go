@@ -27,7 +27,11 @@ type cfgKey struct{}
 // Config holds the collection of configurations that we attach to contexts.
 // +k8s:deepcopy-gen=false
 type Config struct {
-	Defaults *Defaults
+	Defaults       *Defaults
+	FeatureFlags   *FeatureFlags
+	ArtifactBucket *ArtifactBucket
+	ArtifactPVC    *ArtifactPVC
+	Metrics        *Metrics
 }
 
 // FromContext extracts a Config from the provided context.
@@ -46,8 +50,16 @@ func FromContextOrDefaults(ctx context.Context) *Config {
 		return cfg
 	}
 	defaults, _ := NewDefaultsFromMap(map[string]string{})
+	featureFlags, _ := NewFeatureFlagsFromMap(map[string]string{})
+	artifactBucket, _ := NewArtifactBucketFromMap(map[string]string{})
+	artifactPVC, _ := NewArtifactPVCFromMap(map[string]string{})
+	metrics, _ := newMetricsFromMap(map[string]string{})
 	return &Config{
-		Defaults: defaults,
+		Defaults:       defaults,
+		FeatureFlags:   featureFlags,
+		ArtifactBucket: artifactBucket,
+		ArtifactPVC:    artifactPVC,
+		Metrics:        metrics,
 	}
 }
 
@@ -67,10 +79,14 @@ type Store struct {
 func NewStore(logger configmap.Logger, onAfterStore ...func(name string, value interface{})) *Store {
 	store := &Store{
 		UntypedStore: configmap.NewUntypedStore(
-			"defaults",
+			"defaults/features/artifacts",
 			logger,
 			configmap.Constructors{
-				DefaultsConfigName: NewDefaultsFromConfigMap,
+				GetDefaultsConfigName():       NewDefaultsFromConfigMap,
+				GetFeatureFlagsConfigName():   NewFeatureFlagsFromConfigMap,
+				GetArtifactBucketConfigName(): NewArtifactBucketFromConfigMap,
+				GetArtifactPVCConfigName():    NewArtifactPVCFromConfigMap,
+				GetMetricsConfigName():        NewMetricsFromConfigMap,
 			},
 			onAfterStore...,
 		),
@@ -86,7 +102,32 @@ func (s *Store) ToContext(ctx context.Context) context.Context {
 
 // Load creates a Config from the current config state of the Store.
 func (s *Store) Load() *Config {
+	defaults := s.UntypedLoad(GetDefaultsConfigName())
+	if defaults == nil {
+		defaults, _ = NewDefaultsFromMap(map[string]string{})
+	}
+	featureFlags := s.UntypedLoad(GetFeatureFlagsConfigName())
+	if featureFlags == nil {
+		featureFlags, _ = NewFeatureFlagsFromMap(map[string]string{})
+	}
+	artifactBucket := s.UntypedLoad(GetArtifactBucketConfigName())
+	if artifactBucket == nil {
+		artifactBucket, _ = NewArtifactBucketFromMap(map[string]string{})
+	}
+	artifactPVC := s.UntypedLoad(GetArtifactPVCConfigName())
+	if artifactPVC == nil {
+		artifactPVC, _ = NewArtifactPVCFromMap(map[string]string{})
+	}
+
+	metrics := s.UntypedLoad(GetMetricsConfigName())
+	if metrics == nil {
+		metrics, _ = newMetricsFromMap(map[string]string{})
+	}
 	return &Config{
-		Defaults: s.UntypedLoad(DefaultsConfigName).(*Defaults).DeepCopy(),
+		Defaults:       defaults.(*Defaults).DeepCopy(),
+		FeatureFlags:   featureFlags.(*FeatureFlags).DeepCopy(),
+		ArtifactBucket: artifactBucket.(*ArtifactBucket).DeepCopy(),
+		ArtifactPVC:    artifactPVC.(*ArtifactPVC).DeepCopy(),
+		Metrics:        metrics.(*Metrics).DeepCopy(),
 	}
 }

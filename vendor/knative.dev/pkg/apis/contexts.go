@@ -18,6 +18,7 @@ package apis
 
 import (
 	"context"
+	"net/http"
 
 	authenticationv1 "k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +37,21 @@ func WithinCreate(ctx context.Context) context.Context {
 // IsInCreate checks whether the context is a Create.
 func IsInCreate(ctx context.Context) bool {
 	return ctx.Value(inCreateKey{}) != nil
+}
+
+// This is attached to contexts passed to webhook interfaces when
+// the receiver being validated is being deleted.
+type inDeleteKey struct{}
+
+// WithinDelete is used to note that the webhook is calling within
+// the context of a Delete operation.
+func WithinDelete(ctx context.Context) context.Context {
+	return context.WithValue(ctx, inDeleteKey{}, struct{}{})
+}
+
+// IsInDelete checks whether the context is a Delete.
+func IsInDelete(ctx context.Context) bool {
+	return ctx.Value(inDeleteKey{}) != nil
 }
 
 // This is attached to contexts passed to webhook interfaces when
@@ -119,6 +135,12 @@ func WithinParent(ctx context.Context, om metav1.ObjectMeta) context.Context {
 	return context.WithValue(ctx, parentMetaKey{}, om)
 }
 
+// IsWithinParent returns true if we're within parent context.
+func IsWithinParent(ctx context.Context) bool {
+	_, ok := ctx.Value(parentMetaKey{}).(metav1.ObjectMeta)
+	return ok
+}
+
 // ParentMeta accesses the ObjectMeta of the enclosing parent resource
 // from the context.  See WithinParent for how to attach the parent's
 // ObjectMeta to the context.
@@ -179,4 +201,55 @@ func DisallowDeprecated(ctx context.Context) context.Context {
 // are allowed.
 func IsDeprecatedAllowed(ctx context.Context) bool {
 	return ctx.Value(disallowDeprecated{}) == nil
+}
+
+// This is attached to contexts as they are passed down through a resource
+// being validated to direct them to allow namespaces (or missing namespace)
+// outside the parent (as indicated by WithinParent.
+type allowDifferentNamespace struct{}
+
+// AllowDifferentNamespace notes on the context that further validation
+// should allow different namespaces from the encapsulating object. Mainly
+// used by KReference, since it by default requires namespaces to match.
+func AllowDifferentNamespace(ctx context.Context) context.Context {
+	return context.WithValue(ctx, allowDifferentNamespace{}, struct{}{})
+}
+
+// IsDifferentNamespaceAllowed checks the context to see whether different
+// namespace is allowed from the encapsulating object.
+func IsDifferentNamespaceAllowed(ctx context.Context) bool {
+	return ctx.Value(allowDifferentNamespace{}) != nil
+}
+
+// This is attached to contexts passed to webhook interfaces when the user
+// has requested DryRun mode.
+type isDryRun struct{}
+
+// WithDryRun is used to indicate that this call is in DryRun mode.
+func WithDryRun(ctx context.Context) context.Context {
+	return context.WithValue(ctx, isDryRun{}, struct{}{})
+}
+
+// IsDryRun indicates that this request is in DryRun mode.
+func IsDryRun(ctx context.Context) bool {
+	return ctx.Value(isDryRun{}) != nil
+}
+
+// This is attached to contexts passed to webhook interfaces with
+// additional context from the HTTP request.
+type httpReq struct{}
+
+// WithHTTPRequest associated the HTTP request object the webhook
+// received with the context.
+func WithHTTPRequest(ctx context.Context, r *http.Request) context.Context {
+	return context.WithValue(ctx, httpReq{}, r)
+}
+
+// GetHTTPRequest fetches the raw HTTP request received by the webhook.
+func GetHTTPRequest(ctx context.Context) *http.Request {
+	v := ctx.Value(httpReq{})
+	if v == nil {
+		return nil
+	}
+	return v.(*http.Request)
 }
