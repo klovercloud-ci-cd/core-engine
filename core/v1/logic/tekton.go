@@ -371,6 +371,7 @@ func (tekton *tektonService) initIntermediaryTaskSpec(step v1.Step, task *v1alph
 		})
 	}
 	var script string
+	var command,args []string
 	if val,ok:=step.Params[enums.SCRIPT];ok{
 		script=val
 	}
@@ -390,12 +391,16 @@ func (tekton *tektonService) initIntermediaryTaskSpec(step v1.Step, task *v1alph
 		}
 		script=cm.Data["script"]
 	}
+	if script==""{
+		command=strings.Split(step.Params[enums.COMMAND], ",")
+		args=strings.Split(step.Params[enums.COMMAND_ARGS], ",")
+	}
 	for i, image := range strings.Split(step.Params[enums.IMAGES], ",") {
 		container:=corev1.Container{
 			Name:            enums.CUSTOM_STAGE + strconv.Itoa(i),
 			Image:           image,
-			Command:         strings.Split(step.Params[enums.COMMAND], ","),
-			Args:            strings.Split(step.Params[enums.COMMAND_ARGS], ","),
+			Command:         command,
+			Args:            args,
 			Env:             env,
 			ImagePullPolicy: "Always",
 		}

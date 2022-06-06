@@ -157,7 +157,7 @@ const (
 	// SCRIPT key for script
 	SCRIPT = PARAMS("script")
 	// SCRIPT_FROM_CONFIGMAP key for script_from_configmaps
-	SCRIPT_FROM_CONFIGMAP = PARAMS("script_from_configmaps")
+	SCRIPT_FROM_CONFIGMAP = PARAMS("script_from_configmap")
 	// WORKDIR key for workdir
 	WORKDIR = PARAMS("workdir")
 )

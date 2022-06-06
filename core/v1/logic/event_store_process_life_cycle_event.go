@@ -185,31 +185,6 @@ func (e eventStoreProcessLifeCycleService) PullBuildEvents() []v1.ProcessLifeCyc
 	return events
 }
 
-func mapClone(src map[string]interface{}) map[string]interface{} {
-	race.Lock()
-	dst := make(map[string]interface{})
-
-	for k, v := range src {
-
-		dst[k] = v
-
-	}
-	race.Unlock()
-	return dst
-}
-func mapCloneStr(src map[string]string) map[string]string {
-	dst := make(map[string]string)
-	var race sync.RWMutex
-
-	for k, v := range src {
-		race.RLock()
-		dst[k] = v
-		race.RUnlock()
-	}
-
-	return dst
-}
-
 func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 	if subject.EventData["status"] == nil {
 		return
