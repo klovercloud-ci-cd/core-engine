@@ -371,32 +371,32 @@ func (tekton *tektonService) initIntermediaryTaskSpec(step v1.Step, task *v1alph
 		})
 	}
 	var script string
-	var command,args []string
-	if val,ok:=step.Params[enums.SCRIPT];ok{
-		script=val
+	var command, args []string
+	if val, ok := step.Params[enums.SCRIPT]; ok {
+		script = val
 	}
-	if val,ok:=step.Params[enums.SCRIPT_FROM_CONFIGMAP];ok{
-		namespaceAndCM:=strings.Split(val,"/")
-		ns:="default"
-		name:=""
+	if val, ok := step.Params[enums.SCRIPT_FROM_CONFIGMAP]; ok {
+		namespaceAndCM := strings.Split(val, "/")
+		ns := "default"
+		name := ""
 		if len(namespaceAndCM) == 2 {
-			ns=namespaceAndCM[0]
-			name=namespaceAndCM[1]
-		}else{
-			name=namespaceAndCM[0]
+			ns = namespaceAndCM[0]
+			name = namespaceAndCM[1]
+		} else {
+			name = namespaceAndCM[0]
 		}
-		cm,err:=tekton.K8s.GetConfigMap(name,ns)
-		if err!=nil{
+		cm, err := tekton.K8s.GetConfigMap(name, ns)
+		if err != nil {
 			log.Println(err.Error())
 		}
-		script=cm.Data["script"]
+		script = cm.Data["script"]
 	}
-	if script==""{
-		command=strings.Split(step.Params[enums.COMMAND], ",")
-		args=strings.Split(step.Params[enums.COMMAND_ARGS], ",")
+	if script == "" {
+		command = strings.Split(step.Params[enums.COMMAND], ",")
+		args = strings.Split(step.Params[enums.COMMAND_ARGS], ",")
 	}
 	for i, image := range strings.Split(step.Params[enums.IMAGES], ",") {
-		container:=corev1.Container{
+		container := corev1.Container{
 			Name:            enums.CUSTOM_STAGE + strconv.Itoa(i),
 			Image:           image,
 			Command:         command,
@@ -404,12 +404,12 @@ func (tekton *tektonService) initIntermediaryTaskSpec(step v1.Step, task *v1alph
 			Env:             env,
 			ImagePullPolicy: "Always",
 		}
-		if val,ok:=step.Params[enums.WORKDIR];ok{
-			container.WorkingDir=val
+		if val, ok := step.Params[enums.WORKDIR]; ok {
+			container.WorkingDir = val
 		}
 		steps = append(steps, v1alpha1.Step{
 			Container: container,
-			Script:     script,
+			Script:    script,
 		})
 	}
 	task.Spec.Steps = steps
