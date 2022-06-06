@@ -168,7 +168,6 @@ func (k8s k8sService) FollowContainerLifeCycle(companyId, namespace, podName, co
 			lines = lines[:(length - 1)]
 		}
 		for _, line := range lines {
-			log.Println(containerName, podName, "+++++++", line)
 			temp := strings.ToLower(line)
 			subject := v1.Subject{step, temp, stepType, nil, nil, v1.Pipeline{ProcessId: processId}}
 			subject.EventData = make(map[string]interface{})

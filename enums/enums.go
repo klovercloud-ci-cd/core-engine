@@ -148,15 +148,18 @@ const (
 	JENKINS_SECRET = PARAMS("secret")
 	// JENKINS_PARAMS key for jenkins params
 	JENKINS_PARAMS = PARAMS("params")
-
 	// BUILD_TYPE key for build type
 	BUILD_TYPE = PARAMS("build_type")
-
 	// RESOURCE_SIZE key for storage
 	RESOURCE_SIZE = PARAMS("storage")
-
 	// RESOURCE_ACCESS_MODE key for access mode
 	RESOURCE_ACCESS_MODE = PARAMS("access_mode")
+	// SCRIPT key for script
+	SCRIPT = PARAMS("script")
+	// SCRIPT_FROM_CONFIGMAP key for script_from_configmaps
+	SCRIPT_FROM_CONFIGMAP = PARAMS("script_from_configmaps")
+	// WORKDIR key for workdir
+	WORKDIR = PARAMS("workdir")
 )
 
 // PROCESS_STATUS pipeline steps status

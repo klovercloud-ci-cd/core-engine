@@ -348,9 +348,9 @@ func (tekton *tektonService) InitTask(step v1.Step, label map[string]string, pro
 	}
 
 	if step.Type == enums.BUILD {
-		initBuildTaskSpec(step, task)
+		tekton.initBuildTaskSpec(step, task)
 	} else if step.Type == enums.INTERMEDIARY {
-		initIntermediaryTaskSpec(step, task)
+		tekton.initIntermediaryTaskSpec(step, task)
 	} else {
 		log.Print("Please provide a valid step type!")
 	}
@@ -361,7 +361,7 @@ func (tekton *tektonService) InitTask(step v1.Step, label map[string]string, pro
 	return *task, nil
 
 }
-func initIntermediaryTaskSpec(step v1.Step, task *v1alpha1.Task) {
+func (tekton *tektonService) initIntermediaryTaskSpec(step v1.Step, task *v1alpha1.Task) {
 	var steps []v1alpha1.Step
 	var env []corev1.EnvVar
 	for key, value := range step.EnvData {
@@ -370,20 +370,46 @@ func initIntermediaryTaskSpec(step v1.Step, task *v1alpha1.Task) {
 			Value: value,
 		})
 	}
+	var script string
+	if val,ok:=step.Params[enums.SCRIPT];ok{
+		script=val
+	}
+	if val,ok:=step.Params[enums.SCRIPT_FROM_CONFIGMAP];ok{
+		namespaceAndCM:=strings.Split(val,"/")
+		ns:="default"
+		name:=""
+		if len(namespaceAndCM) == 2 {
+			ns=namespaceAndCM[0]
+			name=namespaceAndCM[1]
+		}else{
+			name=namespaceAndCM[0]
+		}
+		cm,err:=tekton.K8s.GetConfigMap(name,ns)
+		if err!=nil{
+			log.Println(err.Error())
+		}
+		script=cm.Data["script"]
+	}
 	for i, image := range strings.Split(step.Params[enums.IMAGES], ",") {
+		container:=corev1.Container{
+			Name:            enums.CUSTOM_STAGE + strconv.Itoa(i),
+			Image:           image,
+			Command:         strings.Split(step.Params[enums.COMMAND], ","),
+			Args:            strings.Split(step.Params[enums.COMMAND_ARGS], ","),
+			Env:             env,
+			ImagePullPolicy: "Always",
+		}
+		if val,ok:=step.Params[enums.WORKDIR];ok{
+			container.WorkingDir=val
+		}
 		steps = append(steps, v1alpha1.Step{
-			Container: corev1.Container{
-				Name:            enums.CUSTOM_STAGE + strconv.Itoa(i),
-				Image:           image,
-				Command:         strings.Split(step.Params[enums.COMMAND], ","),
-				Args:            strings.Split(step.Params[enums.COMMAND_ARGS], ","),
-				Env:             env,
-				ImagePullPolicy: "Always",
-			}})
+			Container: container,
+			Script:     script,
+		})
 	}
 	task.Spec.Steps = steps
 }
-func initBuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
+func (tekton *tektonService) initBuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
 	var params []v1alpha1.ParamSpec
 	params = append(params, v1alpha1.ParamSpec{
 		Name:        "pathToDockerFile",
