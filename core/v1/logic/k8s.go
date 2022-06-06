@@ -102,12 +102,11 @@ func (k8s k8sService) FollowContainerLifeCycle(companyId, namespace, podName, co
 	var footmark string
 	if strings.HasPrefix(containerName, "step-git-source-docker-source") {
 		footmark = string(enums.GIT_CLONE)
-	} else if strings.HasPrefix(containerName, "step-build-and-push0") {
-		footmark = string(enums.BUILD_AND_PUSH_0)
+	} else if strings.HasPrefix(containerName, "step-build-and-push") {
+		str := strings.Trim(containerName, "step-build-and-push")
+		footmark = string(enums.BUILD_AND_PUSH) + "_" + str
 	} else if strings.HasPrefix(containerName, "step-custom-stage") {
 		footmark = string(enums.INIT_INTERMEDIARY_JOB)
-	} else if strings.HasPrefix(containerName, "step-build-and-push1") {
-		footmark = string(enums.BUILD_AND_PUSH_1)
 	} else if strings.HasPrefix(containerName, "step-trigger-pipeline") {
 		footmark = string(enums.INIT_JENKINS_JOB)
 	} else {

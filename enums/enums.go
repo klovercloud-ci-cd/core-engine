@@ -224,10 +224,8 @@ const (
 	INIT_BUILD_JOB = FOOTMARK("init_build_job")
 	// POST_BUILD_JOB FOOTMARK name
 	POST_BUILD_JOB = FOOTMARK("post_build_job")
-	// BUILD_AND_PUSH_0 FOOTMARK name
-	BUILD_AND_PUSH_0 = FOOTMARK("build_and_push0")
-	// BUILD_AND_PUSH_1 FOOTMARK name
-	BUILD_AND_PUSH_1 = FOOTMARK("build_and_push1")
+	// BUILD_AND_PUSH FOOTMARK name
+	BUILD_AND_PUSH = FOOTMARK("build_and_push")
 	// GIT_CLONE FOOTMARK name
 	GIT_CLONE = FOOTMARK("git_clone")
 
