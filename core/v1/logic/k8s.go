@@ -143,7 +143,13 @@ func (k8s k8sService) FollowContainerLifeCycle(companyId, namespace, podName, co
 			subject.EventData["log"] = subject.Log
 			subject.EventData["footmark"] = footmark
 			subject.EventData["reason"] = "n/a"
-			subject.EventData["status"] = enums.STEP_FAILED
+			if err.Error() == "EOF" {
+				if stepType == enums.BUILD {
+					subject.EventData["status"] = enums.STEP_PROCESSING
+				}
+			} else {
+				subject.EventData["status"] = enums.STEP_FAILED
+			}
 			subject.EventData["step"] = step
 			subject.EventData["company_id"] = companyId
 			subject.EventData["process_id"] = processId
@@ -169,7 +175,7 @@ func (k8s k8sService) FollowContainerLifeCycle(companyId, namespace, podName, co
 			subject.EventData["log"] = subject.Log
 			subject.EventData["footmark"] = footmark
 			subject.EventData["reason"] = "n/a"
-			subject.EventData["status"] = enums.BUILD_PROCESSING
+			subject.EventData["status"] = enums.STEP_PROCESSING
 			subject.EventData["claim"] = claim
 			subject.EventData["step"] = step
 			subject.EventData["company_id"] = companyId
@@ -180,6 +186,9 @@ func (k8s k8sService) FollowContainerLifeCycle(companyId, namespace, podName, co
 			}
 
 		}
+	}
+	if readCloser != nil {
+		readCloser.Close()
 	}
 
 }
