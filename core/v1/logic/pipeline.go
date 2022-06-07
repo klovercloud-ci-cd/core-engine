@@ -110,11 +110,11 @@ func (p *pipelineService) PostOperationsForBuildPack(step string, stepType enums
 		pRunStatus = pRunError.Error()
 	} else {
 		if pRun.IsDone() {
-			pRunStatus = string(enums.COMPLETED)
+			pRunStatus = string(enums.SUCCESSFUL)
 		} else if pRun.IsCancelled() {
 			pRunStatus = string(enums.CANCELLED)
 		} else {
-			pRunStatus = string(enums.ERROR)
+			pRunStatus = string(enums.STEP_FAILED)
 		}
 	}
 	processEventData := make(map[string]interface{})
@@ -146,11 +146,11 @@ func (p *pipelineService) PostOperations(step string, stepType enums.STEP_TYPE, 
 		tRunStatus = tRunError.Error()
 	} else {
 		if tRun.IsSuccessful() {
-			tRunStatus = string(enums.COMPLETED)
+			tRunStatus = string(enums.SUCCESSFUL)
 		} else if tRun.IsCancelled() {
 			tRunStatus = string(enums.CANCELLED)
 		} else {
-			tRunStatus = string(enums.FAILED)
+			tRunStatus = string(enums.STEP_FAILED)
 		}
 	}
 	subject := v1.Subject{step, string(stepType + " Step Finished"), stepType, nil, nil, p.pipeline}
