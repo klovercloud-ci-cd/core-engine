@@ -215,7 +215,7 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 				config.CurrentConcurrentJenkinsJobs = config.CurrentConcurrentJenkinsJobs - 1
 			}
 			data = append(data, processLifeCycleEvent)
-		} else if subject.EventData["status"] == string(enums.SUCCESSFUL) {
+		} else if subject.EventData["status"] == string(enums.SUCCESSFUL) ||  subject.EventData["status"] == string(enums.COMPLETED){
 			processLifeCycleEvent.Status = enums.COMPLETED
 			data = append(data, processLifeCycleEvent)
 			for _, each := range nextSteps {
