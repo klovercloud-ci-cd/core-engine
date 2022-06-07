@@ -281,7 +281,7 @@ func (p *pipelineService) applySteps(step v1.Step, claim int) {
 	}
 	if err != nil {
 		log.Println(err.Error())
-		processEventData["status"] = string(enums.STEP_FAILED)
+		processEventData["status"] = string(enums.FAILED)
 		processEventData["log"] = err.Error()
 		processEventData["claim"] = claim
 		listener.EventData = processEventData

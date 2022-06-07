@@ -205,7 +205,7 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 
 			}
 		}
-		if subject.EventData["status"] == string(enums.STEP_FAILED) || subject.EventData["status"] == string(enums.ERROR) || subject.EventData["status"] == string(enums.TERMINATING) {
+		if subject.EventData["status"] == string(enums.FAILED) || subject.EventData["status"] == string(enums.STEP_FAILED) || subject.EventData["status"] == string(enums.ERROR) || subject.EventData["status"] == string(enums.TERMINATING) {
 			processLifeCycleEvent.Status = enums.FAILED
 			if subject.StepType == enums.BUILD {
 				config.CurrentConcurrentBuildJobs = config.CurrentConcurrentBuildJobs - 1
