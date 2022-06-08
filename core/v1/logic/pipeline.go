@@ -7,7 +7,6 @@ import (
 	v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1/service"
 	"github.com/klovercloud-ci-cd/core-engine/enums"
-	"log"
 	"strings"
 )
 
@@ -142,18 +141,23 @@ func (p *pipelineService) PostOperations(step string, stepType enums.STEP_TYPE, 
 	}
 	tRun, tRunError := p.tekton.GetTaskRun(step+"-"+pipeline.ProcessId, true)
 	tRunStatus := ""
+	log := ""
 	if tRunError != nil {
-		tRunStatus = tRunError.Error()
+		log = tRunError.Error()
+		tRunStatus = string(enums.STEP_FAILED)
 	} else {
 		if tRun.IsSuccessful() {
 			tRunStatus = string(enums.SUCCESSFUL)
 		} else if tRun.IsCancelled() {
 			tRunStatus = string(enums.CANCELLED)
 		} else {
+			if len(tRun.Status.Conditions) > 0 {
+				log = tRun.Status.Conditions[len(tRun.Status.Conditions)-1].Message
+			}
 			tRunStatus = string(enums.STEP_FAILED)
 		}
 	}
-	subject := v1.Subject{step, string(stepType + " Step Finished"), stepType, nil, nil, p.pipeline}
+	subject := v1.Subject{step, string(stepType+" Step Finished. ") + log, stepType, nil, nil, p.pipeline}
 	subject.EventData = make(map[string]interface{})
 	subject.EventData["reason"] = "n/a"
 	subject.EventData["log"] = subject.Log
@@ -280,7 +284,8 @@ func (p *pipelineService) applySteps(step v1.Step, claim int) {
 		return
 	}
 	if err != nil {
-		log.Println(err.Error())
+		listener.Log = err.Error()
+		listener.Step = step.Name
 		processEventData["status"] = string(enums.FAILED)
 		processEventData["log"] = err.Error()
 		processEventData["claim"] = claim
