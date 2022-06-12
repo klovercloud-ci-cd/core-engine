@@ -7,6 +7,7 @@ import (
 	v1 "github.com/klovercloud-ci-cd/core-engine/core/v1"
 	"github.com/klovercloud-ci-cd/core-engine/core/v1/service"
 	"github.com/klovercloud-ci-cd/core-engine/enums"
+	"strconv"
 	"strings"
 )
 
@@ -59,6 +60,13 @@ func (p *pipelineService) ApplyIntermediarySteps() {
 		p.pipeline = *each.Pipeline
 		for i, step := range each.Pipeline.Steps {
 			if each.Step == step.Name && each.StepType == step.Type {
+				if each.Pipeline.Steps[i].EnvData==nil{
+					each.Pipeline.Steps[i].EnvData=make(map[string]string)
+				}
+				each.Pipeline.Steps[i].EnvData["COMPANY_ID"]=each.Pipeline.MetaData.CompanyId
+				each.Pipeline.Steps[i].EnvData["PROCESS_ID"]=each.Pipeline.ProcessId
+				each.Pipeline.Steps[i].EnvData["STEP_NAME"]=each.Step
+				each.Pipeline.Steps[i].EnvData["CLAIM"]= strconv.Itoa(each.Claim)
 				p.applySteps(each.Pipeline.Steps[i], each.Claim)
 			}
 		}
