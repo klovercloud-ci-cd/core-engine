@@ -639,7 +639,7 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 			})
 		}
 		taskrun.Spec.Params = params
-		taskrun.Spec.PodTemplate.Volumes = []corev1.Volume{}
+		//taskrun.Spec.PodTemplate.Volumes = []corev1.Volume{}
 	}
 	err := taskrun.Validate(context.Background())
 	if err != nil {
