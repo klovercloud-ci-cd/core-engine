@@ -69,6 +69,7 @@ func (e eventStoreProcessLifeCycleService) PullIntermediaryStepsEvents() []v1.Pr
 	if config.CurrentConcurrentIntermediaryJobs < 0 {
 		config.CurrentConcurrentIntermediaryJobs = 0
 	}
+	log.Println( "CurrentConcurrentIntermediaryJobs",config.CurrentConcurrentIntermediaryJobs)
 	if pullSize < 1 {
 		log.Println("Pull size is loaded with intermediary jobs. Skipping new pulls... ")
 		return nil
@@ -205,7 +206,9 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 
 			}
 		}
+
 		if subject.EventData["status"] == string(enums.FAILED) || subject.EventData["status"] == string(enums.STEP_FAILED) || subject.EventData["status"] == string(enums.ERROR) || subject.EventData["status"] == string(enums.TERMINATING) {
+
 			processLifeCycleEvent.Status = enums.FAILED
 			if subject.StepType == enums.BUILD {
 				config.CurrentConcurrentBuildJobs = config.CurrentConcurrentBuildJobs - 1

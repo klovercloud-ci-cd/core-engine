@@ -152,6 +152,7 @@ func (p *pipelineService) PostOperations(step string, stepType enums.STEP_TYPE, 
 	log := ""
 	if tRunError != nil {
 		log = tRunError.Error()
+		fmt.Println(log)
 		tRunStatus = string(enums.STEP_FAILED)
 	} else {
 		if tRun.IsSuccessful() {
@@ -172,6 +173,7 @@ func (p *pipelineService) PostOperations(step string, stepType enums.STEP_TYPE, 
 	subject.EventData["step"] = step
 	subject.EventData["company_id"] = pipeline.MetaData.CompanyId
 	subject.EventData["process_id"] = pipeline.ProcessId
+	subject.EventData["claim"] = claim
 	if stepType == enums.BUILD {
 		subject.EventData["footmark"] = fmt.Sprint(enums.POST_BUILD_JOB)
 	} else if stepType == enums.INTERMEDIARY {
@@ -266,6 +268,7 @@ func (p *pipelineService) applySteps(step v1.Step, claim int) {
 	processEventData["trigger"] = step.Params["trigger"]
 	processEventData["type"] = step.Type
 	processEventData["process_id"] = p.pipeline.ProcessId
+	processEventData["claim"] = claim
 	var err error
 	if step.Type == enums.BUILD {
 		err = p.applyBuildStep(step, claim)
@@ -296,12 +299,11 @@ func (p *pipelineService) applySteps(step v1.Step, claim int) {
 		listener.Step = step.Name
 		processEventData["status"] = string(enums.STEP_FAILED)
 		processEventData["log"] = err.Error()
-		processEventData["claim"] = claim
 		listener.EventData = processEventData
 		go p.notifyAll(listener)
 		return
 	}
-	processEventData["status"] = string(enums.INITIALIZING)
+	processEventData["status"] = string(enums.POST_JENKINS_JOB)
 	processEventData["next"] = strings.Join(step.Next, ",")
 	listener.EventData = processEventData
 	go p.notifyAll(listener)
@@ -310,9 +312,9 @@ func (p *pipelineService) applySteps(step v1.Step, claim int) {
 //applyJenkinsJobStep applies jenkins step, follows pod lifecycle and the notifies observers
 func (p *pipelineService) applyJenkinsJobStep(step v1.Step, claim int) error {
 	processEventData := make(map[string]interface{})
-	processEventData["step"] = step
+	processEventData["step"] = step.Name
 	processEventData["company_id"] = p.pipeline.MetaData.CompanyId
-	processEventData["status"] = enums.ACTIVE
+	processEventData["status"] = enums.INITIALIZING
 	processEventData["type"] = step.Type
 	processEventData["footmark"] = fmt.Sprint(enums.INIT_JENKINS_JOB)
 	processEventData["claim"] = claim
@@ -338,8 +340,8 @@ func (p *pipelineService) applyJenkinsJobStep(step v1.Step, claim int) error {
 //applyIntermediaryStep applies intermediary step, follows pod lifecycle and the notifies observers
 func (p *pipelineService) applyIntermediaryStep(step v1.Step, claim int) error {
 	processEventData := make(map[string]interface{})
-	processEventData["step"] = step
-	processEventData["status"] = enums.ACTIVE
+	processEventData["step"] = step.Name
+	processEventData["status"] = enums.INITIALIZING
 	processEventData["company_id"] = p.pipeline.MetaData.CompanyId
 	processEventData["type"] = step.Type
 	processEventData["footmark"] = fmt.Sprint(enums.INIT_INTERMEDIARY_JOB)
