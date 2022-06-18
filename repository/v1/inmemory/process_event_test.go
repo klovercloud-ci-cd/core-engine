@@ -43,7 +43,7 @@ package inmemory
 //			if action == "getFront" {
 //				each.actual = repo.GetByCompanyId(each.processId)
 //			} else if action == "removeFront" {
-//				each.actual = repo.DequeueByCompanyId(each.processId)
+//				each.actual = repo.DequeueByCompanyIdAndUserId(each.processId)
 //			}
 //		}
 //		if !reflect.DeepEqual(each.expected, each.actual) {
@@ -110,7 +110,7 @@ package inmemory
 //			if action == "getFront" {
 //				each.actual = repo.GetByCompanyId(each.data.ProcessId)
 //			} else if action == "removeFront" {
-//				each.actual = repo.DequeueByCompanyId(each.data.ProcessId)
+//				each.actual = repo.DequeueByCompanyIdAndUserId(each.data.ProcessId)
 //			}
 //		}
 //		if !reflect.DeepEqual(each.expected, each.actual) {

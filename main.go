@@ -19,6 +19,7 @@ func main() {
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
+	CollectGarbage()
 	go ApplyBuildSteps()
 	go ApplyIntermediarySteps()
 	go ApplyJenkinsJobSteps()
@@ -28,6 +29,14 @@ func main() {
 	}
 	api.Routes(e)
 	e.Logger.Fatal(e.Start(":" + config.ServerPort))
+}
+
+// CollectGarbage functions that deletes garbage (tasks, taskruns, pipelineResources that ar untracked)
+func CollectGarbage() {
+	tektonService := dependency.GetV1TektonService()
+	tektonService.DeleteTasks(config.NonPurgeAbleTasks)
+	tektonService.DeleteTaskRuns(config.NonPurgeAbleTaskRuns)
+	tektonService.DeletePipelineResources(config.NonPurgeAblePipelineResources)
 }
 
 // ApplyBuildSteps routine that pulls build steps in every interval.

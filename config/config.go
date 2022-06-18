@@ -75,6 +75,15 @@ var CurrentConcurrentIntermediaryJobs int64
 // CurrentConcurrentJenkinsJobs running jenkins jobs count.
 var CurrentConcurrentJenkinsJobs int64
 
+// NonPurgeAbleTasks untracked tasks
+var NonPurgeAbleTasks []string
+
+// NonPurgeAbleTaskRuns untracked Taskruns
+var NonPurgeAbleTaskRuns []string
+
+// NonPurgeAblePipelineResources untracked pipelineResources
+var NonPurgeAblePipelineResources []string
+
 // InitEnvironmentVariables initializes environment variables
 func InitEnvironmentVariables() {
 	RunMode = os.Getenv("RUN_MODE")
@@ -103,6 +112,9 @@ func InitEnvironmentVariables() {
 	KanikoImage = os.Getenv("KLOVERCLOUD_KANIKO")
 	CiNamespace = os.Getenv("CI_NAMESPACE")
 	EventStoreUrl = os.Getenv("EVENT_STORE_URL")
+	NonPurgeAbleTasks = strings.Split(os.Getenv("NON_PURGE_ABLE_TASKS"), ",")
+	NonPurgeAbleTaskRuns = strings.Split(os.Getenv("NON_PURGE_ABLE_TASK_RUNS"), ",")
+	NonPurgeAblePipelineResources = strings.Split(os.Getenv("NON_PURGE_ABLE_PIPELINE_RESOURCES"), ",")
 	if os.Getenv("USE_LOCAL_EVENT_STORE") == "true" {
 		UseLocalEventStore = true
 	} else {
