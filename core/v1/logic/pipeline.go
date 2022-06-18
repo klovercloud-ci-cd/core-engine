@@ -303,10 +303,10 @@ func (p *pipelineService) applySteps(step v1.Step, claim int) {
 		go p.notifyAll(listener)
 		return
 	}
-	processEventData["status"] = string(enums.POST_JENKINS_JOB)
-	processEventData["next"] = strings.Join(step.Next, ",")
-	listener.EventData = processEventData
-	go p.notifyAll(listener)
+	//processEventData["status"] = string(enums.SUCCESSFUL)
+	//processEventData["next"] = strings.Join(step.Next, ",")
+	//listener.EventData = processEventData
+	//go p.notifyAll(listener)
 }
 
 //applyJenkinsJobStep applies jenkins step, follows pod lifecycle and the notifies observers

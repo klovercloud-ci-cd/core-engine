@@ -96,3 +96,10 @@ func GetV1PipelineService() service.Pipeline {
 func GetV1JwtService() service.Jwt {
 	return logic.NewJwtService()
 }
+
+// GetV1TektonService returns Tekton services
+func GetV1TektonService() service.Tekton {
+	var k8s service.K8s
+	tektonClientSet, tektonVersionedResourceClientSet, _, dynamicClient := config.GetClientSet()
+	return logic.NewTektonService(tektonClientSet, tektonVersionedResourceClientSet, dynamicClient, k8s)
+}

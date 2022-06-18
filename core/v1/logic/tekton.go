@@ -26,6 +26,69 @@ type tektonService struct {
 	K8s           service.K8s
 }
 
+func (tekton *tektonService) DeletePipelineResources(pipelineResourcesList []string) error {
+	list, err := tekton.Vrcs.TektonV1alpha1().PipelineResources(config.CiNamespace).List(context.Background(), metaV1.ListOptions{})
+	if err != nil {
+		log.Println("[WARNING]:", err.Error())
+		return err
+	}
+	listMap := make(map[string]bool)
+	for _, each := range pipelineResourcesList {
+		listMap[each] = true
+	}
+	for _, each := range list.Items {
+		if _, ok := listMap[each.Name]; !ok {
+			err = tekton.Vrcs.TektonV1alpha1().PipelineResources(config.CiNamespace).Delete(context.Background(), each.Name, metaV1.DeleteOptions{})
+			if err != nil {
+				log.Println("[ERROR]:", err.Error())
+			}
+		}
+	}
+	return nil
+}
+
+func (tekton *tektonService) DeleteTasks(taskList []string) error {
+	list, err := tekton.Tcs.TektonV1alpha1().Tasks(config.CiNamespace).List(context.Background(), metaV1.ListOptions{})
+	if err != nil {
+		log.Println("[WARNING]:", err.Error())
+		return err
+	}
+	listMap := make(map[string]bool)
+	for _, each := range taskList {
+		listMap[each] = true
+	}
+	for _, each := range list.Items {
+		if _, ok := listMap[each.Name]; !ok {
+			err = tekton.Tcs.TektonV1alpha1().Tasks(config.CiNamespace).Delete(context.Background(), each.Name, metaV1.DeleteOptions{})
+			if err != nil {
+				log.Println("[ERROR]:", err.Error())
+			}
+		}
+	}
+	return nil
+}
+
+func (tekton *tektonService) DeleteTaskRuns(taskRunsList []string) error {
+	list, err := tekton.Tcs.TektonV1alpha1().TaskRuns(config.CiNamespace).List(context.Background(), metaV1.ListOptions{})
+	if err != nil {
+		log.Println("[WARNING]:", err.Error())
+		return err
+	}
+	listMap := make(map[string]bool)
+	for _, each := range taskRunsList {
+		listMap[each] = true
+	}
+	for _, each := range list.Items {
+		if _, ok := listMap[each.Name]; !ok {
+			err = tekton.Tcs.TektonV1alpha1().TaskRuns(config.CiNamespace).Delete(context.Background(), each.Name, metaV1.DeleteOptions{})
+			if err != nil {
+				log.Println("[ERROR]:", err.Error())
+			}
+		}
+	}
+	return nil
+}
+
 func (tekton *tektonService) GetPipelineRun(companyId, name, id, stepType string, waitUntilPipelineRunIsCompleted bool, podList corev1.PodList, claim int) (*v1beta1.PipelineRun, error) {
 	pRun, pipelineRunGetingErr := tekton.Tcs.TektonV1beta1().PipelineRuns(config.CiNamespace).Get(context.Background(), name+"-"+id, metaV1.GetOptions{
 		TypeMeta: metaV1.TypeMeta{

@@ -16,10 +16,13 @@ type Tekton interface {
 	CreateTask(v1alpha1.Task) error
 	CreateTaskRun(v1alpha1.TaskRun) error
 	DeletePipelineResourceByProcessId(processId string) error
+	DeletePipelineResources(pipelineResourcesList []string) error
 	DeleteTaskByProcessId(processId string) error
+	DeleteTasks(taskList []string) error
 	DeletePipelineByProcessId(processId string) error
 	DeletePipelineRunByProcessId(processId string) error
 	DeleteTaskRunByProcessId(processId string) error
+	DeleteTaskRuns(taskRunsList []string) error
 	PurgeByProcessId(processId string)
 	GetTaskRun(name string, waitUntilTaskRunIsCompleted bool) (*v1alpha1.TaskRun, error)
 	GetPipelineRun(companyId, name, id, stepType string, waitUntilPipelineRunIsCompleted bool, podList corev1.PodList, claim int) (*v1beta1.PipelineRun, error)
