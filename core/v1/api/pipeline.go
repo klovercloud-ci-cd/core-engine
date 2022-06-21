@@ -9,4 +9,5 @@ type Pipeline interface {
 	Apply(context echo.Context) error
 	GetLogs(context echo.Context) error
 	GetEvents(context echo.Context) error
+	CheckIfStepIsClaimable(context echo.Context) error
 }

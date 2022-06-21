@@ -30,4 +30,5 @@ type Tekton interface {
 	InitPipeline(step v1.Step, label map[string]string, processId string) v1beta1.Pipeline
 	CreatePipelineRun(pipelineRun v1beta1.PipelineRun) error
 	InitPipelineRun(step v1.Step, label map[string]string, processId string) (v1beta1.PipelineRun, error)
+	GetTaskRunByName(step,processId string)(*v1alpha1.TaskRun, error)
 }

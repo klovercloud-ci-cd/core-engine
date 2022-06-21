@@ -21,4 +21,5 @@ type Pipeline interface {
 	ApplyBuildCancellationSteps()
 	PostOperationsForBuildPack(step string, stepType enums.STEP_TYPE, pipeline v1.Pipeline, claim int)
 	FollowContainerLogs(pipeline Pipeline)
+	CheckIfStepIsClaimable(step,processId string) bool
 }

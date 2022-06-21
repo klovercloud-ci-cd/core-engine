@@ -130,6 +130,60 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/api/v1/pipelines/{processId}/steps/{step}": {
+            "get": {
+                "description": "Check if step is claimable",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Pipeline"
+                ],
+                "summary": "Check if step is claimable",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pipeline ProcessId",
+                        "name": "processId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pipeline step",
+                        "name": "step",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Options [IfStepIsClaimable]",
+                        "name": "question",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/common.ResponseDTO"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {

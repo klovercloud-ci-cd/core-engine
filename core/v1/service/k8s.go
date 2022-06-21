@@ -20,4 +20,5 @@ type K8s interface {
 	CreatePersistentVolumeClaim(source corev1.PersistentVolumeClaim) error
 	InitPersistentVolumeClaim(step v1.Step, label map[string]string, processId string) corev1.PersistentVolumeClaim
 	DeletePersistentVolumeClaimByProcessId(processId string) error
+	GetPodByNameAndNamespace(name,namespace string) (*corev1.Pod, error)
 }

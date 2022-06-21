@@ -16,6 +16,10 @@ type mockK8sService struct {
 	service service.LogEvent
 }
 
+func (k8s mockK8sService) GetPodByNameAndNamespace(name, namespace string) (*corev1.Pod, error) {
+	panic("implement me")
+}
+
 func (k8s mockK8sService) DeletePersistentVolumeClaimByProcessId(processId string) error {
 	//TODO implement me
 	panic("implement me")

@@ -21,6 +21,23 @@ type pipelineService struct {
 	observerList          []service.Observer
 }
 
+func (p *pipelineService) CheckIfStepIsClaimable(step, processId string) bool {
+	taskrun,err:=p.tekton.GetTaskRunByName(step,processId)
+	if err!=nil{
+		return true
+	}
+	if taskrun.IsDone() || taskrun.IsCancelled() || taskrun.IsSuccessful(){
+		p.tekton.PurgeByProcessId(processId)
+		return true
+	}
+	_,err= p.k8s.GetPodByNameAndNamespace(taskrun.Status.PodName,config.CiNamespace)
+	if err!=nil{
+		p.tekton.PurgeByProcessId(processId)
+		return true
+	}
+	return false
+}
+
 //ApplyBuildCancellationSteps pulls cancellation events for build job and the process the cancellation.
 func (p *pipelineService) ApplyBuildCancellationSteps() {
 	steps := p.processLifeCycleEvent.PullBuildCancellingEvents()

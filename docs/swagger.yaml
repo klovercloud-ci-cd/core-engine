@@ -20,7 +20,7 @@ definitions:
     properties:
       _metadata:
         $ref: '#/definitions/common.MetaData'
-      data: { }
+      data: {}
       message:
         type: string
       status:
@@ -110,74 +110,107 @@ definitions:
         type: string
     type: object
 info:
-  contact: { }
+  contact: {}
   description: Klovercloud-ci-core API
   title: Klovercloud-ci-core API
 paths:
   /api/v1/pipelines:
     post:
       consumes:
-        - application/json
+      - application/json
       description: Applies Pipeline
       parameters:
-        - description: Pipeline Data
-          in: body
-          name: data
-          required: true
-          schema:
-            $ref: '#/definitions/v1.Pipeline'
+      - description: Pipeline Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/v1.Pipeline'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-              - $ref: '#/definitions/common.ResponseDTO'
-              - properties:
-                  data:
-                    type: string
-                type: object
+            - $ref: '#/definitions/common.ResponseDTO'
+            - properties:
+                data:
+                  type: string
+              type: object
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/common.ResponseDTO'
       summary: Apply Pipeline
       tags:
-        - Pipeline
+      - Pipeline
   /api/v1/pipelines/{processId}:
     get:
       description: Gets logs by pipeline processId [available if local storage is
         enabled]
       parameters:
-        - description: Pipeline ProcessId
-          in: path
-          name: processId
-          required: true
-          type: string
-        - description: Page number
-          in: query
-          name: page
-          type: integer
-        - description: Record count
-          in: query
-          name: limit
-          type: integer
+      - description: Pipeline ProcessId
+        in: path
+        name: processId
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Record count
+        in: query
+        name: limit
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-              - $ref: '#/definitions/common.ResponseDTO'
-              - properties:
-                  data:
-                    items:
-                      type: string
-                    type: array
-                type: object
+            - $ref: '#/definitions/common.ResponseDTO'
+            - properties:
+                data:
+                  items:
+                    type: string
+                  type: array
+              type: object
       summary: Get Logs [available if local storage is enabled]
       tags:
-        - Pipeline
+      - Pipeline
+  /api/v1/pipelines/{processId}/steps/{step}:
+    get:
+      description: Check if step is claimable
+      parameters:
+      - description: Pipeline ProcessId
+        in: path
+        name: processId
+        required: true
+        type: string
+      - description: Pipeline step
+        in: path
+        name: step
+        required: true
+        type: string
+      - description: Options [IfStepIsClaimable]
+        in: query
+        name: question
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/common.ResponseDTO'
+            - properties:
+                data:
+                  type: boolean
+              type: object
+      summary: Check if step is claimable
+      tags:
+      - Pipeline
 swagger: "2.0"

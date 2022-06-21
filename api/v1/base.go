@@ -15,6 +15,7 @@ func Router(g *echo.Group) {
 func PipelineRouter(g *echo.Group) {
 	pipelineRouter := NewPipelineApi(dependency.GetV1PipelineService(), dependency.GetV1ObserverServices())
 	g.POST("", pipelineRouter.Apply, AuthenticationAndAuthorizationHandler)
+	g.GET("/:processId/steps",pipelineRouter.CheckIfStepIsClaimable)
 	if config.UseLocalEventStore {
 		g.GET("/:processId", pipelineRouter.GetLogs)
 		g.GET("/ws", pipelineRouter.GetEvents)

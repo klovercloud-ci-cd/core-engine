@@ -25,6 +25,10 @@ type k8sService struct {
 	observerList []service.Observer
 }
 
+func (k8s k8sService) GetPodByNameAndNamespace(name, namespace string)  (*corev1.Pod, error) {
+	return k8s.Kcs.CoreV1().Pods(namespace).Get(context.Background(),name,metav1.GetOptions{})
+}
+
 func (k8s k8sService) DeletePersistentVolumeClaimByProcessId(processId string) error {
 	list, err := k8s.Kcs.CoreV1().PersistentVolumeClaims(config.CiNamespace).List(context.Background(), metav1.ListOptions{
 		LabelSelector: "processId=" + processId,

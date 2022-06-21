@@ -26,6 +26,10 @@ type tektonService struct {
 	K8s           service.K8s
 }
 
+func (tekton *tektonService) GetTaskRunByName(step,processId string) (*v1alpha1.TaskRun, error) {
+	return tekton.Tcs.TektonV1alpha1().TaskRuns(config.CiNamespace).Get(context.Background(),step + "-" + processId,metaV1.GetOptions{})
+}
+
 func (tekton *tektonService) DeletePipelineResources(pipelineResourcesList []string) error {
 	list, err := tekton.Vrcs.TektonV1alpha1().PipelineResources(config.CiNamespace).List(context.Background(), metaV1.ListOptions{})
 	if err != nil {

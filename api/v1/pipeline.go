@@ -23,6 +23,26 @@ type pipelineApi struct {
 	observerList    []service.Observer
 }
 
+// Get... Check if step is claimable
+// @Summary Check if step is claimable
+// @Description Check if step is claimable
+// @Tags Pipeline
+// @Produce json
+// @Param processId path string true "Pipeline ProcessId"
+// @Param name query string true "Pipeline step name"
+// @Param question query string false "Options [IfStepIsClaimable]"
+// @Success 200 {object} common.ResponseDTO{data=bool}
+// @Router /api/v1/pipelines/{processId}/steps [GET]
+func (p pipelineApi) CheckIfStepIsClaimable(context echo.Context) error {
+	processId := context.Param("processId")
+	step := context.QueryParam("name")
+	question := context.QueryParam("question")
+	if question=="IfStepIsClaimable"{
+		return common.GenerateSuccessResponse(context,p.pipelineService.CheckIfStepIsClaimable(step,processId),nil,"")
+	}
+	return common.GenerateErrorResponse(context,"[ERROR]: Please ask a question!","Operation Failed!")
+}
+
 var (
 	upgrader = websocket.Upgrader{}
 )
