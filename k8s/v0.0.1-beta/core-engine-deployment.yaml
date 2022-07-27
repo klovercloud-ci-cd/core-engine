@@ -17,7 +17,7 @@ spec:
       containers:
         - name: app
           imagePullPolicy: Always
-          image: quay.io/klovercloud/ci-core:v1.0.0
+          image: quay.io/klovercloud/ci-core:v0.0.1-beta
           resources:
             requests:
               cpu: 100m
@@ -29,7 +29,7 @@ spec:
             - configMapRef:
                 name: klovercloud-ci-core-envar-config
             - secretRef:
-                name: klovercloud-ci-core-mongo-secret
+                name: klovercloud-mongo-secret
           ports:
             - containerPort: 8080
           readinessProbe:

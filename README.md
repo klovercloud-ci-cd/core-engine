@@ -15,19 +15,19 @@
 
 ## Responsibility
 
-- Building Image from source code
-- Pushing Image to registry
-- Running container with provided args, envs
-- Triggering Jenkins jobs
+- Builds Image from source code
+- Pushes Image to registry
+- Runs container with provided args, envs
+- Triggers Jenkins job
 
-| Version | tutorial                                            | Kubernetes api | Kubernetes client-go | kubernetes apimachinery | Tektoncd |
+| Version | Descriptors                                            | Kubernetes api | Kubernetes client-go | kubernetes apimachinery | Tektoncd |
 |---------|-----------------------------------------------------|----------------|----------------------|-------------------------|----------|
-| v1      | [tutorial-v1.0.0](markdownfiles/tutorial-v1.0.0.md) | 1.12.9         | 1.12.9               | 1.12.9                  | v1aplha1 |
+| [v0.0.1-beta](https://github.com/klovercloud-ci-cd/core-engine/releases/tag/v0.0.1-beta)     |  [k8s](k8s/v0.0.1-beta)  | 1.12.9         | 1.12.9               | 1.12.9                  | 0.34.1 |
 
 ## Want to contribute
 
 - See [CONTRIBUTING.md](markdownfiles/CONTRIBUTING.md)
 - See [DEVELOPMENT.md](markdownfiles/DEVELOPMENT.md) to get start
-- See [architecture](https://github.com/klovercloud-ci-cd/architecture)
+- See [architecture](https://github.com/klovercloud-ci-cd/architecture/blob/master/README.md)
 - Look at our
-  [our issues](https://github.com/klovercloud-ci-cd/klovercloud-ci-core/issues)
+  [our issues](https://github.com/klovercloud-ci-cd/core-engine/issues)
