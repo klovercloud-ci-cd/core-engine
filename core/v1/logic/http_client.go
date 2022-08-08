@@ -47,16 +47,16 @@ func (h httpClientService) Post(url string, header map[string]string, body []byt
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println("[ERROR] Failed communicate agent:", err.Error())
+		log.Println("[ERROR] Failed communicate:", err.Error())
 		return err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Println("[ERROR] Failed communicate agent:", err.Error())
+			log.Println("[ERROR] Failed communicate:", err.Error())
 		} else {
-			log.Println("[ERROR] Failed communicate agent::", string(body))
+			log.Println("[ERROR] Failed communicate:", string(body))
 		}
 	}
 	return nil

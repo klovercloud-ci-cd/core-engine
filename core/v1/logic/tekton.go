@@ -483,13 +483,19 @@ func (tekton *tektonService) initIntermediaryTaskSpec(step v1.Step, task *v1alph
 }
 func (tekton *tektonService) initBuildTaskSpec(step v1.Step, task *v1alpha1.Task) {
 	var params []v1alpha1.ParamSpec
+	dockerFilePath:=step.Params[enums.DOCKERFILE_PATH]
+	if dockerFilePath==""{
+		dockerFilePath="Dockerfile"
+	}else{
+		dockerFilePath=dockerFilePath+"/Dockerfile"
+	}
 	params = append(params, v1alpha1.ParamSpec{
 		Name:        "pathToDockerFile",
 		Type:        "string",
 		Description: "The path to the dockerfile to build",
 		Default: &v1alpha1.ArrayOrString{
 			Type:      "string",
-			StringVal: "/workspace/docker-source/Dockerfile",
+			StringVal: dockerFilePath,
 		},
 	})
 	params = append(params, v1alpha1.ParamSpec{
@@ -581,13 +587,13 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 	}
 	if step.Type == enums.BUILD {
 		var params []v1alpha1.Param
-		params = append(params, v1alpha1.Param{
-			Name: "pathToDockerFile",
-			Value: v1alpha1.ArrayOrString{
-				Type:      v1alpha1.ParamTypeString,
-				StringVal: "Dockerfile",
-			},
-		})
+		//params = append(params, v1alpha1.Param{
+		//	Name: "pathToDockerFile",
+		//	Value: v1alpha1.ArrayOrString{
+		//		Type:      v1alpha1.ParamTypeString,
+		//		StringVal: "Dockerfile",
+		//	},
+		//})
 		params = append(params, v1alpha1.Param{
 			Name: "pathToContext",
 			Value: v1alpha1.ArrayOrString{
