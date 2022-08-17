@@ -132,8 +132,8 @@ const (
 	RESOURCE_NAME = PARAMS("name")
 	// RESOURCE_NAMESPACE key for k8s resource namespace as pipeline step param
 	RESOURCE_NAMESPACE = PARAMS("namespace")
-	// IMAGE_URL key for image url as pipeline step param
-	IMAGE_URL = PARAMS("url")
+	// URL key for url as pipeline step param
+	URL = PARAMS("url")
 	// TYPE key for resource type as pipeline step param
 	TYPE = PARAMS("type")
 	// COMMAND key for command array of intermediary step

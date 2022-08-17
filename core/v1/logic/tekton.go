@@ -194,7 +194,7 @@ func (tekton *tektonService) InitPipeline(step v1.Step, label map[string]string,
 					{
 						Name: "url", Value: v1beta1.ArrayOrString{
 							Type:      v1beta1.ParamTypeString,
-							StringVal: step.Params[enums.IMAGE_URL],
+							StringVal: step.Params[enums.URL],
 						},
 					},
 					{
@@ -355,7 +355,7 @@ func (tekton *tektonService) InitPipelineResources(step v1.Step, label map[strin
 		input.Spec.Params = append(input.Spec.Params, struct {
 			Name  string `json:"name"`
 			Value string `json:"value"`
-		}{Name: "url", Value: step.Params[enums.IMAGE_URL]})
+		}{Name: "url", Value: step.Params[enums.URL]})
 	}
 	error := input.Validate(context.Background())
 	if error != nil {
