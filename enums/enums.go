@@ -160,6 +160,8 @@ const (
 	SCRIPT_FROM_CONFIGMAP = PARAMS("script_from_configmap")
 	// WORKDIR key for workdir
 	WORKDIR = PARAMS("workdir")
+	// DOCKERFILE_PATH key for dockerfile path
+	DOCKERFILE_PATH=PARAMS("dockerfile_path")
 )
 
 // PROCESS_STATUS pipeline steps status
