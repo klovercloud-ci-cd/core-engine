@@ -168,6 +168,8 @@ const (
 type PROCESS_STATUS string
 
 const (
+	// QUEUED pipeline steps status queued
+	QUEUED=PROCESS_STATUS("queued")
 	// NON_INITIALIZED pipeline steps status non_initialized
 	NON_INITIALIZED = PROCESS_STATUS("non_initialized")
 	// ACTIVE pipeline steps status active

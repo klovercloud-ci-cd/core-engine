@@ -192,7 +192,7 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 	}
 	data := []v1.ProcessLifeCycleEvent{}
 	var processLifeCycleEvent v1.ProcessLifeCycleEvent
-	if subject.EventData["status"] != enums.NON_INITIALIZED {
+	if subject.EventData["status"] != enums.QUEUED {
 		var nextSteps []string
 		for _, each := range subject.Pipeline.Steps {
 			if each.Name == subject.Step {
@@ -241,7 +241,6 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 
 		processLifeCycleEvent := v1.ProcessLifeCycleEvent{
 			ProcessId: subject.Pipeline.ProcessId,
-			Status:    enums.NON_INITIALIZED,
 			Step:      subject.Step,
 			StepType:  enums.STEP_TYPE(fmt.Sprintf("%v", subject.EventData["type"])),
 			Next:      strings.Split(fmt.Sprintf("%v", subject.EventData["next"]), ","),
@@ -250,13 +249,18 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 			CreatedAt: time.Now().UTC(),
 			Trigger:   enums.TRIGGER(fmt.Sprintf("%v", subject.EventData["trigger"])),
 		}
+		if subject.EventData["type"]==enums.BUILD{
+			processLifeCycleEvent.Status=enums.QUEUED
+		}else{
+			processLifeCycleEvent.Status=enums.PAUSED
+		}
 		data = append(data, processLifeCycleEvent)
 
 		for i, each := range subject.Pipeline.Steps {
 			if i == 0 {
 				continue
 			}
-			data = append(data, v1.ProcessLifeCycleEvent{
+			event:=v1.ProcessLifeCycleEvent{
 				ProcessId: subject.Pipeline.ProcessId,
 				Step:      each.Name,
 				Status:    enums.NON_INITIALIZED,
@@ -266,7 +270,8 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 				Pipeline:  nil,
 				CreatedAt: time.Now().UTC(),
 				Trigger:   each.Trigger,
-			})
+			}
+			data = append(data, event)
 		}
 	}
 	type ProcessLifeCycleEventList struct {
