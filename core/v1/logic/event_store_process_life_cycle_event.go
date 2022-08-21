@@ -222,11 +222,12 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 			processLifeCycleEvent.Status = enums.COMPLETED
 			data = append(data, processLifeCycleEvent)
 			for _, each := range nextSteps {
-				data = append(data, v1.ProcessLifeCycleEvent{
+				event:=v1.ProcessLifeCycleEvent{
 					ProcessId: subject.Pipeline.ProcessId,
-					Status:    enums.PAUSED,
+					Status:    enums.QUEUED,
 					Step:      each,
-				})
+				}
+				data = append(data,event)
 			}
 			if subject.StepType == enums.BUILD {
 				config.CurrentConcurrentBuildJobs = config.CurrentConcurrentBuildJobs - 1
@@ -249,11 +250,7 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 			CreatedAt: time.Now().UTC(),
 			Trigger:   enums.TRIGGER(fmt.Sprintf("%v", subject.EventData["trigger"])),
 		}
-		if subject.EventData["type"]==enums.BUILD{
-			processLifeCycleEvent.Status=enums.QUEUED
-		}else{
-			processLifeCycleEvent.Status=enums.PAUSED
-		}
+		processLifeCycleEvent.Status=enums.QUEUED
 		data = append(data, processLifeCycleEvent)
 
 		for i, each := range subject.Pipeline.Steps {
