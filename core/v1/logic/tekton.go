@@ -335,13 +335,17 @@ func (tekton *tektonService) InitPipelineResources(step v1.Step, label map[strin
 	}
 	label["revision"] = step.Params[enums.REVISION]
 	label["processId"] = processId
+	tempRevision:=step.Params[enums.REVISION]
+	if len(tempRevision)>15{
+		tempRevision=step.Params[enums.REVISION][:15]
+	}
 	input := v1alpha1.PipelineResource{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       "PipelineResource",
 			APIVersion: "tekton.dev/v1alpha1",
 		},
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      step.Params[enums.REVISION][:15] + "-" + processId,
+			Name:      tempRevision + "-" + processId,
 			Namespace: config.CiNamespace,
 			Labels:    label,
 		},
