@@ -591,13 +591,6 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 	}
 	if step.Type == enums.BUILD {
 		var params []v1alpha1.Param
-		//params = append(params, v1alpha1.Param{
-		//	Name: "pathToDockerFile",
-		//	Value: v1alpha1.ArrayOrString{
-		//		Type:      v1alpha1.ParamTypeString,
-		//		StringVal: "Dockerfile",
-		//	},
-		//})
 		params = append(params, v1alpha1.Param{
 			Name: "pathToContext",
 			Value: v1alpha1.ArrayOrString{
@@ -644,13 +637,16 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 				})
 			}
 		}
-
+		tempRevision:=step.Params[enums.REVISION]
+		if len(tempRevision)>15{
+			tempRevision=step.Params[enums.REVISION][:15]
+		}
 		inputresourceBindings := []v1alpha1.TaskResourceBinding{}
 		inputresourceBindings = append(inputresourceBindings, v1alpha1.TaskResourceBinding{
 			PipelineResourceBinding: v1alpha1.PipelineResourceBinding{
 				Name: "docker-source",
 				ResourceRef: &v1alpha1.PipelineResourceRef{
-					Name: step.Params[enums.REVISION][:15] + "-" + processId,
+					Name: tempRevision + "-" + processId,
 				},
 			},
 		})
