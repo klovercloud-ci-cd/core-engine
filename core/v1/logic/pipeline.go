@@ -230,7 +230,7 @@ func (p *pipelineService) SetInputResource(url, revision string, pipeline v1.Pip
 	p.pipeline = pipeline
 	for i := range p.pipeline.Steps {
 		s := stepService{p.pipeline.Steps[i]}
-		s.SetInput(url, revision)
+		s.SetInput(p.pipeline.Steps[i].Params[enums.URL], p.pipeline.Steps[i].Params[enums.REVISION])
 		p.pipeline.Steps[i] = s.step
 	}
 }
@@ -266,7 +266,7 @@ func (p *pipelineService) buildProcessLifeCycleEvents() {
 		processEventData["step"] = initialStep.Name
 		listener := v1.Subject{Pipeline: p.pipeline, Step: initialStep.Name}
 		processEventData["trigger"] = initialStep.Trigger
-		processEventData["status"] = enums.NON_INITIALIZED
+		processEventData["status"] = enums.QUEUED
 		processEventData["next"] = strings.Join(initialStep.Next, ",")
 		processEventData["type"] = initialStep.Type
 		listener.EventData = processEventData

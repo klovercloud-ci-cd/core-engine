@@ -194,7 +194,7 @@ func (tekton *tektonService) InitPipeline(step v1.Step, label map[string]string,
 					{
 						Name: "url", Value: v1beta1.ArrayOrString{
 							Type:      v1beta1.ParamTypeString,
-							StringVal: step.Params[enums.IMAGE_URL],
+							StringVal: step.Params[enums.URL],
 						},
 					},
 					{
@@ -335,13 +335,17 @@ func (tekton *tektonService) InitPipelineResources(step v1.Step, label map[strin
 	}
 	label["revision"] = step.Params[enums.REVISION]
 	label["processId"] = processId
+	tempRevision:=step.Params[enums.REVISION]
+	if len(tempRevision)>15{
+		tempRevision=step.Params[enums.REVISION][:15]
+	}
 	input := v1alpha1.PipelineResource{
 		TypeMeta: metaV1.TypeMeta{
 			Kind:       "PipelineResource",
 			APIVersion: "tekton.dev/v1alpha1",
 		},
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:      step.Params[enums.REVISION][:15] + "-" + processId,
+			Name:      tempRevision + "-" + processId,
 			Namespace: config.CiNamespace,
 			Labels:    label,
 		},
@@ -355,7 +359,7 @@ func (tekton *tektonService) InitPipelineResources(step v1.Step, label map[strin
 		input.Spec.Params = append(input.Spec.Params, struct {
 			Name  string `json:"name"`
 			Value string `json:"value"`
-		}{Name: "url", Value: step.Params[enums.IMAGE_URL]})
+		}{Name: "url", Value: step.Params[enums.URL]})
 	}
 	error := input.Validate(context.Background())
 	if error != nil {
@@ -587,13 +591,6 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 	}
 	if step.Type == enums.BUILD {
 		var params []v1alpha1.Param
-		//params = append(params, v1alpha1.Param{
-		//	Name: "pathToDockerFile",
-		//	Value: v1alpha1.ArrayOrString{
-		//		Type:      v1alpha1.ParamTypeString,
-		//		StringVal: "Dockerfile",
-		//	},
-		//})
 		params = append(params, v1alpha1.Param{
 			Name: "pathToContext",
 			Value: v1alpha1.ArrayOrString{
@@ -640,13 +637,16 @@ func (tekton *tektonService) InitTaskRun(step v1.Step, label map[string]string, 
 				})
 			}
 		}
-
+		tempRevision:=step.Params[enums.REVISION]
+		if len(tempRevision)>15{
+			tempRevision=step.Params[enums.REVISION][:15]
+		}
 		inputresourceBindings := []v1alpha1.TaskResourceBinding{}
 		inputresourceBindings = append(inputresourceBindings, v1alpha1.TaskResourceBinding{
 			PipelineResourceBinding: v1alpha1.PipelineResourceBinding{
 				Name: "docker-source",
 				ResourceRef: &v1alpha1.PipelineResourceRef{
-					Name: step.Params[enums.REVISION][:15] + "-" + processId,
+					Name: tempRevision + "-" + processId,
 				},
 			},
 		})

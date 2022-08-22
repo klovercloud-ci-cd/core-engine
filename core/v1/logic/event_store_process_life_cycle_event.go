@@ -192,7 +192,7 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 	}
 	data := []v1.ProcessLifeCycleEvent{}
 	var processLifeCycleEvent v1.ProcessLifeCycleEvent
-	if subject.EventData["status"] != enums.NON_INITIALIZED {
+	if subject.EventData["status"] != enums.QUEUED {
 		var nextSteps []string
 		for _, each := range subject.Pipeline.Steps {
 			if each.Name == subject.Step {
@@ -222,11 +222,12 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 			processLifeCycleEvent.Status = enums.COMPLETED
 			data = append(data, processLifeCycleEvent)
 			for _, each := range nextSteps {
-				data = append(data, v1.ProcessLifeCycleEvent{
+				event:=v1.ProcessLifeCycleEvent{
 					ProcessId: subject.Pipeline.ProcessId,
-					Status:    enums.PAUSED,
+					Status:    enums.QUEUED,
 					Step:      each,
-				})
+				}
+				data = append(data,event)
 			}
 			if subject.StepType == enums.BUILD {
 				config.CurrentConcurrentBuildJobs = config.CurrentConcurrentBuildJobs - 1
@@ -241,7 +242,6 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 
 		processLifeCycleEvent := v1.ProcessLifeCycleEvent{
 			ProcessId: subject.Pipeline.ProcessId,
-			Status:    enums.NON_INITIALIZED,
 			Step:      subject.Step,
 			StepType:  enums.STEP_TYPE(fmt.Sprintf("%v", subject.EventData["type"])),
 			Next:      strings.Split(fmt.Sprintf("%v", subject.EventData["next"]), ","),
@@ -250,13 +250,14 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 			CreatedAt: time.Now().UTC(),
 			Trigger:   enums.TRIGGER(fmt.Sprintf("%v", subject.EventData["trigger"])),
 		}
+		processLifeCycleEvent.Status=enums.QUEUED
 		data = append(data, processLifeCycleEvent)
 
 		for i, each := range subject.Pipeline.Steps {
 			if i == 0 {
 				continue
 			}
-			data = append(data, v1.ProcessLifeCycleEvent{
+			event:=v1.ProcessLifeCycleEvent{
 				ProcessId: subject.Pipeline.ProcessId,
 				Step:      each.Name,
 				Status:    enums.NON_INITIALIZED,
@@ -266,7 +267,8 @@ func (e eventStoreProcessLifeCycleService) Listen(subject v1.Subject) {
 				Pipeline:  nil,
 				CreatedAt: time.Now().UTC(),
 				Trigger:   each.Trigger,
-			})
+			}
+			data = append(data, event)
 		}
 	}
 	type ProcessLifeCycleEventList struct {
