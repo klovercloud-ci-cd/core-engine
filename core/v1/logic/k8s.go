@@ -111,10 +111,12 @@ func (k8s k8sService) FollowContainerLifeCycle(companyId, namespace, podName, co
 		footmark = string(enums.BUILD_AND_PUSH) + "_" + str
 	} else if strings.HasPrefix(containerName, "step-custom-stage") {
 		footmark = string(enums.INIT_INTERMEDIARY_JOB)
-	} else if strings.HasPrefix(containerName, "step-trigger-pipeline") {
-		footmark = string(enums.INIT_JENKINS_JOB)
-	} else {
+	} else if stepType==enums.BUILD{
 		footmark = string(enums.INIT_BUILD_JOB)
+	} else if stepType==enums.INTERMEDIARY{
+		footmark = string(enums.INIT_BUILD_JOB)
+	}else if stepType==enums.JENKINS_JOB{
+		footmark = string(enums.INIT_JENKINS_JOB)
 	}
 	readCloser, err := req.Stream(context.Background())
 	for err != nil {
