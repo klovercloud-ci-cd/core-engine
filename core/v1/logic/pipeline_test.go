@@ -86,7 +86,7 @@ func TestPipelineService_SetInputResource(t *testing.T) {
 		k8s:    &mockK8sService{},
 		tekton: nil,
 	}
-	service.SetInputResource("www.example.com", "123456", testCase.data)
+	service.SetInputResource(testCase.data)
 	testCase.actual = service.pipeline.Steps[0].Params
 	if !reflect.DeepEqual(testCase.expected, testCase.actual) {
 		fmt.Println(testCase.actual)

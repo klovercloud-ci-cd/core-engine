@@ -22,16 +22,16 @@ type pipelineService struct {
 }
 
 func (p *pipelineService) CheckIfStepIsClaimable(step, processId string) bool {
-	taskrun,err:=p.tekton.GetTaskRunByName(step,processId)
-	if err!=nil{
+	taskrun, err := p.tekton.GetTaskRunByName(step, processId)
+	if err != nil {
 		return true
 	}
-	if taskrun.IsDone() || taskrun.IsCancelled() || taskrun.IsSuccessful(){
+	if taskrun.IsDone() || taskrun.IsCancelled() || taskrun.IsSuccessful() {
 		p.tekton.PurgeByProcessId(processId)
 		return true
 	}
-	_,err= p.k8s.GetPodByNameAndNamespace(taskrun.Status.PodName,config.CiNamespace)
-	if err!=nil{
+	_, err = p.k8s.GetPodByNameAndNamespace(taskrun.Status.PodName, config.CiNamespace)
+	if err != nil {
 		p.tekton.PurgeByProcessId(processId)
 		return true
 	}
@@ -77,13 +77,13 @@ func (p *pipelineService) ApplyIntermediarySteps() {
 		p.pipeline = *each.Pipeline
 		for i, step := range each.Pipeline.Steps {
 			if each.Step == step.Name && each.StepType == step.Type {
-				if each.Pipeline.Steps[i].EnvData==nil{
-					each.Pipeline.Steps[i].EnvData=make(map[string]string)
+				if each.Pipeline.Steps[i].EnvData == nil {
+					each.Pipeline.Steps[i].EnvData = make(map[string]string)
 				}
-				each.Pipeline.Steps[i].EnvData["COMPANY_ID"]=each.Pipeline.MetaData.CompanyId
-				each.Pipeline.Steps[i].EnvData["PROCESS_ID"]=each.Pipeline.ProcessId
-				each.Pipeline.Steps[i].EnvData["STEP_NAME"]=each.Step
-				each.Pipeline.Steps[i].EnvData["CLAIM"]= strconv.Itoa(each.Claim)
+				each.Pipeline.Steps[i].EnvData["COMPANY_ID"] = each.Pipeline.MetaData.CompanyId
+				each.Pipeline.Steps[i].EnvData["PROCESS_ID"] = each.Pipeline.ProcessId
+				each.Pipeline.Steps[i].EnvData["STEP_NAME"] = each.Step
+				each.Pipeline.Steps[i].EnvData["CLAIM"] = strconv.Itoa(each.Claim)
 				p.applySteps(each.Pipeline.Steps[i], each.Claim)
 			}
 		}
@@ -112,11 +112,6 @@ func (p *pipelineService) ReadEventByCompanyId(c chan map[string]interface{}, pr
 //GetLogsByProcessId get Logs by process id and log event options. This is used optionally, only when local event store is used.
 func (p *pipelineService) GetLogsByProcessId(processId string, option v1.LogEventQueryOption) ([]string, int64) {
 	return p.logEventService.GetByProcessId(processId, option)
-}
-
-func (p *pipelineService) FollowContainerLogs(pipeline service.Pipeline) {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (p *pipelineService) PostOperationsForBuildPack(step string, stepType enums.STEP_TYPE, pipeline v1.Pipeline, claim int) {
@@ -183,7 +178,7 @@ func (p *pipelineService) PostOperations(step string, stepType enums.STEP_TYPE, 
 			tRunStatus = string(enums.STEP_FAILED)
 		}
 	}
-	subject := v1.Subject{step, string(stepType+" Step Finished. ") + log, stepType, nil, nil, p.pipeline}
+	subject := v1.Subject{Step: step, Log: string(stepType+" Step Finished. ") + log, StepType: stepType, Pipeline: p.pipeline}
 	subject.EventData = make(map[string]interface{})
 	subject.EventData["reason"] = "n/a"
 	subject.EventData["log"] = subject.Log
@@ -226,7 +221,7 @@ func (p *pipelineService) LoadEnvs(pipeline v1.Pipeline) {
 }
 
 // SetInputResource sets input resources for build step
-func (p *pipelineService) SetInputResource(url, revision string, pipeline v1.Pipeline) {
+func (p *pipelineService) SetInputResource(pipeline v1.Pipeline) {
 	p.pipeline = pipeline
 	for i := range p.pipeline.Steps {
 		s := stepService{p.pipeline.Steps[i]}
@@ -236,15 +231,15 @@ func (p *pipelineService) SetInputResource(url, revision string, pipeline v1.Pip
 }
 
 // Build reads data from arg, serializes string into map and set into argData of step, reads data from env, serializes string into map and set into envData of step, sets input resources for build step
-func (p *pipelineService) Build(url, revision string, pipeline v1.Pipeline) {
+func (p *pipelineService) Build(pipeline v1.Pipeline) {
 	p.LoadArgs(pipeline)
 	p.LoadEnvs(pipeline)
-	p.SetInputResource(url, revision, pipeline)
+	p.SetInputResource(pipeline)
 }
 
 //BuildProcessLifeCycleEvents Builds pipeline By triggering Build method, then validates pipeline, and then notifies the observers.
-func (p *pipelineService) BuildProcessLifeCycleEvents(url, revision string, pipeline v1.Pipeline) error {
-	p.Build(url, revision, pipeline)
+func (p *pipelineService) BuildProcessLifeCycleEvents(pipeline v1.Pipeline) error {
+	p.Build(pipeline)
 	if p.pipeline.Label == nil {
 		p.pipeline.Label = make(map[string]string)
 	}
@@ -475,7 +470,7 @@ func (p *pipelineService) applyRegularBuildStep(step v1.Step, claim int) error {
 
 //applyBuildStep applies build step, follows pod lifecycle and the notifies observers
 func (p *pipelineService) applyBuildStep(step v1.Step, claim int) error {
-	subject := v1.Subject{step.Name, "Build Step Started", step.Type, nil, nil, p.pipeline}
+	subject := v1.Subject{Step: step.Name, Log: "Build Step Started", StepType: step.Type, Pipeline: p.pipeline}
 	subject.EventData = make(map[string]interface{})
 	subject.EventData["reason"] = "n/a"
 	subject.EventData["log"] = subject.Log

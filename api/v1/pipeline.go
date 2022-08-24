@@ -124,8 +124,7 @@ func (p pipelineApi) Apply(context echo.Context) error {
 			return common.GenerateErrorResponse(context, nil, err.Error())
 		}
 	}
-	url := context.QueryParam("url")
-	revision := context.QueryParam("revision")
+
 	purgingOption := context.QueryParam("purging")
 	if purgingOption == string(enums.PIPELINE_PURGING_ENABLE) {
 		data.Option.Purging = enums.PIPELINE_PURGING_ENABLE
@@ -136,7 +135,7 @@ func (p pipelineApi) Apply(context echo.Context) error {
 	if data.ProcessId == "" {
 		data.ProcessId = guuid.New().String()
 	}
-	err = p.pipelineService.BuildProcessLifeCycleEvents(url, revision, data)
+	err = p.pipelineService.BuildProcessLifeCycleEvents(data)
 	if err != nil {
 		log.Println("Input Error:", err.Error())
 		listener := v1.Subject{Pipeline: data, Step: "n/a", Log: err.Error()}
