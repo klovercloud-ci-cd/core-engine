@@ -58,55 +58,55 @@ func (step Step) Validate() error {
 
 func (step Step) validateDeployStep() error {
 	if step.Params[enums.AGENT] == "" {
-		return errors.New("Agent is required!")
+		return errors.New("Agent is required! Step: " + step.Name)
 	}
 	if step.Params[enums.RESOURCE_NAME] == "" {
-		return errors.New("Params name is required!")
+		return errors.New("Params name is required! Step: " + step.Name)
 	}
 	if step.Params[enums.RESOURCE_NAMESPACE] == "" {
 
-		return errors.New("Params namespace is required!")
+		return errors.New("Params namespace is required! Step: " + step.Name)
 	}
 	if step.Params[enums.TYPE] == "" {
-		return errors.New("Params type is required!")
+		return errors.New("Params type is required! Step: " + step.Name)
 	}
 	if step.Params[enums.IMAGES] == "" {
-		return errors.New("Params image is required!")
+		return errors.New("Params image is required! Step: " + step.Name)
 	}
 	return nil
 }
 
 func (step Step) validateBuildStep() error {
 	if step.Params[enums.REPOSITORY_TYPE] == "" {
-		return errors.New("Repository type is required!")
+		return errors.New("Repository type is required! Step: " + step.Name)
 	}
 	if step.Params[enums.REVISION] == "" {
-		return errors.New("Revision is required!")
+		return errors.New("Revision is required! Step: " + step.Name)
 	}
 	if step.Params[enums.SERVICE_ACCOUNT] == "" {
-		return errors.New("Service account is required!")
+		return errors.New("Service account is required! Step: " + step.Name)
 	}
 	if step.Params[enums.IMAGES] == "" {
-		return errors.New("Image is required!")
+		return errors.New("Image is required! Step: " + step.Name)
 	}
 	return nil
 }
 
 func (step Step) validateIntermediaryStep() error {
 	if step.Params[enums.SERVICE_ACCOUNT] == "" {
-		return errors.New("Service account is required!")
+		return errors.New("Service account is required! Step: " + step.Name)
 	}
 	if step.Params[enums.IMAGES] == "" {
-		return errors.New("Image is required!")
+		return errors.New("Image is required! Step: " + step.Name)
 	}
 	return nil
 }
 
 func (step Step) validateJenkinsJobStep() error {
 	if step.Params[enums.JENKINS_URL] == "" {
-		return errors.New("Jenkins url is required!")
+		return errors.New("Jenkins url is required! Step: " + step.Name)
 	} else if step.Params[enums.JENKINS_JOB_NAME] == "" {
-		return errors.New("Jenkins job name is required!")
+		return errors.New("Jenkins job name is required! Step: " + step.Name)
 	}
 	return nil
 }
