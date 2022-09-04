@@ -138,7 +138,7 @@ func (p pipelineApi) Apply(context echo.Context) error {
 	err = p.pipelineService.BuildProcessLifeCycleEvents(data)
 	if err != nil {
 		log.Println("Input Error:", err.Error())
-		listener := v1.Subject{Pipeline: data, Step: "n/a", Log: err.Error()}
+		listener := v1.Subject{Pipeline: data, Step: "_", Log: err.Error(), EventData: map[string]interface{}{"footmark": enums.PRE_PROCESS}}
 		go p.notifyAll(listener)
 		return common.GenerateErrorResponse(context, err.Error(), "Failed to trigger pipeline!")
 	}

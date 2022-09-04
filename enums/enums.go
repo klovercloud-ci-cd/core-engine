@@ -161,7 +161,7 @@ const (
 	// WORKDIR key for workdir
 	WORKDIR = PARAMS("workdir")
 	// DOCKERFILE_PATH key for dockerfile path
-	DOCKERFILE_PATH=PARAMS("dockerfile_path")
+	DOCKERFILE_PATH = PARAMS("dockerfile_path")
 )
 
 // PROCESS_STATUS pipeline steps status
@@ -169,7 +169,7 @@ type PROCESS_STATUS string
 
 const (
 	// QUEUED pipeline steps status queued
-	QUEUED=PROCESS_STATUS("queued")
+	QUEUED = PROCESS_STATUS("queued")
 	// NON_INITIALIZED pipeline steps status non_initialized
 	NON_INITIALIZED = PROCESS_STATUS("non_initialized")
 	// ACTIVE pipeline steps status active
@@ -224,6 +224,8 @@ const (
 type FOOTMARK string
 
 const (
+	// INIT_BUILD_JOB FOOTMARK name
+	PRE_PROCESS = FOOTMARK("pre_process")
 	// INIT_BUILD_JOB FOOTMARK name
 	INIT_BUILD_JOB = FOOTMARK("init_build_job")
 	// POST_BUILD_JOB FOOTMARK name
